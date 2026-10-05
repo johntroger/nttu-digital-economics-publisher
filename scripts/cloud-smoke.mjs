@@ -7,6 +7,7 @@ import { resolve } from 'node:path';
 import { createServer } from 'node:net';
 import { HEARTBEAT_CRON } from '../src/cloud/runtime.ts';
 import { runManagementSmoke } from './cloud-management-smoke.mjs';
+import { Miniflare, convertV4MiniflareOptions } from 'miniflare';
 const output = 'tmp/cloud-smoke/' + randomUUID();
 const { directory } = prepareCloud({ output });
 const configPath = resolve(directory, 'wrangler.json');
@@ -60,3 +61,33 @@ try {
   await Promise.race([new Promise(resolve => child.once('exit', resolve)), new Promise(resolve => setTimeout(resolve, 5000))]);
 }
 await runManagementSmoke();
+// Exercise OAuth's actual fetch implementation inside workerd, not only Node mocks.
+// This catches runtime differences such as unsupported redirect='error'. No Google request leaves this fixture.
+let exchanges = 0, redirectFixture = false;
+const oauth = new Miniflare(convertV4MiniflareOptions({ workers: [{ name: 'oauth-fixture', modules: true,
+  scriptPath: resolve(directory, 'bundle/worker.js'), compatibilityDate: '2026-10-05',
+  bindings: { APP_ENV: 'staging', INTEGRATION_MODE: 'unconfigured', STAGING_HEALTH_TOKEN: token,
+    AUTH_ORIGIN: 'https://nttu-publisher-staging.example.workers.dev', GOOGLE_CLIENT_ID: 'fixture.apps.googleusercontent.com',
+    GOOGLE_CLIENT_SECRET: 'fixture-only-secret', SESSION_SIGNING_KEY: 'e'.repeat(64) },
+  outboundService: async request => {
+    exchanges++;
+    assert(request.url === 'https://oauth2.googleapis.com/token', 'OAuth must use only the fixed token endpoint');
+    const form = new URLSearchParams(await request.text());
+    assert(form.get('grant_type') === 'authorization_code', 'OAuth form encoding must survive Workers runtime');
+    assert(form.get('client_id') === 'fixture.apps.googleusercontent.com', 'OAuth client fixture must be preserved');
+    if (redirectFixture) return new Response(null, { status: 302, headers: { Location: 'https://untrusted.invalid' } });
+    return Response.json({ error: 'invalid_grant', error_description: 'fixture detail must remain private' }, { status: 400 });
+  },
+}] }));
+try {
+  const url = 'https://nttu-publisher-staging.example.workers.dev/api/staging/auth-check';
+  assert((await oauth.dispatchFetch(url, { method: 'POST' })).status === 401, 'OAuth diagnostic must be bearer protected');
+  assert(exchanges === 0, 'Anonymous diagnostic must not contact provider');
+  const probe = () => oauth.dispatchFetch(url, { method: 'POST', headers: { Authorization: 'Bearer ' + token } });
+  const first = await (await probe()).json();
+  assert(first.category === 'grant' && first.status === 400 && exchanges === 1, 'Real Workers fetch must reach provider and preserve safe error classification');
+  redirectFixture = true;
+  const second = await (await probe()).json();
+  assert(second.category === 'provider' && second.status === 302 && exchanges === 2, 'OAuth must not follow provider redirects');
+  console.log('OAuth Workers runtime passed: form POST, private diagnostic and redirects blocked; no real Google calls.');
+} finally { await oauth.dispose(); }

@@ -12,6 +12,7 @@ function loginPage(ready: boolean, failed: boolean, reason = ''): Response {
     grant: 'Google từ chối mã đăng nhập. Bấm đăng nhập lại để lấy mã mới; nếu lặp lại cần kiểm tra callback.',
     exchange: 'Chưa trao đổi được token với Google. Thử lại; nếu lặp lại cần kiểm tra cấu hình kết nối.',
     network: 'Máy chủ chưa kết nối được đến Google. Cần kiểm tra kết nối từ Cloudflare.',
+    runtime: 'Runtime chưa thực hiện được yêu cầu đăng nhập. Cần kiểm tra mã kết nối của ứng dụng.',
     timeout: 'Google chưa phản hồi trong thời gian cho phép. Thử đăng nhập lại.',
     provider: 'Google trả về lỗi khi trao đổi mã đăng nhập. Cần kiểm tra phản hồi của dịch vụ.',
     request: 'Google từ chối định dạng yêu cầu đăng nhập. Cần kiểm tra cấu hình ứng dụng.',

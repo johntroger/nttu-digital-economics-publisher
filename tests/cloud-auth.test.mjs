@@ -59,7 +59,7 @@ test('Callback exchanges only a validated flow and creates a restricted owner se
   const callback = '/auth/google/callback?code=fixture-code&state=' + url.searchParams.get('state');
   let calls = 0;
   const fetcher = async (endpoint, options) => {
-    calls++; assert.equal(endpoint, 'https://oauth2.googleapis.com/token'); assert.equal(options.redirect, 'error');
+    calls++; assert.equal(endpoint, 'https://oauth2.googleapis.com/token'); assert.equal(options.redirect, 'manual');
     assert.equal(typeof options.body, 'string');
     const form = new URLSearchParams(options.body);
     assert.equal(form.get('client_id'), env.GOOGLE_CLIENT_ID);

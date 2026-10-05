@@ -63,3 +63,15 @@ release; D1 private status 200 và paused=true; status ẩn danh/catalog/manager
 publish endpoint 501. OAuth start 302 đúng accounts.google.com, đúng client ID owner
 cung cấp và callback staging, cookie HttpOnly. Không lưu giá trị cookie vào bằng chứng.
 Đây mới là kiểm chứng bắt đầu OAuth, chưa xác nhận Google token exchange/owner login thật.
+
+## Xử lý lỗi đăng nhập thực tế
+
+Owner báo login failed. Chẩn đoán có bảo vệ cho thấy không nhận được HTTP từ Google.
+Đã tái hiện trên workerd: fetch HTTP dùng redirect='error' ném TypeError
+"Invalid redirect value, must be one of follow or manual" trước khi gửi yêu cầu.
+Sửa token exchange sang redirect='manual', từ chối phản hồi 3xx thay vì đi theo chuyển hướng;
+form serialize rõ ràng và fetch giữ global context. JWKS cũng dùng customFetch giữ global context.
+Không suy ra Client Secret sai từ lỗi này. Diagnostic dùng mã cố ý không hợp lệ, yêu cầu
+bearer riêng staging và chỉ trả nhóm lỗi/status; không trả token, secret, body, email hay code thật.
+Thêm test OAuth trên bundle chạy trong workerd với outbound provider fixture: HTTP form,
+auth diagnostic, lỗi provider và không follow redirect. Cần owner đăng nhập lại sau khi deploy.

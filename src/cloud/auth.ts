@@ -1,9 +1,10 @@
-import { SignJWT, jwtVerify, createRemoteJWKSet } from 'jose';
+import { SignJWT, jwtVerify, createRemoteJWKSet, customFetch } from 'jose';
 import type { JWTVerifyGetKey } from 'jose';
 import { POLICY } from '../domain/policy.ts';
 import type { CloudBindings } from './runtime.ts';
 const SESSION = '__Host-nttu_session', FLOW = '__Host-nttu_oauth';
-const googleKeys = createRemoteJWKSet(new URL('https://www.googleapis.com/oauth2/v3/certs'), { timeoutDuration: 5000 });
+const runtimeFetch: typeof fetch = (input, init) => globalThis.fetch(input, init);
+const googleKeys = createRemoteJWKSet(new URL('https://www.googleapis.com/oauth2/v3/certs'), { timeoutDuration: 5000, [customFetch]: runtimeFetch });
 export interface OwnerSession { email: string; sub: string; csrf: string }
 export class AuthError extends Error {}
 class ExchangeError extends AuthError {
@@ -24,12 +25,15 @@ async function exchange(env: CloudBindings, code: string, verifier: string, fetc
   const cfg = config(env);
   let response: Response;
   try {
-    response = await fetcher('https://oauth2.googleapis.com/token', { method: 'POST', redirect: 'error', signal: AbortSignal.timeout(10000),
+    response = await fetcher('https://oauth2.googleapis.com/token', { method: 'POST', redirect: 'manual', signal: AbortSignal.timeout(10000),
       headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
       body: new URLSearchParams({ code, client_id: cfg.id, client_secret: cfg.secret, grant_type: 'authorization_code',
         redirect_uri: cfg.origin + '/auth/google/callback', code_verifier: verifier }).toString() });
   } catch (error) {
-    throw new ExchangeError(error instanceof Error && ['TimeoutError', 'AbortError'].includes(error.name) ? 'timeout' : 'network');
+    const name = error instanceof Error ? error.name : '';
+    const message = error instanceof Error ? error.message : '';
+    throw new ExchangeError(['TimeoutError', 'AbortError'].includes(name) ? 'timeout'
+      : /illegal invocation|incorrect.*this|invalid.*redirect/i.test(message) ? 'runtime' : 'network');
   }
   const data = await response.json().catch(() => null) as { error?: unknown; id_token?: unknown } | null;
   if (!response.ok) {
@@ -42,7 +46,7 @@ async function exchange(env: CloudBindings, code: string, verifier: string, fetc
 }
 // Bearer-protected server diagnostic: a deliberately invalid code can never create a user session.
 // Only a fixed category/status is returned; response bodies and configured secrets stay private.
-export async function probeGoogleExchange(env: CloudBindings, fetcher: typeof fetch = fetch) {
+export async function probeGoogleExchange(env: CloudBindings, fetcher: typeof fetch = runtimeFetch) {
   try { await exchange(env, 'nttu-invalid-diagnostic-code', 'd'.repeat(64), fetcher); return { category: 'unexpected', status: 200 }; }
   catch (error) {
     if (error instanceof ExchangeError) return { category: error.reason, status: error.status };
@@ -86,7 +90,7 @@ export async function verifyGoogleIdentity(token: string, env: CloudBindings, no
   return { sub: payload.sub, email: POLICY.ownerEmail };
 }
 export async function completeGoogle(request: Request, env: CloudBindings,
-  { fetcher = fetch, keys = googleKeys }: { fetcher?: typeof fetch; keys?: JWTVerifyGetKey } = {}): Promise<Response> {
+  { fetcher = runtimeFetch, keys = googleKeys }: { fetcher?: typeof fetch; keys?: JWTVerifyGetKey } = {}): Promise<Response> {
   const cfg = config(env), url = new URL(request.url);
   let reason = 'flow';
   try {
