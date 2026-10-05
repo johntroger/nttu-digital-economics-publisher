@@ -1,6 +1,6 @@
 # Bước 11 — GitHub và kiểm thử tự động
 
-Repository dự kiến: https://github.com/johntroger/nttu-digital-economics-publisher, riêng tư.
+Repository đã tạo: https://github.com/johntroger/nttu-digital-economics-publisher, riêng tư.
 Git local dùng nhánh main, danh tính johntroger và email noreply GitHub. Chỉ cấu hình Git riêng cho dự án; tài khoản đăng nhập qua Git Credential Manager, không ghi token vào file/repository.
 
 CI chạy khi push main, pull request hoặc workflow_dispatch trên Ubuntu và Windows, Node 24.
@@ -29,4 +29,22 @@ Hook là kiểm tra local, không phải branch protection trên máy chủ.
 Tài liệu chính thức tham khảo: https://docs.github.com/en/actions/tutorials/build-and-test-code/nodejs
 và https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax.
 
-Trạng thái kiểm thử/push/CI remote được bổ sung sau xác minh. Dừng trước bước 12.
+## Kết quả nghiệm thu 05/10/2026
+
+- Repository riêng tư đã tạo và đẩy nhánh main: https://github.com/johntroger/nttu-digital-economics-publisher.
+- Local strict TypeScript và **157/157 Node/SQLite/HTTP** đạt; **9/9 image** đạt.
+- **121/121 portable** đạt; CI thật chạy thành công trên Ubuntu và Windows, gồm npm ci,
+  TypeScript, test portable và kiểm tra index. Lần chạy xác minh đầu tiên:
+  https://github.com/johntroger/nttu-digital-economics-publisher/actions/runs/37274229044.
+- Pre-push hook đã thực sự chạy toàn bộ kiểm thử trước lần push đầu. Gọi Node trực tiếp,
+  không ghép lệnh kiểm thử qua shell. Hook cho checkout mới cần cài lại bằng hooks:install.
+- Kiểm tra index đạt; không có PDF/logo gốc/ảnh mẫu/database/tmp/backup/private account settings.
+  Có ba kiểm thử mới cho file riêng, nhận diện credential và việc kiểm tra index thay vì worktree.
+- Byte migration/renderer/sample input trong index trùng file đã ghim checksum local.
+
+Các workflow sau tự chạy theo commit; xem tab Actions để đọc kết quả hiện hành. CI kiểm tra
+mã nguồn và core workflow, không thay thế kiểm thử local với tài nguyên thật hoặc fanpage thật.
+GitHub không phải nơi chạy scheduler production; ứng dụng vẫn local, các dịch vụ thật chưa nối.
+
+Dừng trước bước 12. Đề xuất: chuẩn bị môi trường staging trên cloud để chạy khi máy tính tắt,
+sau đó tích hợp Google/Facebook thử/Telegram theo phạm vi được phê duyệt riêng.

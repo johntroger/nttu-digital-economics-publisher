@@ -53,3 +53,13 @@ giữ kho gốc và lịch sử. Đã tạo gói thực tế đầu tiên cho kh
 154/154 kiểm thử mã nguồn, 42/42 ca trình duyệt và 9/9 kiểm thử ảnh đạt.
 Báo cáo: docs/steps/10-local-backups.md. Dừng trước bước 11 (đề xuất GitHub và CI).
 Chưa nghiệm thu sao lưu mã hóa/cloud/production hoặc lịch sao lưu tự động.
+
+## Mốc hiện hành — bước 11 (05/10/2026)
+
+Đã tạo Git local/main và repository GitHub riêng tư johntroger/nttu-digital-economics-publisher,
+đẩy mã nguồn, thiết lập CI Node24 trên Ubuntu/Windows. 157/157 kiểm thử mã nguồn local,
+9/9 ảnh và 121/121 portable đạt; CI thật hai nền tảng đã thành công.
+Pre-push kiểm tra đầy đủ local; repository guard chặn file riêng và credential phổ biến.
+PDF/logo gốc/ảnh mẫu/database/backup/tài khoản không đưa vào repository.
+Báo cáo: docs/steps/11-github-ci.md. Dừng trước bước 12: đề xuất chuẩn bị staging cloud.
+GitHub quản lý mã nguồn/CI; ứng dụng chưa chạy cloud hoặc đăng Facebook thật.

@@ -71,3 +71,7 @@ Mốc bước 10: 154/154 Node, 7/7 backup + 14/14 UI + 5/5 sample + 8/8 editor 
 browser, 9/9 image đạt. Sao lưu thực tế kho local hoàn tất; khôi phục kiểm thử vào kho riêng
 paused/quarantined, giữ nguồn/ảnh/lịch sử. Chưa nghiệm thu backup mã hóa/cloud/production.
 Chi tiết và runbook local: docs/steps/10-local-backups.md.
+
+Mốc bước 11: 157/157 Node local, 9/9 image, 121/121 portable. CI GitHub thực tế trên Ubuntu và
+Windows thành công; repository riêng tư đã tạo/main đã push. Private tài liệu/logo/ảnh mẫu,
+database/backup và tài khoản giữ ngoài Git. Xem docs/steps/11-github-ci.md.

@@ -787,3 +787,12 @@ quarantined/paused, giữ lịch sử, dùng tài nguyên riêng và không thay
 154 Node, 42 browser, 9 image đạt. Xem docs/steps/10-local-backups.md.
 Đây là adapter local cho backup: chưa thực hiện age/cloud/cron/retention production;
 yêu cầu thiết kế production giữ nguyên. Dừng trước bước 11, đề xuất GitHub và CI.
+
+## Cập nhật triển khai bước 11 — 05/10/2026
+
+Repository riêng tư GitHub johntroger/nttu-digital-economics-publisher đã có mã nguồn/main và CI.
+CI Node24 Ubuntu/Windows đã kiểm chứng thành công: strict TypeScript, 121 portable tests và
+repository guard. Kiểm thử local đầy đủ 157 Node/SQLite/HTTP + 9 image đạt, giữ private assets
+ngoài Git. Hook pre-push bắt buộc kiểm tra local trên checkout đã cài hook; không coi nó là
+branch protection máy chủ. Ứng dụng vẫn local, chưa dùng GitHub như scheduler production.
+Xem docs/steps/11-github-ci.md. Dừng trước bước 12, đề xuất chuẩn bị staging cloud để kiểm thử.

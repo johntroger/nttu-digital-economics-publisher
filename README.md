@@ -105,7 +105,7 @@ content/mẫu; vẫn cần mã nguồn ứng dụng để mở. Local chưa mã 
 
 ## Bước 11: Git và CI
 
-Repository riêng tư dự kiến: `johntroger/nttu-digital-economics-publisher`. Node 24 (`.nvmrc`).
+Repository riêng tư: [johntroger/nttu-digital-economics-publisher](https://github.com/johntroger/nttu-digital-economics-publisher). Node 24 (`.nvmrc`).
 `npm run check:ci` chạy TypeScript, kiểm thử portable và kiểm tra nội dung index.
 CI GitHub chạy trên Windows/Ubuntu; PDF/logo gốc, ảnh đã dựng, database và backup giữ ngoài Git.
 Trước push vẫn chạy đầy đủ `npm run check` và `npm run test:images` qua `.githooks/pre-push`.
