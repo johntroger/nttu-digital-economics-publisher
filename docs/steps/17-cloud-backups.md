@@ -1,6 +1,6 @@
 # Bước 17 — Sao lưu cloud và khôi phục vào kho riêng
 
-Phê duyệt: 05/10/2026. Đang triển khai.
+Phê duyệt: 05/10/2026. Đã triển khai và nghiệm thu staging.
 
 Giao diện Sao lưu: tạo snapshot các bảng nghiệp vụ D1 trong một batch transaction,
 sao chép PDF/logo/ảnh R2 và font/OFL riêng từng file, ghi manifest sau khi mọi file
@@ -41,5 +41,26 @@ Nghiệm thu cục bộ: 9 kiểm thử chuyên biệt sao lưu/khôi phục đ�
 D1/R2 thực tế cục bộ áp dụng đủ 12 migrations và hoàn tất sao lưu/đối chiếu.
 19 kiểm tra giao diện desktop/mobile đạt. ZIP tải từ giao diện được Python
 zipfile kiểm CRC độc lập và khôi phục SQLite cô lập, giữ lịch sử và cách ly
-mọi phiên bản. Đang triển khai để nghiệm thu trên staging thật.
+mọi phiên bản. Đã nghiệm thu trên staging thật.
 
+
+Nghiệm thu cuối: 211/211 kiểm thử local và 9/9 kiểm tra ảnh đạt. CI Windows và
+Ubuntu đạt (175 portable tests); runtime Worker/D1/R2 chạy trên Ubuntu và local.
+Đã sửa Git checkout Windows đổi CRLF của OFL bằng thuộc tính eol=lf, giữ checksum.
+
+Bản staging được triển khai qua GitHub Actions, 12 migrations. Kiểm tra 36
+đường dẫn không đăng nhập trả 401; health bearer không truy cập kho riêng.
+21 tài nguyên gốc, 13 PDF nguồn chuẩn giữ nguyên checksum; lịch dừng, publish 501.
+
+Đã tạo bản thật backup-0b849c33-4755-4b24-9441-7082e6acc478 qua phiên Google owner:
+40 bài, 40 phiên bản, 21 tài nguyên, 27 file (13.131.989 byte nội dung).
+Đã đối chiếu 27 file và manifest, tải ZIP 13.143.737 byte vào Downloads.
+Python zipfile kiểm CRC và giải nén độc lập thành công. CLI khôi phục vào
+tmp/step-17/restores/restored-aa933d38-2774-44cd-ac4e-cdfd7a837cd5:
+40 bài/40 phiên bản/21 tài nguyên; integrity=ok, foreign_key_check không có lỗi,
+paused=true, quarantined=true, remoteModified=false. Không đưa kho phục hồi lên cloud.
+
+Bằng chứng riêng tư (không đưa GitHub): tmp/step-17/browser-results.json,
+remote-evidence.json, real-restore-result.json, staging-backup-complete.png.
+ZIP nằm ở C:/Users/trant/Downloads/backup-0b849c33-4755-4b24-9441-7082e6acc478.zip.
+Chưa thiết lập sao lưu theo lịch/retention/xóa bản; dừng tại Bước 17 để chờ phê duyệt bước kế tiếp.
