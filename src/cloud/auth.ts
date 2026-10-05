@@ -127,7 +127,7 @@ export async function ownerSession(request: Request, env: CloudBindings): Promis
     return { email: POLICY.ownerEmail, sub: payload.sub, csrf: payload.csrf };
   } catch { return null; }
 }
-export function requireMutation(request: Request, env: CloudBindings, session: OwnerSession): void {
+export function requireMutation(request: Request, env: CloudBindings, session: OwnerSession, contentType = 'application/json'): void {
   if (request.headers.get('Origin') !== config(env).origin || request.headers.get('X-CSRF-Token') !== session.csrf
-    || request.headers.get('Content-Type') !== 'application/json') throw new AuthError('CSRF_REQUIRED');
+    || request.headers.get('Content-Type') !== contentType) throw new AuthError('CSRF_REQUIRED');
 }

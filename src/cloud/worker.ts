@@ -2,6 +2,7 @@ import { assertStaging, readStatus, recordHeartbeat } from './runtime.ts';
 import type { CloudBindings } from './runtime.ts';
 import { startGoogle, completeGoogle, ownerSession, requireMutation, clearSessionCookie, authConfigured, probeGoogleExchange, AuthError } from './auth.ts';
 import { cloudCatalog, cloudPost, saveCloudCaption, CatalogError } from './catalog.ts';
+import { library, readUpload, uploadFile, downloadFile } from './storage.ts';
 
 const UI_HEADERS = { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer',
   'Content-Security-Policy': "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'" };
@@ -64,7 +65,7 @@ export default {
     try { assertStaging(env); } catch { return json({ code: 'CONFIGURATION_NOT_READY' }, 503); }
     const path = new URL(request.url).pathname;
     if (request.method === 'GET' && path === '/health') {
-      return json({ service: 'nttu-publisher', step: 13, environment: 'staging',
+      return json({ service: 'nttu-publisher', step: 14, environment: 'staging',
         integrationMode: 'unconfigured', publishingImplemented: false,
         databaseChecked: false, schedulerImplemented: false, heartbeatImplemented: true,
         release: env.RELEASE_SHA ?? 'local' });
@@ -103,13 +104,30 @@ export default {
         const response = json({ loggedOut: true }); response.headers.append('Set-Cookie', clearSessionCookie()); return response;
       }
       if (path === '/api/catalog' && request.method === 'GET') return json(await cloudCatalog(env));
-      const route = path.match(/^\/api\/posts\/([^/]+)(?:\/(save|restore))?$/);
+      if (path === '/api/library' && request.method === 'GET') return json(await library(env));
+      if (path === '/api/library/upload' && request.method === 'POST') {
+        requireMutation(request,env,session,'application/octet-stream');
+        const header=request.headers.get('X-File-Metadata');let metadata:unknown;
+        if(!header||header.length>6000)throw new CatalogError('FILE_METADATA_INVALID');
+        try {metadata=JSON.parse(decodeURIComponent(header));} catch {throw new CatalogError('FILE_METADATA_INVALID');}
+        return json(await uploadFile(env,session,metadata,await readUpload(request)));
+      }
+      const fileRoute=path.match(/^\/api\/library\/files\/([a-f0-9-]{36})$/);
+      if(fileRoute&&request.method==='GET')return downloadFile(env,fileRoute[1]!);
+      const route = path.match(/^\/api\/posts\/([^/]+)(?:\/(save|restore|image))?$/);
       if (route) {
         const id = decodeURIComponent(route[1]!);
         if (id.length > 300) return json({ code: 'INVALID_POST_ID' }, 400);
         if (!route[2] && request.method === 'GET') return json(await cloudPost(env, id));
         if (route[2] && request.method === 'POST') {
           requireMutation(request, env, session);
+          if(route[2]==='image') {
+            const data=await input(request) as Record<string,unknown>|null;
+            if(!data||typeof data!=='object'||typeof data.libraryId!=='string'||data.libraryId.length>100)throw new CatalogError('IMAGE_NOT_AVAILABLE');
+            const current=await cloudPost(env,id);
+            return json(await saveCloudCaption(env,session,id,{expectedVersion:data.expectedVersion,requestId:data.requestId,
+              title:current.title,body:current.body,sourceNote:current.sourceNote},false,data.libraryId));
+          }
           return json(await saveCloudCaption(env, session, id, await input(request), route[2] === 'restore'));
         }
         return json({ code: 'METHOD_NOT_ALLOWED' }, 405);

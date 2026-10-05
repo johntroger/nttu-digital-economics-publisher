@@ -122,3 +122,20 @@ CI deploy main sau kiểm tra, đã bật với secrets/variables riêng staging
 171 test local và 135 portable đạt; kiểm tra ảnh qua pre-push. Health:
 https://nttu-publisher-staging.nttu-kts-johntroger.workers.dev/health.
 Runbook và phần việc còn lại: `docs/steps/12-staging-foundation.md`.
+
+## Bước 13: Google và quản lý caption staging
+
+Giao diện staging đã triển khai tại https://nttu-publisher-staging.nttu-kts-johntroger.workers.dev/.
+Google owner login đã được người quản lý xác nhận thành công. Kho cloud khởi tạo riêng từ
+40 đề cương, có đọc/biên tập caption, lịch sử phiên bản và khôi phục thành phiên bản mới.
+Caption luôn ghép footer và dòng phân cách; lưu không đánh dấu đủ điều kiện đăng.
+Ảnh/PDF/logo/backup private vẫn ở local; Facebook và Telegram chưa kết nối, lịch đăng vẫn dừng.
+Chi tiết kiểm thử và giới hạn: `docs/steps/13-google-management.md`.
+
+## Bước 14: tài nguyên cloud riêng tư
+
+Tab Tài nguyên quản lý PDF, logo và ảnh PNG vuông 1080. Mọi file được đọc sau Google
+owner login, giữ checksum và metadata bất biến; upload trùng dùng lại file, lỗi giữa
+R2/D1 có thể tiếp tục bằng tải lại cùng file. Gắn ảnh tạo phiên bản mới cần rà soát.
+Giới hạn staging 256 file/100 MiB; lịch Facebook vẫn dừng. CI đang triển khai bản này.
+Kết quả và tình trạng nghiệm thu remote: `docs/steps/14-private-storage.md`.

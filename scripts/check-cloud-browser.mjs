@@ -5,6 +5,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import { managementFixture } from './cloud-management-smoke.mjs';
 import worker from '../src/cloud/worker.ts';
+import { png, pdf } from '../tests/helpers/files.mjs';
 const { chromium } = createRequire(`${process.env.USERPROFILE}/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/package.json`)('playwright');
 const f = await managementFixture(), fixtureId = crypto.randomUUID();
 let base;
@@ -20,7 +21,7 @@ const server = createServer(async (incoming, outgoing) => {
   } catch { outgoing.writeHead(500); outgoing.end('Local test harness failed'); }
 });
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve)); base='http://127.0.0.1:'+server.address().port;
-mkdirSync('tmp/step-13',{recursive:true});
+mkdirSync('tmp/step-14',{recursive:true});
 const browser=await chromium.launch({headless:true,executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe'});
 const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage(),errors=[],results=[];
 page.on('pageerror',error=>errors.push(error.message));
@@ -48,7 +49,37 @@ try {
     await page.waitForFunction(()=>document.getElementById('version-label').textContent==='Phiên bản 3');
     assert.equal(await page.locator('#body').inputValue(),original);
   });
-  await page.screenshot({path:'tmp/step-13/cloud-desktop.png',fullPage:true});
+  await check('library uploads private PDF and logo, and reuses identical file',async()=>{
+    await page.locator('[data-view=library]').click();
+    await page.locator('#file-input').setInputFiles({name:'Nguồn thử.pdf',mimeType:'application/pdf',buffer:Buffer.from(pdf)});
+    await page.locator('#file-source').fill('FIXTURE');
+    await page.locator('#upload-file').click();await page.waitForFunction(()=>document.querySelectorAll('.file-row').length===1);
+    await page.locator('#upload-file').click();await page.waitForFunction(()=>document.getElementById('message').textContent.includes('đã có'));
+    assert.equal(await page.locator('.file-row').count(),1);
+    const link=await page.getByRole('link',{name:'Tải PDF'}).getAttribute('href');
+    const response=await page.request.get(base+link);assert.equal(response.status(),200);assert.deepEqual(await response.body(),Buffer.from(pdf));
+    assert.equal((await fetch(base+link)).status,401);
+    await page.locator('#file-kind').selectOption('logo');assert.equal(await page.locator('#file-source').isDisabled(),true);
+    await page.locator('#file-input').setInputFiles({name:'Logo thử.png',mimeType:'image/png',buffer:Buffer.from(png(100,100))});
+    await page.locator('#upload-file').click();await page.waitForFunction(()=>document.querySelectorAll('.file-row').length===2);
+  });
+  await check('library rejects wrong square size and uploads full square image',async()=>{
+    await page.locator('#file-kind').selectOption('image');
+    await page.locator('#file-input').setInputFiles({name:'Nhỏ.png',mimeType:'image/png',buffer:Buffer.from(png(360,360))});
+    await page.locator('#upload-file').click();await page.waitForFunction(()=>document.getElementById('message').textContent.includes('1080'));
+    assert.equal(await page.locator('.file-row').count(),2);
+    await page.locator('#file-input').setInputFiles({name:'Ảnh bài thử.png',mimeType:'image/png',buffer:Buffer.from(png())});
+    await page.locator('#upload-file').click();await page.waitForFunction(()=>document.querySelectorAll('.file-row').length===3);
+    await page.screenshot({path:'tmp/step-14/library-desktop.png',fullPage:true});
+  });
+  await check('attachment preserves caption and creates reviewed-needed version with visible image',async()=>{
+    await page.locator('[data-view=posts]').click();await page.locator('#attach-image').click();
+    await page.waitForFunction(()=>document.getElementById('version-label').textContent==='Phiên bản 4');
+    assert.equal(await page.locator('#body').inputValue(),original);
+    await page.waitForFunction(()=>document.getElementById('post-image').naturalWidth===1080);
+    assert.match(await page.locator('#image-status').textContent(),/cần rà soát/);
+    await page.screenshot({path:'tmp/step-14/cloud-desktop.png',fullPage:true});
+  });
   await check('search and navigation work without fabricated history',async()=>{
     await page.locator('#search').fill('khong-co-bai-fixture'); assert.equal(await page.locator('.post-button').count(),0);
     await page.locator('#search').fill('');
@@ -61,9 +92,12 @@ try {
     await page.locator('#search').focus();await page.keyboard.press('Tab');
     assert.equal(await page.evaluate(()=>document.activeElement.id),'group');
     assert.notEqual(await page.locator('#group').evaluate(el=>getComputedStyle(el).outlineStyle),'none');
-    await page.screenshot({path:'tmp/step-13/cloud-mobile.png',fullPage:true});
+    await page.screenshot({path:'tmp/step-14/cloud-mobile.png',fullPage:true});
+    await page.locator('[data-view=library]').click();
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+    await page.screenshot({path:'tmp/step-14/library-mobile.png',fullPage:true});
   });
   assert.deepEqual(errors,[]);
-  writeFileSync('tmp/step-13/browser-results.json',JSON.stringify({results,errors,mode:'isolated local D1 and fixture session; not Google login acceptance'},null,2));
+  writeFileSync('tmp/step-14/browser-results.json',JSON.stringify({results,errors,mode:'isolated local D1/R2 and fixture session; not Google login acceptance'},null,2));
   console.log('PASS '+results.length+' cloud browser checks');
 } finally {await browser.close();await new Promise(resolve=>server.close(resolve));await f.dispose();}

@@ -105,6 +105,8 @@ test('cloud migration preparation preserves original schema hashes and never imp
   assert.equal(config.vars.APP_ENV, 'staging'); assert.deepEqual(config.triggers.crons, [HEARTBEAT_CRON]);
   assert.equal(config.keep_vars, true);
   assert.equal(config.assets.run_worker_first, true); assert.equal('r2_buckets' in config, false);
+  const storage = prepareCloud({ output: 'tmp/tests/cloud-storage-preparation', storageEnabled: true }).config;
+  assert.deepEqual(storage.r2_buckets, [{ binding: 'MEDIA', bucket_name: 'nttu-publisher-staging-assets' }]);
   const db = new DatabaseSync(':memory:'); try {
     db.exec('PRAGMA foreign_keys=ON');
     for (const name of readdirSync(directory + '/migrations').sort()) db.exec(readFileSync(directory + '/migrations/' + name, 'utf8'));

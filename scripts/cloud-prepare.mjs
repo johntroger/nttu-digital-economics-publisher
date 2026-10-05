@@ -5,7 +5,7 @@ import { pathToFileURL } from 'node:url';
 import { HEARTBEAT_CRON } from '../src/cloud/runtime.ts';
 import { cloudSeedSQL } from './cloud-seed.mjs';
 
-export function prepareCloud({ databaseId = '00000000-0000-0000-0000-000000000000', output = 'tmp/cloud', releaseSha = 'local', origin = process.env.STAGING_WORKER_URL ?? '' } = {}) {
+export function prepareCloud({ databaseId = '00000000-0000-0000-0000-000000000000', output = 'tmp/cloud', releaseSha = 'local', origin = process.env.STAGING_WORKER_URL ?? '', storageEnabled = process.env.STAGING_R2_ENABLED === 'true' } = {}) {
   if (!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(databaseId)) throw new Error('Invalid D1 database ID');
   if (releaseSha !== 'local' && !/^[a-f0-9]{40}$/i.test(releaseSha)) throw new Error('Release must be a full commit SHA');
   const root = resolve('.'), directory = resolve(output);
@@ -26,6 +26,7 @@ export function prepareCloud({ databaseId = '00000000-0000-0000-0000-00000000000
   writeFileSync(resolve(directory, 'migrations', '0007_cloud_runtime.sql'), readFileSync('cloud/runtime.sql'));
   writeFileSync(resolve(directory, 'migrations', '0008_owner_management.sql'), readFileSync('cloud/owner-management.sql'));
   writeFileSync(resolve(directory, 'migrations', '0009_staging_briefs.sql'), cloudSeedSQL());
+  writeFileSync(resolve(directory, 'migrations', '0010_private_storage.sql'), readFileSync('cloud/private-storage.sql'));
   const assets = resolve(directory, 'assets'); mkdirSync(assets, { recursive: true });
   for (const name of ['manager.html', 'manager.js', 'cloud.css']) writeFileSync(resolve(assets, name), readFileSync(resolve('ui/cloud', name)));
   const config = {
@@ -38,6 +39,7 @@ export function prepareCloud({ databaseId = '00000000-0000-0000-0000-00000000000
     triggers: { crons: [HEARTBEAT_CRON] },
     d1_databases: [{ binding: 'DB', database_name: 'nttu-publisher-staging', database_id: databaseId, migrations_dir: './migrations' }],
     observability: { enabled: false },
+    ...(storageEnabled ? { r2_buckets: [{ binding: 'MEDIA', bucket_name: 'nttu-publisher-staging-assets' }] } : {}),
   };
   writeFileSync(resolve(directory, 'wrangler.json'), JSON.stringify(config, null, 2) + '\n');
   writeFileSync(resolve(directory, 'schema-manifest.json'), JSON.stringify(hashes, null, 2) + '\n');

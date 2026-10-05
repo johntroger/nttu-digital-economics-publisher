@@ -10,11 +10,13 @@ import { prepareCloud } from './cloud-prepare.mjs';
 import { cloudCatalog, cloudPost, saveCloudCaption } from '../src/cloud/catalog.ts';
 import { POLICY } from '../src/domain/policy.ts';
 import worker from '../src/cloud/worker.ts';
+import { uploadFile,downloadFile } from '../src/cloud/storage.ts';
+import { png,pdf } from '../tests/helpers/files.mjs';
 
 export async function managementFixture() {
   const output = 'tmp/cloud-management/' + crypto.randomUUID();
   const origin = 'https://nttu-publisher-staging.example.workers.dev';
-  const { directory } = prepareCloud({ output, origin });
+  const { directory } = prepareCloud({ output, origin, storageEnabled: true });
   const configPath = resolve(directory, 'wrangler.json'), state = resolve(directory, 'state');
   const migration = spawnSync(process.execPath, [resolve('node_modules/wrangler/bin/wrangler.js'), 'd1', 'migrations', 'apply', 'DB', '--local', '--config', configPath, '--persist-to', state],
     { encoding: 'utf8', timeout: 120000, env: { ...process.env, WRANGLER_SEND_METRICS: 'false', CI: 'true' } });
@@ -57,6 +59,17 @@ export async function runManagementSmoke() {
     assert.equal((await worker.fetch(new Request(f.origin+'/manager.js'),f.env)).status,401);
     assert.equal((await worker.fetch(new Request(f.origin+'/',{headers:{Cookie:f.cookie}}),f.env)).status,200);
     assert.equal((await f.env.DB.prepare('PRAGMA foreign_key_check').all()).results.length,0);
+    const bytes=png();
+    const file=await uploadFile(f.env,f.owner,{kind:'image',filename:'Runtime image.png',contentType:'image/png'},bytes);
+    assert.equal(file.file.state,'complete');
+    assert.equal((await uploadFile(f.env,f.owner,{kind:'image',filename:'Runtime image.png',contentType:'image/png'},bytes)).reused,true);
+    assert.deepEqual(new Uint8Array(await (await downloadFile(f.env,file.file.id)).arrayBuffer()),bytes);
+    const doc=await uploadFile(f.env,f.owner,{kind:'document',filename:'Runtime PDF.pdf',contentType:'application/pdf',sourceKey:'BM03'},pdf);
+    assert.equal(doc.file.state,'complete');
+    const active=await cloudPost(f.env,a.id);
+    await saveCloudCaption(f.env,f.owner,a.id,{expectedVersion:active.versionId,requestId:crypto.randomUUID(),title:active.title,body:active.body,sourceNote:''},false,file.file.id);
+    assert.ok((await cloudPost(f.env,a.id)).imageUrl);
+    console.log('Private storage D1/R2 local passed: conditional upload, deduplication, verified download, PDF and new image version.');
     console.log('Management local D1 passed: concurrent CAS, duplicate rollback, owner API, bounded JSON and private UI. Google login is not emulated as remote acceptance.');
   } finally { await f.dispose(); }
 }

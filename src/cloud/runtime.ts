@@ -16,6 +16,10 @@ export interface CloudBindings {
   GOOGLE_CLIENT_SECRET?: string;
   SESSION_SIGNING_KEY?: string;
   ASSETS?: { fetch(request: Request): Promise<Response> };
+  MEDIA?: {
+    put(key: string, data: ArrayBuffer | Uint8Array, options?: { onlyIf?: { etagDoesNotMatch: string }; httpMetadata?: { contentType: string }; customMetadata?: Record<string,string> }): Promise<unknown>;
+    get(key: string): Promise<{ size: number; arrayBuffer(): Promise<ArrayBuffer> } | null>;
+  };
 }
 export const HEARTBEAT_CRON = '*/5 * * * *';
 export const STATUS_SQL = `SELECT r.environment, r.last_scheduled_at, r.heartbeat_count,

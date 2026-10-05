@@ -15,14 +15,16 @@ async function rows(env: CloudBindings, sql: string, ...values: (string | number
   return (await statement.all<Row>()).results;
 }
 const POST_SQL = `SELECT p.id,p.content_key,p.topic_group,p.pool,v.id version_id,v.version,v.caption_title title,
-  v.body,v.metadata_json,v.primary_audience,v.status,v.check_version,v.asset_id,e.stage
-  FROM posts p JOIN content_entries e ON e.post_id=p.id JOIN post_versions v ON v.id=e.active_version_id`;
+  v.body,v.metadata_json,v.primary_audience,v.status,v.check_version,v.asset_id,e.stage,l.id image_file_id
+  FROM posts p JOIN content_entries e ON e.post_id=p.id JOIN post_versions v ON v.id=e.active_version_id
+  LEFT JOIN cloud_library l ON 'library-'||l.id=v.asset_id AND l.kind='image' AND l.state='complete'`;
 function model(row: Row) {
   const metadata = JSON.parse(String(row.metadata_json)) as Record<string, unknown>;
   return { id: row.id, key: row.content_key, group: row.topic_group, pool: row.pool, title: row.title,
     body: row.body, caption: composeCaption(String(row.body)), versionId: row.version_id, version: row.version,
     audience: row.primary_audience, stage: row.stage, status: row.status, sourceNote: metadata.sourceNote ?? '',
-    sourceHint: metadata.sourceHint ?? '', sourceRefs: metadata.sourceRefs ?? [], imageAvailable: false, ready: false };
+    sourceHint: metadata.sourceHint ?? '', sourceRefs: metadata.sourceRefs ?? [], imageAvailable: Boolean(row.image_file_id),
+    imageUrl: row.image_file_id ? '/api/library/files/' + row.image_file_id : null, ready: false };
 }
 export async function cloudCatalog(env: CloudBindings) {
   await readStatus(env);
@@ -32,7 +34,7 @@ export async function cloudCatalog(env: CloudBindings) {
   const schedule = await rows(env, 'SELECT business_date,status FROM schedule_slots ORDER BY business_date LIMIT 100');
   return { mode: 'staging', posts: posts.map(model), publications, notifications, schedule,
     footer: FOOTER, separator: CAPTION_SEPARATOR, paused: true, publishingImplemented: false,
-    cloudImagesConfigured: false, cloudDocumentsConfigured: false };
+    cloudImagesConfigured: Boolean(env.MEDIA), cloudDocumentsConfigured: Boolean(env.MEDIA) };
 }
 export async function cloudPost(env: CloudBindings, id: string) {
   await readStatus(env);
@@ -49,7 +51,7 @@ async function hash(value: string) {
   return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value))), byte => byte.toString(16).padStart(2, '0')).join('');
 }
 function text(value: unknown, max: number): value is string { return typeof value === 'string' && value.trim().length > 0 && value.length <= max; }
-export async function saveCloudCaption(env: CloudBindings, owner: OwnerSession, postId: string, input: unknown, restore = false) {
+export async function saveCloudCaption(env: CloudBindings, owner: OwnerSession, postId: string, input: unknown, restore = false, imageFileId?: string) {
   await readStatus(env);
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw new CatalogError('INVALID_CAPTION');
   const data = input as Record<string, unknown>;
@@ -65,7 +67,14 @@ export async function saveCloudCaption(env: CloudBindings, owner: OwnerSession, 
   }
   if (!text(draft.title, 200) || !text(draft.body, 20000) || draft.body.includes(FOOTER)
     || typeof draft.sourceNote !== 'string' || draft.sourceNote.length > 12000) throw new CatalogError('INVALID_CAPTION');
-  const fingerprint = await hash(JSON.stringify({ postId, owner: owner.sub, expected: data.expectedVersion, draft, parentId, restore }));
+  let assetId: string|null = null;
+  if (imageFileId !== undefined) {
+    if (!env.MEDIA) throw new CatalogError('STORAGE_NOT_CONFIGURED',503);
+    const file=(await rows(env,"SELECT a.id FROM cloud_library l JOIN assets a ON a.id='library-'||l.id WHERE l.id=? AND l.kind='image' AND l.state='complete' AND a.status='complete'",imageFileId))[0];
+    if (!file) throw new CatalogError('IMAGE_NOT_AVAILABLE',422);
+    assetId=String(file.id);
+  }
+  const fingerprint = await hash(JSON.stringify({ postId, owner: owner.sub, expected: data.expectedVersion, draft, parentId, restore, assetId }));
   const replay = (await rows(env, 'SELECT fingerprint,result_version_id FROM editor_requests WHERE request_id=?', data.requestId))[0];
   if (replay) {
     if (replay.fingerprint !== fingerprint) throw new CatalogError('REQUEST_REUSED', 409);
@@ -82,13 +91,13 @@ export async function saveCloudCaption(env: CloudBindings, owner: OwnerSession, 
   const sql = (query: string, ...values: (string | number | null)[]): Statement => env.DB!.prepare(query).bind(...values);
   try {
     await env.DB!.batch([
-      sql(`INSERT INTO post_versions(id,post_id,version,body,caption_title,image_headline,image_points,image_description,primary_audience,metadata_json,status)
-        SELECT ?,v.post_id,v.version+1,?,?,?,?,?,?,?,'needs_review'
+      sql(`INSERT INTO post_versions(id,post_id,version,body,caption_title,image_headline,image_points,image_description,primary_audience,metadata_json,status,asset_id)
+        SELECT ?,v.post_id,v.version+1,?,?,?,?,?,?,?,'needs_review',?
         FROM post_versions v JOIN content_entries e ON e.active_version_id=v.id
         WHERE v.id=? AND v.post_id=? AND EXISTS(SELECT 1 FROM application_state WHERE environment='staging' AND paused_by_user=1 AND maintenance_owner IS NULL)
         AND NOT EXISTS(SELECT 1 FROM publish_jobs j JOIN post_versions p ON p.id=j.post_version_id WHERE p.post_id=v.post_id
           AND j.state IN ('held','publish_requested','evidence_pending','retry_wait','unknown'))`, versionId, draft.body, draft.title,
-        String(parent.image_headline), String(parent.image_points), String(parent.image_description), String(parent.primary_audience), JSON.stringify(metadata), data.expectedVersion, postId),
+        String(parent.image_headline), String(parent.image_points), String(parent.image_description), String(parent.primary_audience), JSON.stringify(metadata), assetId, data.expectedVersion, postId),
       sql('DELETE FROM cloud_caption_keys WHERE post_id=? AND EXISTS(SELECT 1 FROM post_versions WHERE id=?)', postId, versionId),
       // Unique normalized caption key and FK make duplicate/race/zero-row failures roll back the entire D1 batch.
       sql('INSERT INTO cloud_caption_keys VALUES (?,?,?)', checksum, postId, versionId),
