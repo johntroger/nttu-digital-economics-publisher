@@ -75,7 +75,7 @@ export function validateFile(input: unknown,bytes:Uint8Array) {
   if(source!==null&&(kind!=='document'||typeof source!=='string'||!/^([A-Z][A-Z0-9-]{0,63})$/.test(source)))throw new CatalogError('FILE_METADATA_INVALID');
   return {kind:String(kind),contentType:type,filename:name.trim(),sourceKey:source as string|null,...dimensions};
 }
-async function verifiedBytes(env:CloudBindings,row:Row) {
+export async function verifiedBytes(env:CloudBindings,row:Row) {
   if(!env.MEDIA)throw new CatalogError('STORAGE_NOT_CONFIGURED',503);
   const object=await env.MEDIA.get(String(row.storage_key));
   if(!object||object.size!==row.size_bytes||object.size>MAX_UPLOAD)throw new CatalogError('FILE_INTEGRITY_FAILED',409);
@@ -111,13 +111,15 @@ export async function uploadFile(env:CloudBindings,owner:OwnerSession,metadata:u
   if(row.state!=='complete')throw new CatalogError('LIBRARY_QUOTA_OR_BUSY',409);
   return {file:model(row),reused:false};
 }
-export async function downloadFile(env:CloudBindings,id:string) {
+export async function downloadFile(env:CloudBindings,id:string,inline=false) {
   await readStatus(env);
   const row=(await query(env,"SELECT * FROM cloud_library WHERE id=? AND state='complete'",id))[0];
   if(!row)throw new CatalogError('FILE_NOT_FOUND',404);
   const bytes=await verifiedBytes(env,row);
   return new Response(bytes,{headers:{'Content-Type':String(row.content_type),'Content-Length':String(bytes.length),
-    'Content-Disposition':(row.kind==='document'?'attachment':'inline')+"; filename*=UTF-8''"+encodeURIComponent(String(row.filename)),
+    'Content-Disposition':(row.kind==='document'&&!inline?'attachment':'inline')+"; filename*=UTF-8''"+encodeURIComponent(String(row.filename)),
     'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer',
-    'Content-Security-Policy':"default-src 'none'; img-src 'self'; sandbox; frame-ancestors 'none'"}});
+    // Only openPDF's checksum-pinned documents use inline mode. Native PDF viewers
+    // need their own renderer; HTML sandbox/default-src none prevents it from loading.
+    'Content-Security-Policy':inline&&row.kind==='document'?"frame-ancestors 'none'; object-src 'self'; base-uri 'none'":"default-src 'none'; img-src 'self'; sandbox; frame-ancestors 'none'"}});
 }

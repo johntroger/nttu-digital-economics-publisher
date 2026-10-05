@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { managementFixture } from './cloud-management-smoke.mjs';
 import worker from '../src/cloud/worker.ts';
 import { png, pdf } from '../tests/helpers/files.mjs';
+import {createSourceLibrary} from './source-library.mjs';
 const { chromium } = createRequire(`${process.env.USERPROFILE}/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/package.json`)('playwright');
 const f = await managementFixture(), fixtureId = crypto.randomUUID();
 let base;
@@ -21,8 +22,9 @@ const server = createServer(async (incoming, outgoing) => {
   } catch { outgoing.writeHead(500); outgoing.end('Local test harness failed'); }
 });
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve)); base='http://127.0.0.1:'+server.address().port;
-mkdirSync('tmp/step-14',{recursive:true});
-const browser=await chromium.launch({headless:true,executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe'});
+mkdirSync('tmp/step-15',{recursive:true});
+const headedPDF=process.env.PDF_VIEWER_QA==='true';
+const browser=await chromium.launch({headless:!headedPDF,args:headedPDF?['--window-position=-32000,-32000']:[],executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe'});
 const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage(),errors=[],results=[];
 page.on('pageerror',error=>errors.push(error.message));
 const check=async(name,fn)=>{await fn();results.push(name);};
@@ -70,7 +72,7 @@ try {
     assert.equal(await page.locator('.file-row').count(),2);
     await page.locator('#file-input').setInputFiles({name:'Ảnh bài thử.png',mimeType:'image/png',buffer:Buffer.from(png())});
     await page.locator('#upload-file').click();await page.waitForFunction(()=>document.querySelectorAll('.file-row').length===3);
-    await page.screenshot({path:'tmp/step-14/library-desktop.png',fullPage:true});
+    await page.screenshot({path:'tmp/step-15/library-desktop.png',fullPage:true});
   });
   await check('attachment preserves caption and creates reviewed-needed version with visible image',async()=>{
     await page.locator('[data-view=posts]').click();await page.locator('#attach-image').click();
@@ -78,7 +80,7 @@ try {
     assert.equal(await page.locator('#body').inputValue(),original);
     await page.waitForFunction(()=>document.getElementById('post-image').naturalWidth===1080);
     assert.match(await page.locator('#image-status').textContent(),/cần rà soát/);
-    await page.screenshot({path:'tmp/step-14/cloud-desktop.png',fullPage:true});
+    await page.screenshot({path:'tmp/step-15/cloud-desktop.png',fullPage:true});
   });
   await check('search and navigation work without fabricated history',async()=>{
     await page.locator('#search').fill('khong-co-bai-fixture'); assert.equal(await page.locator('.post-button').count(),0);
@@ -92,12 +94,75 @@ try {
     await page.locator('#search').focus();await page.keyboard.press('Tab');
     assert.equal(await page.evaluate(()=>document.activeElement.id),'group');
     assert.notEqual(await page.locator('#group').evaluate(el=>getComputedStyle(el).outlineStyle),'none');
-    await page.screenshot({path:'tmp/step-14/cloud-mobile.png',fullPage:true});
+    await page.screenshot({path:'tmp/step-15/cloud-mobile.png',fullPage:true});
     await page.locator('[data-view=library]').click();
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
-    await page.screenshot({path:'tmp/step-14/library-mobile.png',fullPage:true});
+    await page.screenshot({path:'tmp/step-15/library-mobile.png',fullPage:true});
+  });
+  await page.setViewportSize({width:1440,height:1000});
+  await check('source form uses actual private PDF, preserves draft for invalid page and opens authorized inline URL',async()=>{
+    await page.locator('#file-kind').selectOption('document');await page.locator('#file-source').fill('CAREER-01');
+    await page.locator('#file-input').setInputFiles({name:'CAREER-01.pdf',mimeType:'application/pdf',buffer:createSourceLibrary().pdf('CAREER-01')});
+    await page.locator('#upload-file').click();await page.waitForFunction(()=>document.querySelectorAll('.file-row').length===4);
+    await page.locator('[data-view=posts]').click();await page.locator('.post-button').first().click();
+    await page.locator('#add-source').click();
+    assert.equal(await page.locator('#source-refs [data-field=id] option').count(),14);
+    await page.locator('#source-refs [data-field=id]').selectOption('CAREER-01');
+    await page.locator('#source-refs [data-field=pages]').fill('99999');await page.locator('#source-refs [data-field=section]').fill('Ví dụ căn cứ thử');
+    await page.locator('#source-refs [data-field=supports]').fill('Nhận định fixture dùng để kiểm UI.');await page.locator('#source-refs [data-field=adaptation]').fill('Đối chiếu thủ công trước khi dùng trong bài.');
+    await page.locator('#source-note').fill('Ghi chú thử trên kho kiểm thử riêng.');await page.locator('#save').click();
+    await page.waitForFunction(()=>document.getElementById('message').textContent.includes('Trang PDF'));
+    assert.equal(await page.locator('#source-refs [data-field=pages]').inputValue(),'99999');
+    await page.locator('#source-refs [data-field=pages]').fill('1');await page.locator('#save').click();
+    await page.waitForFunction(()=>document.getElementById('version-label').textContent==='Phiên bản 5');
+    assert.equal(await page.locator('#post-image').isHidden(),true);
+    const href=await page.locator('.source-pdf-link').getAttribute('href');assert.match(href,/CAREER-01\/pdf#page=1$/);
+    const response=await page.request.get(base+href);assert.equal(response.status(),200);assert.match(response.headers()['content-disposition'],/^inline/);
+    assert.equal((await fetch(base+href)).status,401);
+    const popupPromise=context.waitForEvent('page');await page.locator('.source-pdf-link').click();const popup=await popupPromise;
+    await popup.waitForLoadState('domcontentloaded');assert.equal(popup.url(),base+href);
+    if(headedPDF){
+      // Chrome renders PDF in its extension frame, not an embed in the main document.
+      const pdfFrame=await new Promise((resolve,reject)=>{const found=()=>popup.frames().find(frame=>frame.url().startsWith('chrome-extension://')&&frame.url().endsWith('/index.html'));const existing=found();if(existing){resolve(existing);return;}const timeout=setTimeout(()=>reject(new Error('PDF renderer frame missing')),15000);popup.on('framenavigated',()=>{const frame=found();if(frame){clearTimeout(timeout);resolve(frame);}});});
+      await pdfFrame.locator('viewer-page-selector input').waitFor();
+      assert.equal(await pdfFrame.locator('viewer-page-selector input').inputValue(),'1');
+      const pageSelector=pdfFrame.locator('viewer-page-selector');
+      await pdfFrame.waitForFunction(el=>Number(el.docLength)>0,await pageSelector.elementHandle());
+      assert.equal(await pageSelector.evaluate(el=>Number(el.docLength)),createSourceLibrary().list().find(s=>s.id==='CAREER-01').pages);
+      await popup.waitForLoadState('networkidle');
+      await popup.screenshot({path:'tmp/step-15/pdf-inline-browser.png'});
+    }
+    await popup.close();
+  });
+  await check('image and five explicit confirmations create a cloud review without publishing',async()=>{
+    await page.locator('#attach-image').click();await page.waitForFunction(()=>document.getElementById('version-label').textContent==='Phiên bản 6');
+    await page.locator('#audit-post').click();await page.waitForFunction(()=>!document.getElementById('record-review').disabled);
+    for(const checkbox of await page.locator('#review-form input').all())await checkbox.check();
+    await page.locator('#record-review').click();await page.waitForFunction(()=>document.getElementById('post-audit').textContent.includes('Đã rà soát bởi'));
+    assert.match(await page.locator('#post-audit').textContent(),/tranthanhtung37/);
+    assert.equal((await f.env.DB.prepare('SELECT count(*) n FROM cloud_reviews').first()).n,1);
+    assert.equal((await f.env.DB.prepare('SELECT count(*) n FROM content_checks').first()).n,0);
+    assert.equal((await f.env.DB.prepare('SELECT count(*) n FROM publish_jobs').first()).n,0);
+    await page.screenshot({path:'tmp/step-15/source-review-desktop.png',fullPage:true});
+    await page.locator('.source-panel').screenshot({path:'tmp/step-15/source-form-desktop.png'});
+    await page.locator('.review-panel').screenshot({path:'tmp/step-15/review-desktop.png'});
+  });
+  await check('source edit invalidates review and warehouse audit explains all forty briefs',async()=>{
+    await page.locator('#source-refs [data-field=pages]').fill('2');assert.equal(await page.locator('#record-review').isDisabled(),true);
+    await page.locator('#save').click();await page.waitForFunction(()=>document.getElementById('version-label').textContent==='Phiên bản 7');
+    await page.locator('#audit-post').click();await page.waitForFunction(()=>document.getElementById('post-audit').textContent.includes('Cần gắn ảnh'));
+    assert.equal(await page.locator('#record-review').isDisabled(),true);
+    await page.locator('#audit-warehouse').click();await page.waitForFunction(()=>document.getElementById('warehouse-audit').textContent.includes('40 bài'));
+    assert.equal(await page.locator('#warehouse-audit button').count(),40);
+    assert.match(await page.locator('#warehouse-audit h3').textContent(),/0 bài đã rà soát/);
+  });
+  await check('source and review forms remain usable at mobile width',async()=>{
+    await page.setViewportSize({width:390,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+    await page.locator('#source-refs [data-field=section]').focus();assert.notEqual(await page.locator('#source-refs [data-field=section]').evaluate(el=>getComputedStyle(el).outlineStyle),'none');
+    await page.screenshot({path:'tmp/step-15/source-review-mobile.png',fullPage:true});
+    await page.locator('.source-panel').screenshot({path:'tmp/step-15/source-form-mobile.png'});
   });
   assert.deepEqual(errors,[]);
-  writeFileSync('tmp/step-14/browser-results.json',JSON.stringify({results,errors,mode:'isolated local D1/R2 and fixture session; not Google login acceptance'},null,2));
+  writeFileSync('tmp/step-15/browser-results.json',JSON.stringify({results,errors,nativePDFViewer:headedPDF,mode:'isolated local D1/R2 and fixture session; not Google login acceptance'},null,2));
   console.log('PASS '+results.length+' cloud browser checks');
 } finally {await browser.close();await new Promise(resolve=>server.close(resolve));await f.dispose();}

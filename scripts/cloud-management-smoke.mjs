@@ -10,7 +10,8 @@ import { prepareCloud } from './cloud-prepare.mjs';
 import { cloudCatalog, cloudPost, saveCloudCaption } from '../src/cloud/catalog.ts';
 import { POLICY } from '../src/domain/policy.ts';
 import worker from '../src/cloud/worker.ts';
-import { uploadFile,downloadFile } from '../src/cloud/storage.ts';
+import { uploadFile,downloadFile,checksum } from '../src/cloud/storage.ts';
+import {createCloudReview,REVIEW_KEYS} from '../src/cloud/review.ts';
 import { png,pdf } from '../tests/helpers/files.mjs';
 
 export async function managementFixture() {
@@ -69,6 +70,21 @@ export async function runManagementSmoke() {
     const active=await cloudPost(f.env,a.id);
     await saveCloudCaption(f.env,f.owner,a.id,{expectedVersion:active.versionId,requestId:crypto.randomUUID(),title:active.title,body:active.body,sourceNote:''},false,file.file.id);
     assert.ok((await cloudPost(f.env,a.id)).imageUrl);
+    // Injected registry is a service-level test dependency; HTTP never accepts a registry override.
+    const registry=[{id:'BM03',name:'Runtime source fixture',pages:2,sha256:await checksum(pdf),authority:'document'}];
+    const sourced=await cloudPost(f.env,a.id);
+    await saveCloudCaption(f.env,f.owner,a.id,{expectedVersion:sourced.versionId,requestId:crypto.randomUUID(),title:sourced.title,body:sourced.body,
+      sourceNote:'Runtime source fixture',sourceRefs:[{id:'BM03',pages:[1],section:'Fixture',supports:'Runtime test only.',adaptation:'Not a factual review.'}]},false,undefined,registry);
+    const toAttach=await cloudPost(f.env,a.id);
+    await saveCloudCaption(f.env,f.owner,a.id,{expectedVersion:toAttach.versionId,requestId:crypto.randomUUID(),title:toAttach.title,body:toAttach.body,sourceNote:toAttach.sourceNote},false,file.file.id);
+    const reviewService=createCloudReview(f.env,registry),audit=await reviewService.auditPost(a.id);assert.deepEqual(audit.issues,[]);
+    const reviewInput={expectedVersion:audit.versionId,expectedCheck:audit.checkVersion,requestId:crypto.randomUUID(),rubric:Object.fromEntries(REVIEW_KEYS.map(key=>[key,true]))};
+    assert.equal((await reviewService.reviewPost(a.id,f.owner,reviewInput)).replayed,false);
+    assert.equal((await reviewService.reviewPost(a.id,f.owner,reviewInput)).replayed,true);
+    assert.equal((await reviewService.auditPost(a.id)).reviewed,true);
+    assert.equal((await f.env.DB.prepare('SELECT count(*) n FROM content_checks').first()).n,0);
+    assert.equal((await worker.fetch(new Request(f.origin+'/api/sources'),f.env)).status,401);
+    console.log('Cloud source/review D1/R2 passed: version provenance, page validation, image alignment, CAS receipt and no readiness.');
     console.log('Private storage D1/R2 local passed: conditional upload, deduplication, verified download, PDF and new image version.');
     console.log('Management local D1 passed: concurrent CAS, duplicate rollback, owner API, bounded JSON and private UI. Google login is not emulated as remote acceptance.');
   } finally { await f.dispose(); }

@@ -27,6 +27,7 @@ export function prepareCloud({ databaseId = '00000000-0000-0000-0000-00000000000
   writeFileSync(resolve(directory, 'migrations', '0008_owner_management.sql'), readFileSync('cloud/owner-management.sql'));
   writeFileSync(resolve(directory, 'migrations', '0009_staging_briefs.sql'), cloudSeedSQL());
   writeFileSync(resolve(directory, 'migrations', '0010_private_storage.sql'), readFileSync('cloud/private-storage.sql'));
+  writeFileSync(resolve(directory, 'migrations', '0011_source_review.sql'), readFileSync('cloud/source-review.sql'));
   const assets = resolve(directory, 'assets'); mkdirSync(assets, { recursive: true });
   for (const name of ['manager.html', 'manager.js', 'cloud.css']) writeFileSync(resolve(assets, name), readFileSync(resolve('ui/cloud', name)));
   const config = {

@@ -140,3 +140,11 @@ R2/D1 có thể tiếp tục bằng tải lại cùng file. Gắn ảnh tạo ph
 Giới hạn staging 256 file/100 MiB; lịch Facebook vẫn dừng. Đã triển khai staging,
 nhập 13 PDF, 3 logo, 5 ảnh mẫu và kiểm SHA-256 tải ngược về. File ẩn danh trả 401.
 Kết quả và tình trạng nghiệm thu remote: `docs/steps/14-private-storage.md`.
+
+## Bước 15: căn cứ và rà soát cloud
+
+Editor có căn cứ theo tài liệu/trang/mục/nhận định/cách áp dụng, liên kết PDF private
+và nút Kiểm tra bản đã lưu. Kiểm tra toàn kho nêu việc còn thiếu cho từng mã bài.
+Năm xác nhận của người quản lý tạo receipt bất biến gắn phiên bản, ảnh, nguồn và
+footer; phiên bản mới cần rà soát lại. Chưa tạo readiness hoặc bật lịch Facebook.
+Kiểm thử và tình trạng deploy: `docs/steps/15-cloud-source-review.md`.

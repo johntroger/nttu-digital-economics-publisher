@@ -3,6 +3,9 @@ import { readStatus } from './runtime.ts';
 import { normalizedBody } from '../domain/content.ts';
 import { composeCaption, FOOTER, CAPTION_SEPARATOR } from '../domain/footer.ts';
 import type { OwnerSession } from './auth.ts';
+import {createCloudReview} from './review.ts';
+import {SOURCE_REGISTRY} from './source-registry.ts';
+import type {SourceDefinition} from './source-registry.ts';
 export class CatalogError extends Error {
   code: string;
   status: number;
@@ -22,7 +25,7 @@ function model(row: Row) {
   const metadata = JSON.parse(String(row.metadata_json)) as Record<string, unknown>;
   return { id: row.id, key: row.content_key, group: row.topic_group, pool: row.pool, title: row.title,
     body: row.body, caption: composeCaption(String(row.body)), versionId: row.version_id, version: row.version,
-    audience: row.primary_audience, stage: row.stage, status: row.status, sourceNote: metadata.sourceNote ?? '',
+    audience: row.primary_audience, stage: row.stage, status: row.status, checkVersion:row.check_version, sourceNote: metadata.sourceNote ?? '',
     sourceHint: metadata.sourceHint ?? '', sourceRefs: metadata.sourceRefs ?? [], imageAvailable: Boolean(row.image_file_id),
     imageUrl: row.image_file_id ? '/api/library/files/' + row.image_file_id : null, ready: false };
 }
@@ -51,7 +54,7 @@ async function hash(value: string) {
   return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value))), byte => byte.toString(16).padStart(2, '0')).join('');
 }
 function text(value: unknown, max: number): value is string { return typeof value === 'string' && value.trim().length > 0 && value.length <= max; }
-export async function saveCloudCaption(env: CloudBindings, owner: OwnerSession, postId: string, input: unknown, restore = false, imageFileId?: string) {
+export async function saveCloudCaption(env: CloudBindings, owner: OwnerSession, postId: string, input: unknown, restore = false, imageFileId?: string,sourceRegistry:readonly SourceDefinition[]=SOURCE_REGISTRY) {
   await readStatus(env);
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw new CatalogError('INVALID_CAPTION');
   const data = input as Record<string, unknown>;
@@ -74,7 +77,8 @@ export async function saveCloudCaption(env: CloudBindings, owner: OwnerSession, 
     if (!file) throw new CatalogError('IMAGE_NOT_AVAILABLE',422);
     assetId=String(file.id);
   }
-  const fingerprint = await hash(JSON.stringify({ postId, owner: owner.sub, expected: data.expectedVersion, draft, parentId, restore, assetId }));
+  const sourceRecords=!restore&&data.sourceRefs!==undefined?await createCloudReview(env,sourceRegistry).resolveReferences(data.sourceRefs):undefined;
+  const fingerprint = await hash(JSON.stringify({ postId, owner: owner.sub, expected: data.expectedVersion, draft, parentId, restore, assetId,sourceRecords }));
   const replay = (await rows(env, 'SELECT fingerprint,result_version_id FROM editor_requests WHERE request_id=?', data.requestId))[0];
   if (replay) {
     if (replay.fingerprint !== fingerprint) throw new CatalogError('REQUEST_REUSED', 409);
@@ -85,6 +89,7 @@ export async function saveCloudCaption(env: CloudBindings, owner: OwnerSession, 
   if (active.version_id !== data.expectedVersion) throw new CatalogError('VERSION_CONFLICT', 409);
   const parent = (await rows(env, 'SELECT * FROM post_versions WHERE id=? AND post_id=?', parentId, postId))[0]!;
   const metadata = { ...JSON.parse(String(parent.metadata_json)) as Record<string, unknown>, isBrief: false, sourceNote: draft.sourceNote, editor: true };
+  if(sourceRecords!==undefined)Object.assign(metadata,{sourceRefs:sourceRecords.map(({id,pages,section,supports,adaptation})=>({id,pages,section,supports,adaptation}))});
   const versionId = 'cloud-version-' + crypto.randomUUID(), checksum = await hash(normalizedBody(draft.body));
   const now = new Date().toISOString();
   if (!env.DB!.batch) throw new CatalogError('CLOUD_DATABASE_UNAVAILABLE', 503);
@@ -101,15 +106,24 @@ export async function saveCloudCaption(env: CloudBindings, owner: OwnerSession, 
       sql('DELETE FROM cloud_caption_keys WHERE post_id=? AND EXISTS(SELECT 1 FROM post_versions WHERE id=?)', postId, versionId),
       // Unique normalized caption key and FK make duplicate/race/zero-row failures roll back the entire D1 batch.
       sql('INSERT INTO cloud_caption_keys VALUES (?,?,?)', checksum, postId, versionId),
+      ...(sourceRecords===undefined?[
       sql(`INSERT INTO sources(id,title,revision,locator,authority,status,reviewed_at,review_due_at)
         SELECT ?||':source:'||s.id,s.title,s.revision,s.locator,s.authority,
         CASE WHEN s.authority='user_confirmation' THEN s.status ELSE 'pending' END,
         CASE WHEN s.authority='user_confirmation' THEN s.reviewed_at ELSE NULL END,s.review_due_at
         FROM sources s JOIN version_sources r ON r.source_id=s.id WHERE r.version_id=?`, versionId, parentId),
       sql(`INSERT INTO version_sources SELECT ?,?||':source:'||source_id,location FROM version_sources WHERE version_id=?`, versionId, versionId, parentId),
+      ]:sourceRecords.flatMap((ref,index)=>{
+        const sourceId=versionId+':source:'+index,confirmation=ref.authority==='user_confirmation';
+        return [sql('INSERT INTO sources VALUES (?,?,?,?,?,?,?,NULL)',sourceId,ref.title,ref.revision,ref.section,ref.authority,confirmation?'verified':'pending',confirmation?now:null),
+          sql('INSERT INTO version_sources VALUES (?,?,?)',versionId,sourceId,JSON.stringify({id:ref.id,pages:ref.pages,section:ref.section,supports:ref.supports,adaptation:ref.adaptation}))];
+      })),
       sql('INSERT INTO version_facts SELECT ?,fact_id FROM version_facts WHERE version_id=?', versionId, parentId),
       sql(`INSERT INTO editor_revisions VALUES (?,?,?,?,?,?)`, versionId, data.expectedVersion, restore ? parentId : null, restore ? 'restore' : 'save', owner.email, now),
       sql("UPDATE content_entries SET active_version_id=?,stage='caption' WHERE post_id=? AND active_version_id=?", versionId, postId, data.expectedVersion),
+      sql(`INSERT INTO asset_bindings(version_id,asset_id,check_version,checksum)
+        SELECT v.id,a.id,v.check_version,a.checksum FROM post_versions v JOIN assets a ON a.id=v.asset_id
+        WHERE v.id=? AND a.status='complete'`,versionId),
       sql('INSERT INTO editor_requests VALUES (?,?,?)', data.requestId, fingerprint, versionId),
     ]);
   } catch {
