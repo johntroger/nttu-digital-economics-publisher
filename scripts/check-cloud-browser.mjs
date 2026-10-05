@@ -4,6 +4,9 @@ import { createServer } from 'node:http';
 import { mkdirSync, writeFileSync,readFileSync } from 'node:fs';
 import {uploadFile} from '../src/cloud/storage.ts';
 import {DESIGN_REGISTRY} from '../src/cloud/design-registry.ts';
+import {spawnSync} from 'node:child_process';
+import {restoreCloudBundle} from './cloud-backup-restore.mjs';
+import {DatabaseSync} from 'node:sqlite';
 import assert from 'node:assert/strict';
 import { managementFixture } from './cloud-management-smoke.mjs';
 import worker from '../src/cloud/worker.ts';
@@ -199,8 +202,32 @@ try {
     await page.locator('#save-artwork').click();await page.waitForFunction(()=>document.getElementById('version-label').textContent==='Phiên bản 9');
     assert.equal((await f.env.DB.prepare('SELECT count(*) n FROM publish_jobs').first()).n,0);assert.equal((await f.env.DB.prepare('SELECT count(*) n FROM content_checks').first()).n,0);
   });
+  mkdirSync('tmp/step-17',{recursive:true});
+  let backupId;
+  await check('cloud backup UI resumes the same pinned snapshot after interrupted copy and shows file progress',async()=>{
+    assert.equal((await fetch(base+'/api/backups')).status,401);await page.setViewportSize({width:1440,height:1000});await page.locator('[data-view=backups]').click();await page.waitForFunction(()=>document.getElementById('backup-list').textContent.includes('Chưa có'));
+    let interrupt=true;await page.route('**/api/backups/*/continue',async route=>{if(interrupt){interrupt=false;await route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({code:'BACKUP_WRITE_FAILED'})});}else await route.continue();});
+    await page.locator('#create-backup').click();await page.waitForFunction(()=>document.getElementById('message').textContent.includes('Chưa lưu được file sao lưu'));
+    await page.locator('.backup-row').waitFor();assert.equal(await page.locator('.backup-row').count(),1);await page.getByRole('button',{name:'Tiếp tục bản sao'}).click();await page.waitForFunction(()=>document.getElementById('backup-list').textContent.includes('Đã hoàn tất'));await page.unroute('**/api/backups/*/continue');
+    const list=await(await page.request.get(base+'/api/backups')).json();assert.equal(list.backups.length,1);assert.equal(list.backups[0].state,'complete');backupId=list.backups[0].id;
+    await page.screenshot({path:'tmp/step-17/backups-desktop.png',fullPage:true});
+  });
+  await check('backup UI verifies every file and remains usable on mobile',async()=>{
+    await page.getByRole('button',{name:'Kiểm tra bản sao',exact:true}).click();await page.waitForFunction(()=>document.getElementById('backup-list').textContent.includes('Kiểm tra gần nhất'));
+    await page.setViewportSize({width:390,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);await page.waitForFunction(()=>!document.getElementById('create-backup').disabled);await page.keyboard.press('Tab');await page.locator('#create-backup').focus();assert.notEqual(await page.locator('#create-backup').evaluate(el=>getComputedStyle(el).outlineStyle),'none');await page.screenshot({path:'tmp/step-17/backups-mobile.png',fullPage:true});
+  });
+  await check('downloaded ZIP passes Python independent CRC checks and restores isolated SQLite with history preserved and all versions quarantined',async()=>{
+    const downloadPromise=page.waitForEvent('download');await page.getByRole('button',{name:'Tải gói ZIP'}).click();const download=await downloadPromise;assert.equal(download.suggestedFilename(),backupId+'.zip');await download.saveAs('tmp/step-17/browser-backup.zip');
+    const bundle='tmp/step-17/browser-extracted-'+crypto.randomUUID();
+    const script="import zipfile,pathlib,sys\nroot=pathlib.Path(sys.argv[2]).resolve()\nassert pathlib.Path.cwd().resolve() in root.parents\nwith zipfile.ZipFile(sys.argv[1]) as z:\n assert z.testzip() is None\n assert len(z.infolist())<=263\n for f in z.infolist():\n  p=(root/f.filename).resolve();assert root in p.parents and f.file_size<=12*1048576\n z.extractall(root)\nprint('Independent ZIP CRC/extraction passed')\n";
+    const checked=spawnSync('C:/Users/trant/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe',['-c',script,'tmp/step-17/browser-backup.zip',bundle],{encoding:'utf8'});assert.equal(checked.status,0,checked.stderr);
+    const restored=restoreCloudBundle({bundle,requestId:crypto.randomUUID(),confirmQuarantine:true}),db=new DatabaseSync(restored.database,{readOnly:true});
+    try{assert.equal(db.prepare('SELECT count(*) n FROM posts').get().n,40);assert.equal(db.prepare('SELECT count(*) n FROM cloud_reviews').get().n,1);assert.equal(db.prepare("SELECT count(*) n FROM post_versions WHERE status!='quarantined'").get().n,0);assert.equal(db.prepare('PRAGMA foreign_key_check').all().length,0);}finally{db.close();}
+    writeFileSync('tmp/step-17/browser-restore-result.json',JSON.stringify(restored,null,2));assert.equal((await f.env.DB.prepare('SELECT count(*) n FROM publish_jobs').first()).n,0);
+  });
   assert.deepEqual(errors,[]);
   writeFileSync('tmp/step-15/browser-results.json',JSON.stringify({results,errors,nativePDFViewer:headedPDF,mode:'isolated local D1/R2 and fixture session; not Google login acceptance'},null,2));
   console.log('PASS '+results.length+' cloud browser checks');
   writeFileSync('tmp/step-16/browser-results.json',JSON.stringify({results,errors,mode:'local private originals and fixture D1/R2; no remote owner mutation'},null,2));
+  writeFileSync('tmp/step-17/browser-results.json',JSON.stringify({results,errors,mode:'fixture D1/R2, private originals, independent Python ZIP check and isolated SQLite restore'},null,2));
 } finally {await browser.close();await new Promise(resolve=>server.close(resolve));await f.dispose();}

@@ -6,6 +6,7 @@ import { library, readUpload, uploadFile, downloadFile } from './storage.ts';
 import {createCloudReview} from './review.ts';
 import {designResources,saveArtwork} from './artwork.ts';
 import {DESIGN_REGISTRY} from './design-registry.ts';
+import {listBackups,createBackup,continueBackup,checkBackup,backupManifest,backupFile} from './backups.ts';
 
 const UI_HEADERS = { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer',
   'Content-Security-Policy': "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'" };
@@ -68,7 +69,7 @@ export default {
     try { assertStaging(env); } catch { return json({ code: 'CONFIGURATION_NOT_READY' }, 503); }
     const path = new URL(request.url).pathname;
     if (request.method === 'GET' && path === '/health') {
-      return json({ service: 'nttu-publisher', step: 16, environment: 'staging',
+      return json({ service: 'nttu-publisher', step: 17, environment: 'staging',
         integrationMode: 'unconfigured', publishingImplemented: false,
         databaseChecked: false, schedulerImplemented: false, heartbeatImplemented: true,
         release: env.RELEASE_SHA ?? 'local' });
@@ -97,11 +98,20 @@ export default {
     const session = await ownerSession(request, env);
     if (!session) {
       if (path === '/' && request.method === 'GET') return loginPage(authConfigured(env), new URL(request.url).searchParams.get('login') === 'failed', new URL(request.url).searchParams.get('reason') ?? '');
-      if (path.startsWith('/api/') || path.startsWith('/fonts/') || ['/auth/logout','/manager.html','/manager.js','/artwork.js','/artwork-ui.js'].includes(path)) return json({ code: 'UNAUTHORIZED' }, 401);
+      if (path.startsWith('/api/') || path.startsWith('/fonts/') || ['/auth/logout','/manager.html','/manager.js','/artwork.js','/artwork-ui.js','/backups.js','/zip.js'].includes(path)) return json({ code: 'UNAUTHORIZED' }, 401);
       return json({ code: 'NOT_FOUND' }, 404);
     }
     try {
       if (path === '/api/me' && request.method === 'GET') return json({ email: session.email, csrf: session.csrf });
+      if(path==='/api/backups'&&request.method==='GET')return json(await listBackups(env));
+      if(path==='/api/backups/create'&&request.method==='POST'){requireMutation(request,env,session);return json(await createBackup(env,session,await input(request)));}
+      const backupRoute=path.match(/^\/api\/backups\/(backup-[a-f0-9-]{36})\/(continue|check|manifest|files\/\d+)$/);
+      if(backupRoute){const id=backupRoute[1]!,action=backupRoute[2]!;
+        if(request.method==='GET'&&action==='manifest')return json(await backupManifest(env,id));
+        if(request.method==='GET'&&action.startsWith('files/'))return await backupFile(env,id,Number(action.slice(6)));
+        if(request.method==='POST'&&['continue','check'].includes(action)){requireMutation(request,env,session);const data=await input(request);return json(action==='continue'?await continueBackup(env,id,session):await checkBackup(env,id,data));}
+        return json({code:'METHOD_NOT_ALLOWED'},405);
+      }
       if (path === '/auth/logout' && request.method === 'POST') {
         requireMutation(request, env, session);
         const response = json({ loggedOut: true }); response.headers.append('Set-Cookie', clearSessionCookie()); return response;
@@ -151,7 +161,7 @@ export default {
         }
         return json({ code: 'METHOD_NOT_ALLOWED' }, 405);
       }
-      if (['/', '/manager.html', '/manager.js','/artwork.js','/artwork-ui.js'].includes(path) && request.method === 'GET') return asset(request, env, path === '/' ? '/manager.html' : undefined);
+      if (['/', '/manager.html', '/manager.js','/artwork.js','/artwork-ui.js','/backups.js','/zip.js'].includes(path) && request.method === 'GET') return asset(request, env, path === '/' ? '/manager.html' : undefined);
       if (path.startsWith('/api/')) return json({ code: 'CLOUD_FEATURE_PENDING' }, 501);
     } catch (error) {
       if (error instanceof AuthError) return json({ code: 'CSRF_REQUIRED' }, 403);

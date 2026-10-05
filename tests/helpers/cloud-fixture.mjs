@@ -7,7 +7,7 @@ export function cloudFixture() {
   for(const file of readdirSync(directory+'/migrations').sort())db.exec(readFileSync(directory+'/migrations/'+file,'utf8'));
   const objects=new Map(),controls={failPut:false,failRead:false,corrupt:false};
   const env={APP_ENV:'staging',INTEGRATION_MODE:'unconfigured',DB:{
-    prepare(sql){let values=[];return{bind(...args){values=args;return this;},async first(){return db.prepare(sql).get(...values)??null;},async all(){return{results:db.prepare(sql).all(...values)};},async run(){return db.prepare(sql).run(...values);},execute(){return db.prepare(sql).run(...values);}};},
+    prepare(sql){let values=[];return{bind(...args){values=args;return this;},async first(){return db.prepare(sql).get(...values)??null;},async all(){return{results:db.prepare(sql).all(...values)};},async run(){return db.prepare(sql).run(...values);},execute(){const stmt=db.prepare(sql);return stmt.columns().length?{results:stmt.all(...values)}:stmt.run(...values);}};},
     async batch(statements){db.exec('BEGIN');try{const result=statements.map(s=>s.execute());db.exec('COMMIT');return result;}catch(error){db.exec('ROLLBACK');throw error;}},
   },MEDIA:{
     async put(key,bytes){if(controls.failPut)throw Error('fixture put failure');if(objects.has(key))return null;objects.set(key,new Uint8Array(bytes));return{};},

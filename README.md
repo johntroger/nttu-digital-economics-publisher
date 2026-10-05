@@ -158,3 +158,12 @@ Font OFL và logo kiểm checksum; glyph thiếu, chữ tràn và contrast thấ
 Dựng trong trình duyệt, không gọi AI, chưa tự sinh ảnh hoặc đăng hằng ngày.
 Máy chủ không chứng minh pixel đúng spec: vẫn cần xem ảnh/rà soát Bước 15.
 Chi tiết: `docs/steps/16-cloud-artwork.md`.
+
+## Bước 17: sao lưu dữ liệu và tài nguyên cloud
+
+Tab **Sao lưu** tạo snapshot dữ liệu đã lưu, sao chép riêng PDF/logo/ảnh/font/OFL,
+cho tiếp tục khi lỗi, kiểm tra checksum và tải ZIP về máy. Giữ tối đa 10 bản;
+chưa có lịch tự động hoặc tự xóa. Bản cùng R2 cần thêm bản tải xuống để giữ riêng.
+Khôi phục ZIP đã giải nén bằng `scripts/cloud-backup-restore.mjs` vào SQLite dưới
+tmp mới, mọi phiên bản quarantined/lịch dừng. Không ghi đè D1/R2 hiện tại và không
+chuyển binding sang kho khác. Giới hạn và nghiệm thu: `docs/steps/17-cloud-backups.md`.

@@ -1,7 +1,9 @@
 import {createArtworkBuilder} from './artwork-ui.js';
+import {createBackupsPanel} from './backups.js';
 const $ = id => document.getElementById(id);
 let session, catalog, selected, resources, sourceCatalog, postAudit, pendingSave, pendingImage, pendingReview, saving = false, opening = 0;
 const artworkBuilder=createArtworkBuilder({root:$('editor'),getPost:()=>selected,isDirty:dirty,isBusy:()=>saving,api,message,csrf:()=>session.csrf,setBusy:lock,reload:async id=>{selected=null;lock(false);await loadLibrary();await loadCatalog();await openPost(id,true);}});
+const backupsPanel=createBackupsPanel({root:$('main'),api,message});
 const mediaSection = document.createElement('section'); mediaSection.className = 'media-section';
 const mediaHeading = document.createElement('h3'); mediaHeading.textContent = 'Ảnh minh họa của phiên bản';
 const mediaImage = document.createElement('img'); mediaImage.id = 'post-image'; mediaImage.hidden = true;
@@ -69,7 +71,7 @@ async function api(path, input) {
   const body = await response.json();
   if (!response.ok) {
     const errors = { VERSION_CONFLICT: 'Bài đã có phiên bản mới. Mở lại bài trước khi lưu.', VERSION_CONFLICT_OR_BUSY: 'Bài đang được xử lý hoặc đã thay đổi. Mở lại bài để kiểm tra.', DUPLICATE_CAPTION: 'Nội dung trùng với một bài khác trong kho.', REQUEST_REUSED: 'Yêu cầu lưu cũ không khớp. Mở lại bài và thử lại.', CSRF_REQUIRED: 'Phiên không hợp lệ. Đăng nhập lại để tiếp tục.', INVALID_CAPTION: 'Kiểm tra tiêu đề và nội dung. Không dán phần kết bài vào ô nội dung.', CLOUD_DATABASE_UNAVAILABLE: 'Kho cloud chưa sẵn sàng. Thử lại sau.' };
-    throw new Error(errors[body.code] ?? issueLabels[body.code] ?? (body.code==='REVIEW_VERSION_REQUIRES_NEW_SAVE'?'Tạo phiên bản mới trước khi rà soát lại.':'Không thực hiện được thao tác. Thử lại sau.'));
+    throw Object.assign(new Error(errors[body.code] ?? issueLabels[body.code] ?? (body.code==='REVIEW_VERSION_REQUIRES_NEW_SAVE'?'Tạo phiên bản mới trước khi rà soát lại.':'Không thực hiện được thao tác. Thử lại sau.')),{code:body.code});
   }
   return body;
 }
@@ -143,7 +145,8 @@ for (const id of ['search', 'group']) $(id).addEventListener(id === 'search' ? '
 $('body').addEventListener('input', preview);$('edit-form').addEventListener('input',refreshReview);
 for (const button of document.querySelectorAll('[data-view]')) button.addEventListener('click', () => {
   for (const item of document.querySelectorAll('[data-view]')) item.removeAttribute('aria-current'); button.setAttribute('aria-current', 'page');
-  const view = button.dataset.view; $('posts-view').hidden = view !== 'posts'; $('library-view').hidden = view !== 'library'; $('other-view').hidden = view === 'posts' || view === 'library';
+  const view = button.dataset.view; $('posts-view').hidden = view !== 'posts'; $('library-view').hidden = view !== 'library';$('backups-view').hidden=view!=='backups'; $('other-view').hidden = ['posts','library','backups'].includes(view);
+  if(view==='backups'){backupsPanel.load().catch(error=>message(error.message,true));return;}
   if(view === 'library') {loadLibrary().catch(error=>message(error.message,true));return;}
   $('other-content').replaceChildren();
   const heading = document.createElement('h2'), text = document.createElement('p');

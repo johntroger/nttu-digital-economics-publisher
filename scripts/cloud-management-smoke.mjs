@@ -15,6 +15,8 @@ import {createCloudReview,REVIEW_KEYS} from '../src/cloud/review.ts';
 import { png,pdf } from '../tests/helpers/files.mjs';
 import {DESIGN_REGISTRY} from '../src/cloud/design-registry.ts';
 import {saveArtwork} from '../src/cloud/artwork.ts';
+import {createBackup,continueBackup,checkBackup,backupManifest,backupFile} from '../src/cloud/backups.ts';
+import {BACKUP_SCHEMA} from '../src/cloud/backup-schema.ts';
 
 export async function managementFixture() {
   const output = 'tmp/cloud-management/' + crypto.randomUUID();
@@ -31,7 +33,7 @@ export async function managementFixture() {
     ASSETS: { async fetch(request) {
       const name = new URL(request.url).pathname.slice(1);
       if(name.startsWith('fonts/')&&([...DESIGN_REGISTRY.fonts.map(f=>'fonts/'+f.name),'fonts/BricolageGrotesque-OFL.txt','fonts/WorkSans-OFL.txt']).includes(name))return new Response(readFileSync(resolve('assets',name)),{headers:{'Content-Type':name.endsWith('.ttf')?'font/ttf':'text/plain'}});
-      if (!['manager.html','manager.js','cloud.css','artwork.js','artwork-ui.js'].includes(name)) return new Response('', { status: 404 });
+      if (!['manager.html','manager.js','cloud.css','artwork.js','artwork-ui.js','backups.js','zip.js'].includes(name)) return new Response('', { status: 404 });
       return new Response(readFileSync(resolve('ui/cloud', name)), { headers: { 'Content-Type': name.endsWith('.html') ? 'text/html; charset=utf-8' : name.endsWith('.js') ? 'text/javascript; charset=utf-8' : 'text/css; charset=utf-8' } });
     } },
   };
@@ -94,6 +96,10 @@ export async function runManagementSmoke() {
     const artworkPost=await cloudPost(f.env,a.id);assert.equal(artworkPost.body,artworkParent.body);assert.equal(artworkPost.imageDesign.spec.motif,'portfolio');assert.equal(artworkPost.ready,false);
     assert.equal((await f.env.DB.prepare('SELECT count(*) n FROM content_checks').first()).n,0);
     console.log('Cloud artwork D1/R2 passed: private logo integrity, design snapshot, idempotent image binding, no publishing readiness.');
+    let backup=await createBackup(f.env,f.owner,{requestId:crypto.randomUUID()});for(let i=0;i<265&&backup.state!=='complete';i++)backup=await continueBackup(f.env,backup.id,f.owner);assert.equal(backup.state,'complete');
+    const checkInput={requestId:crypto.randomUUID()};let verification;for(let i=0;i<264;i++){verification=await checkBackup(f.env,backup.id,checkInput);if(verification.verified)break;}assert.equal(verification.verified,true);
+    const backupManifestData=await backupManifest(f.env,backup.id);assert.equal(backupManifestData.counts.posts,40);assert.equal(backupManifestData.files.length,1+backupManifestData.counts.files+BACKUP_SCHEMA.extra.length);assert.equal((await backupFile(f.env,backup.id,0)).status,200);
+    console.log('Cloud backup D1/R2 passed: transactional snapshot, conditional copies, readback SHA, manifest and persisted verification; no live restore.');
     console.log('Cloud source/review D1/R2 passed: version provenance, page validation, image alignment, CAS receipt and no readiness.');
     console.log('Private storage D1/R2 local passed: conditional upload, deduplication, verified download, PDF and new image version.');
     console.log('Management local D1 passed: concurrent CAS, duplicate rollback, owner API, bounded JSON and private UI. Google login is not emulated as remote acceptance.');
