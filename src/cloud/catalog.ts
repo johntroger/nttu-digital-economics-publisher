@@ -26,7 +26,7 @@ function model(row: Row) {
   return { id: row.id, key: row.content_key, group: row.topic_group, pool: row.pool, title: row.title,
     body: row.body, caption: composeCaption(String(row.body)), versionId: row.version_id, version: row.version,
     audience: row.primary_audience, stage: row.stage, status: row.status, checkVersion:row.check_version, sourceNote: metadata.sourceNote ?? '',
-    sourceHint: metadata.sourceHint ?? '', sourceRefs: metadata.sourceRefs ?? [], imageAvailable: Boolean(row.image_file_id),
+    sourceHint: metadata.sourceHint ?? '', sourceRefs: metadata.sourceRefs ?? [], imageDesign:row.image_file_id?metadata.imageDesign??null:null, imageAvailable: Boolean(row.image_file_id),
     imageUrl: row.image_file_id ? '/api/library/files/' + row.image_file_id : null, ready: false };
 }
 export async function cloudCatalog(env: CloudBindings) {
@@ -54,7 +54,7 @@ async function hash(value: string) {
   return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value))), byte => byte.toString(16).padStart(2, '0')).join('');
 }
 function text(value: unknown, max: number): value is string { return typeof value === 'string' && value.trim().length > 0 && value.length <= max; }
-export async function saveCloudCaption(env: CloudBindings, owner: OwnerSession, postId: string, input: unknown, restore = false, imageFileId?: string,sourceRegistry:readonly SourceDefinition[]=SOURCE_REGISTRY) {
+export async function saveCloudCaption(env: CloudBindings, owner: OwnerSession, postId: string, input: unknown, restore = false, imageFileId?: string,sourceRegistry:readonly SourceDefinition[]=SOURCE_REGISTRY,imageDesign?:Record<string,unknown>) {
   await readStatus(env);
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw new CatalogError('INVALID_CAPTION');
   const data = input as Record<string, unknown>;
@@ -78,7 +78,7 @@ export async function saveCloudCaption(env: CloudBindings, owner: OwnerSession, 
     assetId=String(file.id);
   }
   const sourceRecords=!restore&&data.sourceRefs!==undefined?await createCloudReview(env,sourceRegistry).resolveReferences(data.sourceRefs):undefined;
-  const fingerprint = await hash(JSON.stringify({ postId, owner: owner.sub, expected: data.expectedVersion, draft, parentId, restore, assetId,sourceRecords }));
+  const fingerprint = await hash(JSON.stringify({ postId, owner: owner.sub, expected: data.expectedVersion, draft, parentId, restore, assetId,sourceRecords,imageDesign }));
   const replay = (await rows(env, 'SELECT fingerprint,result_version_id FROM editor_requests WHERE request_id=?', data.requestId))[0];
   if (replay) {
     if (replay.fingerprint !== fingerprint) throw new CatalogError('REQUEST_REUSED', 409);
@@ -89,6 +89,8 @@ export async function saveCloudCaption(env: CloudBindings, owner: OwnerSession, 
   if (active.version_id !== data.expectedVersion) throw new CatalogError('VERSION_CONFLICT', 409);
   const parent = (await rows(env, 'SELECT * FROM post_versions WHERE id=? AND post_id=?', parentId, postId))[0]!;
   const metadata = { ...JSON.parse(String(parent.metadata_json)) as Record<string, unknown>, isBrief: false, sourceNote: draft.sourceNote, editor: true };
+  delete (metadata as Record<string,unknown>).imageDesign;
+  if(imageFileId&&imageDesign)Object.assign(metadata,{imageDesign});
   if(sourceRecords!==undefined)Object.assign(metadata,{sourceRefs:sourceRecords.map(({id,pages,section,supports,adaptation})=>({id,pages,section,supports,adaptation}))});
   const versionId = 'cloud-version-' + crypto.randomUUID(), checksum = await hash(normalizedBody(draft.body));
   const now = new Date().toISOString();

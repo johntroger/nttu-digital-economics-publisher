@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { resolve, relative, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { HEARTBEAT_CRON } from '../src/cloud/runtime.ts';
+import {DESIGN_REGISTRY} from '../src/cloud/design-registry.ts';
 import { cloudSeedSQL } from './cloud-seed.mjs';
 
 export function prepareCloud({ databaseId = '00000000-0000-0000-0000-000000000000', output = 'tmp/cloud', releaseSha = 'local', origin = process.env.STAGING_WORKER_URL ?? '', storageEnabled = process.env.STAGING_R2_ENABLED === 'true' } = {}) {
@@ -29,7 +30,10 @@ export function prepareCloud({ databaseId = '00000000-0000-0000-0000-00000000000
   writeFileSync(resolve(directory, 'migrations', '0010_private_storage.sql'), readFileSync('cloud/private-storage.sql'));
   writeFileSync(resolve(directory, 'migrations', '0011_source_review.sql'), readFileSync('cloud/source-review.sql'));
   const assets = resolve(directory, 'assets'); mkdirSync(assets, { recursive: true });
-  for (const name of ['manager.html', 'manager.js', 'cloud.css']) writeFileSync(resolve(assets, name), readFileSync(resolve('ui/cloud', name)));
+  for (const name of ['manager.html', 'manager.js', 'cloud.css','artwork.js','artwork-ui.js']) writeFileSync(resolve(assets, name), readFileSync(resolve('ui/cloud', name)));
+  mkdirSync(resolve(assets,'fonts'),{recursive:true});
+  for(const font of DESIGN_REGISTRY.fonts){const bytes=readFileSync(resolve('assets/fonts',font.name));if(createHash('sha256').update(bytes).digest('hex')!==font.sha256)throw new Error('Approved font changed');writeFileSync(resolve(assets,'fonts',font.name),bytes);}
+  for(const license of ['BricolageGrotesque-OFL.txt','WorkSans-OFL.txt'])writeFileSync(resolve(assets,'fonts',license),readFileSync(resolve('assets/fonts',license)));
   const config = {
     name: 'nttu-publisher-staging', main: relative(directory, resolve('src/cloud/worker.ts')).split(sep).join('/'),
     compatibility_date: '2026-10-05', workers_dev: true, preview_urls: false,

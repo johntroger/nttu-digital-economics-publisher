@@ -13,6 +13,8 @@ import worker from '../src/cloud/worker.ts';
 import { uploadFile,downloadFile,checksum } from '../src/cloud/storage.ts';
 import {createCloudReview,REVIEW_KEYS} from '../src/cloud/review.ts';
 import { png,pdf } from '../tests/helpers/files.mjs';
+import {DESIGN_REGISTRY} from '../src/cloud/design-registry.ts';
+import {saveArtwork} from '../src/cloud/artwork.ts';
 
 export async function managementFixture() {
   const output = 'tmp/cloud-management/' + crypto.randomUUID();
@@ -28,7 +30,8 @@ export async function managementFixture() {
     GOOGLE_CLIENT_SECRET: 'fixture-only-secret', SESSION_SIGNING_KEY: signing,
     ASSETS: { async fetch(request) {
       const name = new URL(request.url).pathname.slice(1);
-      if (!['manager.html','manager.js','cloud.css'].includes(name)) return new Response('', { status: 404 });
+      if(name.startsWith('fonts/')&&([...DESIGN_REGISTRY.fonts.map(f=>'fonts/'+f.name),'fonts/BricolageGrotesque-OFL.txt','fonts/WorkSans-OFL.txt']).includes(name))return new Response(readFileSync(resolve('assets',name)),{headers:{'Content-Type':name.endsWith('.ttf')?'font/ttf':'text/plain'}});
+      if (!['manager.html','manager.js','cloud.css','artwork.js','artwork-ui.js'].includes(name)) return new Response('', { status: 404 });
       return new Response(readFileSync(resolve('ui/cloud', name)), { headers: { 'Content-Type': name.endsWith('.html') ? 'text/html; charset=utf-8' : name.endsWith('.js') ? 'text/javascript; charset=utf-8' : 'text/css; charset=utf-8' } });
     } },
   };
@@ -84,6 +87,13 @@ export async function runManagementSmoke() {
     assert.equal((await reviewService.auditPost(a.id)).reviewed,true);
     assert.equal((await f.env.DB.prepare('SELECT count(*) n FROM content_checks').first()).n,0);
     assert.equal((await worker.fetch(new Request(f.origin+'/api/sources'),f.env)).status,401);
+    const designRegistry=structuredClone(DESIGN_REGISTRY);
+    for(const [index,logo] of designRegistry.logos.entries()){const logoBytes=png(500+index*100,500);logo.sha256=await checksum(logoBytes);await uploadFile(f.env,f.owner,{kind:'logo',filename:logo.file,contentType:'image/png'},logoBytes);}
+    const artworkParent=await cloudPost(f.env,a.id),designInput={requestId:crypto.randomUUID(),expectedVersion:artworkParent.versionId,spec:{layout:'illustration',motif:'portfolio',headline:'Hồ sơ năng lực',points:[],note:'Bằng chứng thực hành',paper:'#F2F6FA',ink:'#163348',accent:'#07559D'}};
+    const artwork=await saveArtwork(f.env,f.owner,a.id,designInput,bytes,designRegistry);assert.equal((await saveArtwork(f.env,f.owner,a.id,designInput,bytes,designRegistry)).versionId,artwork.versionId);
+    const artworkPost=await cloudPost(f.env,a.id);assert.equal(artworkPost.body,artworkParent.body);assert.equal(artworkPost.imageDesign.spec.motif,'portfolio');assert.equal(artworkPost.ready,false);
+    assert.equal((await f.env.DB.prepare('SELECT count(*) n FROM content_checks').first()).n,0);
+    console.log('Cloud artwork D1/R2 passed: private logo integrity, design snapshot, idempotent image binding, no publishing readiness.');
     console.log('Cloud source/review D1/R2 passed: version provenance, page validation, image alignment, CAS receipt and no readiness.');
     console.log('Private storage D1/R2 local passed: conditional upload, deduplication, verified download, PDF and new image version.');
     console.log('Management local D1 passed: concurrent CAS, duplicate rollback, owner API, bounded JSON and private UI. Google login is not emulated as remote acceptance.');

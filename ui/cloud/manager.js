@@ -1,5 +1,7 @@
+import {createArtworkBuilder} from './artwork-ui.js';
 const $ = id => document.getElementById(id);
 let session, catalog, selected, resources, sourceCatalog, postAudit, pendingSave, pendingImage, pendingReview, saving = false, opening = 0;
+const artworkBuilder=createArtworkBuilder({root:$('editor'),getPost:()=>selected,isDirty:dirty,isBusy:()=>saving,api,message,csrf:()=>session.csrf,setBusy:lock,reload:async id=>{selected=null;lock(false);await loadLibrary();await loadCatalog();await openPost(id,true);}});
 const mediaSection = document.createElement('section'); mediaSection.className = 'media-section';
 const mediaHeading = document.createElement('h3'); mediaHeading.textContent = 'Ảnh minh họa của phiên bản';
 const mediaImage = document.createElement('img'); mediaImage.id = 'post-image'; mediaImage.hidden = true;
@@ -85,9 +87,9 @@ function renderPosts() {
   }
 }
 async function loadCatalog() { catalog = await api('/api/catalog'); $('total').textContent = catalog.posts.length; $('captions').textContent = catalog.posts.filter(post => post.stage === 'caption').length; renderPosts(); }
-async function openPost(id) {
-  if (saving) return;
-  if (dirty()
+async function openPost(id,internal=false) {
+  if (saving||artworkBuilder.isBusy()&&!internal) return;
+  if ((dirty()||artworkBuilder.hasDraft())
     && !confirm('Bỏ các thay đổi chưa lưu để mở bài khác?')) return;
   const sequence = ++opening;
   lock(true);
@@ -97,7 +99,7 @@ async function openPost(id) {
     if(!sourceCatalog)sourceCatalog=await api('/api/sources');
     if(sequence!==opening)return;
     selected = post; pendingSave = null; pendingImage = null; pendingReview=null;postAudit=null;
-    sourceRows.replaceChildren();for(const ref of post.sourceRefs)addSource(ref);
+    sourceRows.replaceChildren();for(const ref of post.sourceRefs)addSource(ref);artworkBuilder.update(post);
     auditResult.textContent='Chưa kiểm tra phiên bản này.';reviewForm.reset();refreshImage();refreshReview();
     $('choose').hidden = true; $('edit-form').hidden = false; $('post-key').textContent = post.key;
     $('version-label').textContent = `Phiên bản ${post.version}`; $('title').value = post.title;
@@ -117,7 +119,7 @@ async function openPost(id) {
   } catch (error) { message(error.message, true); } finally { if(sequence===opening)lock(false); }
 }
 function preview() { $('caption-preview').textContent = $('body').value.trim() + '\n\n' + catalog.separator + '\n\n' + catalog.footer; }
-function lock(value) { saving = value; for (const field of $('edit-form').querySelectorAll('input,textarea,button,select')) field.disabled = value;for(const row of sourceRows.children)if(row.querySelector('[data-field=id]').value==='OWNER-2026')row.querySelector('[data-field=pages]').disabled=true;refreshImage();refreshReview(); }
+function lock(value) { saving = value; for (const field of $('edit-form').querySelectorAll('input,textarea,button,select')) field.disabled = value;for(const row of sourceRows.children)if(row.querySelector('[data-field=id]').value==='OWNER-2026')row.querySelector('[data-field=pages]').disabled=true;refreshImage();refreshReview();artworkBuilder.refresh(); }
 $('edit-form').addEventListener('submit', async event => {
   event.preventDefault(); if (saving || !selected) return;
   const draft = { expectedVersion: selected.versionId, title: $('title').value, body: $('body').value, sourceNote: $('source-note').value,sourceRefs:sourceDraft() };
@@ -157,7 +159,7 @@ for (const button of document.querySelectorAll('[data-view]')) button.addEventLi
   }
 });
 $('logout').addEventListener('click', async () => { try { await api('/auth/logout', {}); location.assign('/'); } catch (error) { message(error.message, true); } });
-window.addEventListener('beforeunload', event => { if (dirty()) { event.preventDefault(); event.returnValue = ''; } });
+window.addEventListener('beforeunload', event => { if (dirty()||artworkBuilder.hasDraft()) { event.preventDefault(); event.returnValue = ''; } });
 const fileErrors = {STORAGE_NOT_CONFIGURED:'Kho file cloud chưa được kết nối.',FILE_TOO_LARGE:'File vượt giới hạn dung lượng.',FILE_FORMAT_INVALID:'Định dạng bên trong file không hợp lệ.',FILE_TYPE_UNSUPPORTED:'Loại file không được hỗ trợ.',IMAGE_MUST_BE_SQUARE:'Ảnh bài phải là PNG 1080 × 1080.',FILE_METADATA_INVALID:'Tên file hoặc mã nguồn chưa hợp lệ.',FILE_INTEGRITY_FAILED:'File không khớp dữ liệu đã lưu. Cần kiểm tra kho lưu trữ.',LIBRARY_QUOTA_OR_BUSY:'Kho đã chạm giới hạn hoặc đang bảo trì.',STORAGE_WRITE_FAILED:'Chưa lưu được file. Thử tải lại cùng file để tiếp tục.'};
 async function loadLibrary() {
   resources=await api('/api/library');

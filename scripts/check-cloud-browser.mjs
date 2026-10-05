@@ -1,7 +1,9 @@
 // Browser QA uses an isolated loopback harness and fixture session, never real Google credentials.
 import { createRequire } from 'node:module';
 import { createServer } from 'node:http';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync,readFileSync } from 'node:fs';
+import {uploadFile} from '../src/cloud/storage.ts';
+import {DESIGN_REGISTRY} from '../src/cloud/design-registry.ts';
 import assert from 'node:assert/strict';
 import { managementFixture } from './cloud-management-smoke.mjs';
 import worker from '../src/cloud/worker.ts';
@@ -162,7 +164,43 @@ try {
     await page.screenshot({path:'tmp/step-15/source-review-mobile.png',fullPage:true});
     await page.locator('.source-panel').screenshot({path:'tmp/step-15/source-form-mobile.png'});
   });
+  mkdirSync('tmp/step-16',{recursive:true});
+  await check('builder loads three real pinned private logos and OFL fonts, and blocks invalid preview',async()=>{
+    for(const logo of DESIGN_REGISTRY.logos)await uploadFile(f.env,f.owner,{kind:'logo',filename:logo.file,contentType:logo.file.endsWith('.jpg')?'image/jpeg':'image/png'},readFileSync('assets/brand/originals/'+logo.file));
+    await page.setViewportSize({width:1440,height:1000});
+    await page.locator('#design-headline').fill('Ba bước xây dựng hồ sơ năng lực');
+    for(const [i,text] of ['Chọn một vấn đề cụ thể','Làm thử và kiểm chứng kết quả','Ghi lại điều học được'].entries())await page.locator('#design-point-'+(i+1)).fill(text);
+    await page.locator('#design-note').fill('Thực hành nhỏ, bằng chứng rõ');
+    await page.locator('#design-ink').fill('#f2f6fa');await page.locator('#preview-artwork').click();
+    await page.waitForFunction(()=>document.getElementById('design-status').textContent.includes('tương phản'));assert.equal(await page.locator('#save-artwork').isDisabled(),true);
+    await page.locator('#design-ink').fill('#163348');await page.locator('#design-headline').fill('W'.repeat(100));await page.locator('#preview-artwork').click();
+    await page.waitForFunction(()=>document.getElementById('design-status').textContent.includes('vượt diện tích'));assert.equal(await page.locator('#artwork-preview').isHidden(),true);
+    await page.locator('#design-headline').fill('Học AI 📚');await page.locator('#preview-artwork').click();await page.waitForFunction(()=>document.getElementById('design-status').textContent.includes('ký tự'));
+    await page.locator('#design-headline').fill('Ba bước xây dựng hồ sơ năng lực');await page.locator('#preview-artwork').click();await page.waitForFunction(()=>!document.getElementById('save-artwork').disabled);
+    await page.locator('.artwork-builder').screenshot({path:'tmp/step-16/builder-desktop.png'});
+  });
+  async function exportPNG(name){const encoded=await page.locator('#artwork-preview').evaluate(canvas=>canvas.toDataURL('image/png').split(',')[1]);writeFileSync('tmp/step-16/'+name+'.png',Buffer.from(encoded,'base64'));return Buffer.from(encoded,'base64');}
+  await check('infographic renderer is repeatable and upload creates pinned design version without readiness',async()=>{
+    const first=await exportPNG('infographic');await page.locator('#preview-artwork').click();await page.waitForFunction(()=>!document.getElementById('save-artwork').disabled);assert.deepEqual(await exportPNG('infographic-repeat'),first);
+    let loseResponse=true;
+    await page.route('**/api/posts/*/artwork',async route=>{if(loseResponse){loseResponse=false;await route.fetch();await route.abort('failed');}else await route.continue();});
+    await page.locator('#save-artwork').click();await page.waitForFunction(()=>document.getElementById('design-status').textContent.includes('Bấm lưu lại'));
+    assert.equal(await page.locator('#version-label').textContent(),'Phiên bản 7');assert.equal(await page.locator('#save-artwork').isEnabled(),true);
+    await page.locator('#save-artwork').click();await page.waitForFunction(()=>document.getElementById('version-label').textContent==='Phiên bản 8');await page.unroute('**/api/posts/*/artwork');
+    const saved=await(await page.request.get(base+'/api/catalog')).json();const post=saved.posts.find(p=>p.version===8);assert.equal(post.imageDesign.renderer,'canvas-square-v1');assert.equal(post.imageDesign.spec.points.length,3);assert.equal(post.ready,false);
+    assert.deepEqual(await(await page.request.get(base+post.imageUrl)).body(),first);assert.equal((await fetch(base+post.imageUrl)).status,401);
+    await page.locator('#design-note').fill('Ghi lại tiến bộ qua mỗi lần thực hành');assert.equal(await page.locator('#save-artwork').isDisabled(),true);assert.equal(await page.locator('#artwork-preview').isHidden(),true);
+  });
+  await check('all three minimal illustration motifs, custom palette and mobile canvas remain usable',async()=>{
+    await page.locator('#design-layout').selectOption('illustration');await page.locator('#design-headline').fill('Kết nối kỹ năng với cơ hội nghề nghiệp');
+    await page.locator('#design-paper').fill('#eaf5ef');await page.locator('#design-ink').fill('#123b30');await page.locator('#design-accent').fill('#176044');
+    for(const motif of ['network','process','portfolio']){await page.locator('#design-motif').selectOption(motif);await page.locator('#preview-artwork').click();await page.waitForFunction(()=>!document.getElementById('save-artwork').disabled);await exportPNG('illustration-'+motif);}
+    await page.setViewportSize({width:390,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);await page.locator('.artwork-builder').screenshot({path:'tmp/step-16/builder-mobile.png'});
+    await page.locator('#save-artwork').click();await page.waitForFunction(()=>document.getElementById('version-label').textContent==='Phiên bản 9');
+    assert.equal((await f.env.DB.prepare('SELECT count(*) n FROM publish_jobs').first()).n,0);assert.equal((await f.env.DB.prepare('SELECT count(*) n FROM content_checks').first()).n,0);
+  });
   assert.deepEqual(errors,[]);
   writeFileSync('tmp/step-15/browser-results.json',JSON.stringify({results,errors,nativePDFViewer:headedPDF,mode:'isolated local D1/R2 and fixture session; not Google login acceptance'},null,2));
   console.log('PASS '+results.length+' cloud browser checks');
+  writeFileSync('tmp/step-16/browser-results.json',JSON.stringify({results,errors,mode:'local private originals and fixture D1/R2; no remote owner mutation'},null,2));
 } finally {await browser.close();await new Promise(resolve=>server.close(resolve));await f.dispose();}

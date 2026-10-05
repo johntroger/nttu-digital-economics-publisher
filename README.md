@@ -148,3 +148,13 @@ và nút Kiểm tra bản đã lưu. Kiểm tra toàn kho nêu việc còn thi�
 Năm xác nhận của người quản lý tạo receipt bất biến gắn phiên bản, ảnh, nguồn và
 footer; phiên bản mới cần rà soát lại. Chưa tạo readiness hoặc bật lịch Facebook.
 Kiểm thử và tình trạng deploy: `docs/steps/15-cloud-source-review.md`.
+
+## Bước 16: dựng ảnh trong giao diện cloud
+
+Trong bài đã lưu, mục **Dựng ảnh minh họa** có infographic ba ý chính và minh họa
+ít chữ (kết nối/quy trình/hồ sơ). Đổi màu theo chủ đề, xem trước PNG 1080×1080 rồi
+lưu/gắn vào phiên bản mới. Ba logo chuẩn được giữ nguyên, đặt trên hàng trắng.
+Font OFL và logo kiểm checksum; glyph thiếu, chữ tràn và contrast thấp bị chặn.
+Dựng trong trình duyệt, không gọi AI, chưa tự sinh ảnh hoặc đăng hằng ngày.
+Máy chủ không chứng minh pixel đúng spec: vẫn cần xem ảnh/rà soát Bước 15.
+Chi tiết: `docs/steps/16-cloud-artwork.md`.

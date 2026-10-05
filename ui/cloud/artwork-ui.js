@@ -1,0 +1,34 @@
+import {loadDesignAssets,renderArtwork,pngBlob} from './artwork.js';
+export function createArtworkBuilder({root,getPost,isDirty,isBusy,api,message,csrf,reload,setBusy}){
+  let prepared,assets,resources,revision=0,busy=false,changed=false;
+  const section=document.createElement('section');section.className='artwork-builder';section.hidden=true;
+  section.innerHTML='<h3>Dựng ảnh minh họa</h3><p class="muted">Ảnh vuông, ba logo chuẩn. Chọn ít chữ hoặc ba ý chính; lưu caption trước khi dựng ảnh.</p><form id="artwork-form"><div class="artwork-fields"><label>Định dạng<select id="design-layout"><option value="infographic">Infographic ba ý chính</option><option value="illustration">Minh họa ít chữ</option></select></label><label>Tiêu đề trên ảnh<input id="design-headline" maxlength="160" required></label><div id="design-points"><label>Ý chính 1<input id="design-point-1" maxlength="120"></label><label>Ý chính 2<input id="design-point-2" maxlength="120"></label><label>Ý chính 3<input id="design-point-3" maxlength="120"></label></div><label id="design-motif-label">Minh họa<select id="design-motif"><option value="network">Kết nối công nghệ</option><option value="process">Quy trình thực hành</option><option value="portfolio">Hồ sơ năng lực</option></select></label><label>Dòng bổ sung (tùy chọn)<input id="design-note" maxlength="120"></label><div class="design-colors"><label>Màu nền<input id="design-paper" type="color" value="#f2f6fa"></label><label>Màu chữ<input id="design-ink" type="color" value="#163348"></label><label>Màu điểm nhấn<input id="design-accent" type="color" value="#07559d"></label></div></div><button type="submit" id="preview-artwork">Xem trước ảnh</button></form><p id="design-status" role="status"></p><canvas id="artwork-preview" width="1080" height="1080" hidden role="img" aria-label="Ảnh minh họa đang xem trước"></canvas><button type="button" id="save-artwork" disabled>Lưu và gắn ảnh vào bản mới</button><p class="muted">Xem chữ và ba logo trước khi lưu. Lưu ảnh tạo bản mới cần rà soát; lịch đăng vẫn dừng.</p>';
+  root.append(section);const $=id=>section.querySelector('#'+id);
+  const errors={DESIGN_INVALID:'Nhập tiêu đề và đủ ba ý chính, dùng chữ trên một dòng trong mỗi ô.',DESIGN_CONTRAST:'Màu chữ và điểm nhấn cần tương phản hơn với nền.',DESIGN_TEXT_OVERFLOW:'Chữ vượt diện tích ảnh. Rút gọn tiêu đề hoặc ý chính rồi xem trước lại.',DESIGN_GLYPH_MISSING:'Font chưa hỗ trợ một ký tự. Dùng chữ tiếng Việt thông thường, không dùng emoji.',DESIGN_LOGO_MISSING:'Cần đủ ba logo chuẩn trong thư viện.',DESIGN_RESOURCE_CHANGED:'Logo hoặc font không khớp bản chuẩn. Kiểm tra tài nguyên.',DESIGN_RESOURCE_FAILED:'Chưa tải được logo hoặc font. Thử xem trước lại.',DESIGN_CANVAS_FAILED:'Chưa xuất được PNG. Thử xem trước lại.',VERSION_CONFLICT:'Bài đã đổi phiên bản. Mở lại bài rồi dựng ảnh.'};
+  const status=(text,error=false)=>{$('design-status').textContent=text;$('design-status').classList.toggle('error',error);};
+  const spec=()=>({layout:$('design-layout').value,motif:$('design-motif').value,headline:$('design-headline').value.trim(),points:$('design-layout').value==='infographic'?[1,2,3].map(i=>$('design-point-'+i).value.trim()):[],note:$('design-note').value.trim(),paper:$('design-paper').value,ink:$('design-ink').value,accent:$('design-accent').value});
+  function invalidate(){revision++;prepared=null;$('artwork-preview').hidden=true;$('save-artwork').disabled=true;status('Đầu vào đã thay đổi. Xem trước lại để lưu.');}
+  function controls(){const locked=busy||isBusy();for(const field of section.querySelectorAll('input,select,button'))field.disabled=locked;$('save-artwork').disabled=locked||!prepared||isDirty();const infographic=$('design-layout').value==='infographic';$('design-points').hidden=!infographic;$('design-motif-label').hidden=infographic;for(const i of [1,2,3])$('design-point-'+i).required=infographic;}
+  $('artwork-form').addEventListener('input',()=>{changed=true;invalidate();controls();});
+  $('artwork-form').addEventListener('submit',async event=>{
+    event.preventDefault();if(busy||isBusy()||!getPost())return;if(isDirty()){status('Lưu thay đổi caption và căn cứ trước khi dựng ảnh.',true);return;}
+    const post=getPost(),generation=++revision,design=spec();busy=true;setBusy(true);controls();status('Đang dựng ảnh...');
+    try{
+      assets?.dispose();assets=null;resources=await api('/api/design/resources');assets=await loadDesignAssets(resources);
+      const canvas=document.createElement('canvas'),report=renderArtwork(canvas,design,resources,assets),blob=await pngBlob(canvas);
+      if(generation!==revision||getPost()?.versionId!==post.versionId)return;
+      const visible=$('artwork-preview');visible.getContext('2d').drawImage(canvas,0,0);visible.hidden=false;visible.setAttribute('aria-label',design.headline);
+      prepared={postId:post.id,version:post.versionId,spec:design,report,blob,requestId:crypto.randomUUID()};status('Ảnh đã dựng. Kiểm tra nội dung và logo trước khi lưu.');
+    }catch(error){prepared=null;$('artwork-preview').hidden=true;status(errors[error.code]??'Chưa dựng được ảnh. Thử lại sau.',true);}finally{busy=false;setBusy(false);controls();}
+  });
+  $('save-artwork').addEventListener('click',async()=>{
+    if(busy||isBusy()||!prepared)return;if(isDirty()||getPost()?.versionId!==prepared.version){invalidate();status('Lưu caption hoặc mở lại phiên bản trước khi dựng ảnh.',true);return;}
+    busy=true;setBusy(true);controls();const pending=prepared;
+    try{
+      const response=await fetch('/api/posts/'+encodeURIComponent(pending.postId)+'/artwork',{method:'POST',headers:{'Content-Type':'application/octet-stream','X-CSRF-Token':csrf(),'X-Design-Metadata':encodeURIComponent(JSON.stringify({requestId:pending.requestId,expectedVersion:pending.version,spec:pending.spec}))},body:pending.blob});
+      if(response.status===401){location.assign('/?login=expired');return;}const result=await response.json();if(!response.ok)throw Object.assign(new Error(),{code:result.code});
+      prepared=null;changed=false;await reload(pending.postId);status('Đã lưu và gắn ảnh vào phiên bản mới.');message('Đã lưu ảnh trên cloud; phiên bản mới cần rà soát.');
+    }catch(error){status(errors[error.code]??'Chưa lưu được ảnh. Bấm lưu lại cùng ảnh để tiếp tục.',true);}finally{busy=false;setBusy(false);controls();}
+  });
+  return {update(post){invalidate();changed=false;section.hidden=!post;if(post){const previous=post.imageDesign?.spec;const d=previous??{headline:post.title,layout:'infographic',motif:'network',points:[],note:'',paper:'#f2f6fa',ink:'#163348',accent:'#07559d'};for(const key of ['headline','layout','motif','note','paper','ink','accent'])$('design-'+key).value=d[key];for(const i of [1,2,3])$('design-point-'+i).value=d.points[i-1]??'';status('Nhập ý chính hoặc chọn minh họa ít chữ, rồi xem trước.');}controls();},refresh:controls,isBusy:()=>busy,hasDraft:()=>changed};
+}

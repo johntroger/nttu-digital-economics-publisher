@@ -4,6 +4,8 @@ import { startGoogle, completeGoogle, ownerSession, requireMutation, clearSessio
 import { cloudCatalog, cloudPost, saveCloudCaption, CatalogError } from './catalog.ts';
 import { library, readUpload, uploadFile, downloadFile } from './storage.ts';
 import {createCloudReview} from './review.ts';
+import {designResources,saveArtwork} from './artwork.ts';
+import {DESIGN_REGISTRY} from './design-registry.ts';
 
 const UI_HEADERS = { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer',
   'Content-Security-Policy': "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'" };
@@ -66,7 +68,7 @@ export default {
     try { assertStaging(env); } catch { return json({ code: 'CONFIGURATION_NOT_READY' }, 503); }
     const path = new URL(request.url).pathname;
     if (request.method === 'GET' && path === '/health') {
-      return json({ service: 'nttu-publisher', step: 15, environment: 'staging',
+      return json({ service: 'nttu-publisher', step: 16, environment: 'staging',
         integrationMode: 'unconfigured', publishingImplemented: false,
         databaseChecked: false, schedulerImplemented: false, heartbeatImplemented: true,
         release: env.RELEASE_SHA ?? 'local' });
@@ -95,7 +97,7 @@ export default {
     const session = await ownerSession(request, env);
     if (!session) {
       if (path === '/' && request.method === 'GET') return loginPage(authConfigured(env), new URL(request.url).searchParams.get('login') === 'failed', new URL(request.url).searchParams.get('reason') ?? '');
-      if (path.startsWith('/api/') || path === '/auth/logout' || path === '/manager.html' || path === '/manager.js') return json({ code: 'UNAUTHORIZED' }, 401);
+      if (path.startsWith('/api/') || path.startsWith('/fonts/') || ['/auth/logout','/manager.html','/manager.js','/artwork.js','/artwork-ui.js'].includes(path)) return json({ code: 'UNAUTHORIZED' }, 401);
       return json({ code: 'NOT_FOUND' }, 404);
     }
     try {
@@ -106,6 +108,8 @@ export default {
       }
       if (path === '/api/catalog' && request.method === 'GET') return json(await cloudCatalog(env));
       if (path === '/api/library' && request.method === 'GET') return json(await library(env));
+      if(path==='/api/design/resources'&&request.method==='GET')return json(await designResources(env));
+      if(request.method==='GET'&&(DESIGN_REGISTRY.fonts.some(f=>path==='/fonts/'+f.name)||['/fonts/BricolageGrotesque-OFL.txt','/fonts/WorkSans-OFL.txt'].includes(path)))return asset(request,env);
       if (path === '/api/sources' && request.method === 'GET') return json(await createCloudReview(env).listSources());
       if (path === '/api/audit' && request.method === 'GET') return json(await createCloudReview(env).warehouseAudit());
       const pdfRoute=path.match(/^\/api\/sources\/(CAREER-(?:0[1-9]|10)|BM(?:03|11|12))\/pdf$/);
@@ -119,12 +123,19 @@ export default {
       }
       const fileRoute=path.match(/^\/api\/library\/files\/([a-f0-9-]{36})$/);
       if(fileRoute&&request.method==='GET')return await downloadFile(env,fileRoute[1]!);
-      const route = path.match(/^\/api\/posts\/([^/]+)(?:\/(save|restore|image|audit|review))?$/);
+      const route = path.match(/^\/api\/posts\/([^/]+)(?:\/(save|restore|image|audit|review|artwork))?$/);
       if (route) {
         const id = decodeURIComponent(route[1]!);
         if (id.length > 300) return json({ code: 'INVALID_POST_ID' }, 400);
         if (!route[2] && request.method === 'GET') return json(await cloudPost(env, id));
         if(route[2]==='audit'&&request.method==='GET')return json(await createCloudReview(env).auditPost(id));
+        if(route[2]==='artwork'&&request.method==='POST'){
+          requireMutation(request,env,session,'application/octet-stream');
+          const header=request.headers.get('X-Design-Metadata');let metadata:unknown;
+          if(!header||header.length>12000)throw new CatalogError('DESIGN_INVALID');
+          try{metadata=JSON.parse(decodeURIComponent(header));}catch{throw new CatalogError('DESIGN_INVALID');}
+          return json(await saveArtwork(env,session,id,metadata,await readUpload(request)));
+        }
         if (route[2] && request.method === 'POST') {
           requireMutation(request, env, session);
           if(route[2]==='review')return json(await createCloudReview(env).reviewPost(id,session,await input(request)));
@@ -140,7 +151,7 @@ export default {
         }
         return json({ code: 'METHOD_NOT_ALLOWED' }, 405);
       }
-      if (['/', '/manager.html', '/manager.js'].includes(path) && request.method === 'GET') return asset(request, env, path === '/' ? '/manager.html' : undefined);
+      if (['/', '/manager.html', '/manager.js','/artwork.js','/artwork-ui.js'].includes(path) && request.method === 'GET') return asset(request, env, path === '/' ? '/manager.html' : undefined);
       if (path.startsWith('/api/')) return json({ code: 'CLOUD_FEATURE_PENDING' }, 501);
     } catch (error) {
       if (error instanceof AuthError) return json({ code: 'CSRF_REQUIRED' }, 403);
