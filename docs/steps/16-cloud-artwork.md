@@ -1,6 +1,6 @@
 # Bước 16 — Dựng ảnh trong giao diện cloud
 
-Phê duyệt ngày 05/10/2026. Đang triển khai, chưa bật xuất bản.
+Phê duyệt ngày 05/10/2026. Đã triển khai staging, chưa bật xuất bản.
 
 Phạm vi: dựng PNG 1080×1080 trong trình duyệt của người quản lý, xem trước và
 lưu/gắn ảnh thành phiên bản mới trên R2/D1. Không gọi AI; không có tác vụ dựng ảnh
@@ -40,4 +40,16 @@ fixture, bao gồm hai mẫu, ba motif, glyph/contrast/overflow, PNG tái dựng
 lưu ảnh, vô hiệu preview khi sửa, desktop/mobile và nguồn/rà soát bước trước.
 Đã xem PNG và form mobile, cân dòng tiêu đề và sửa pictogram thành chip công nghệ.
 Tình huống phản hồi bị mất sau khi máy chủ đã lưu cũng đạt: client giữ PNG/request ID,
-retry trả đúng phiên bản đã tạo, không sinh phiên bản thứ hai. Đang triển khai qua CI.
+retry trả đúng phiên bản đã tạo, không sinh phiên bản thứ hai.
+
+CI Windows/Ubuntu và triển khai mã afcf0e63c385ec42e3d7d4d3c5c23712e4b91780 đạt:
+https://github.com/johntroger/nttu-digital-economics-publisher/actions/runs/37311404089.
+Pre-push cũng đạt 9 kiểm thử hồi quy renderer Pillow của bộ mẫu gốc.
+Đối chiếu staging ngày 05/10/2026: health step 16 đúng release; giữ 21 tài nguyên,
+13 PDF checksum chuẩn, 40 bài. 33 đường dẫn ẩn danh (gồm modules/font/design API)
+trả 401; bearer health không đọc được API owner. paused=true, publish trả 501.
+Không ghi ảnh/version/review fixture vào kho remote. Thao tác lưu/gắn ảnh đã kiểm
+trên D1/R2 và Chrome cô lập; người quản lý còn cần nghiệm thu thao tác trên staging.
+
+Bước tiếp theo đề xuất: sao lưu/khôi phục dữ liệu và tài nguyên cloud. Phải có
+phê duyệt riêng trước khi code; chưa bắt đầu trong Bước 16.
