@@ -5,8 +5,18 @@ import { cloudCatalog, cloudPost, saveCloudCaption, CatalogError } from './catal
 
 const UI_HEADERS = { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer',
   'Content-Security-Policy': "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'" };
-function loginPage(ready: boolean, failed: boolean): Response {
-  const body = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Đăng nhập | Phòng nội dung</title><link rel="stylesheet" href="/cloud.css"></head><body><main class="login"><strong>Ngành Kinh tế số · NTTU</strong><h1>Phòng nội dung</h1><p>Đăng nhập tài khoản Google của người quản lý để mở kho bài staging.</p>${failed ? '<p role="alert">Không hoàn tất được đăng nhập. Chọn đúng tài khoản quản lý và thử lại.</p>' : ''}${ready ? '<a href="/auth/google/start">Đăng nhập bằng Google</a>' : '<p role="status">Đang thiết lập đăng nhập Google. Kho bài chưa được mở truy cập.</p>'}<small>Lịch đăng Facebook đang dừng.</small></main></body></html>`;
+function loginPage(ready: boolean, failed: boolean, reason = ''): Response {
+  const messages: Record<string, string> = {
+    flow: 'Phiên đăng nhập bị thiếu, hết hạn hoặc không khớp. Bấm đăng nhập lại từ trang này và hoàn tất trong cùng trình duyệt.',
+    client: 'Google từ chối cấu hình ứng dụng. Cần kiểm tra Client ID và Client Secret có thuộc cùng một OAuth Client.',
+    grant: 'Google từ chối mã đăng nhập. Bấm đăng nhập lại để lấy mã mới; nếu lặp lại cần kiểm tra callback.',
+    exchange: 'Chưa trao đổi được token với Google. Thử lại; nếu lặp lại cần kiểm tra cấu hình kết nối.',
+    identity: 'Chưa xác minh được thông tin đăng nhập Google. Cần kiểm tra bước xác minh token.',
+    owner: 'Tài khoản Google chưa được cấp quyền quản lý. Chọn tài khoản quản lý đã đăng ký.',
+    session: 'Chưa tạo được phiên quản lý. Cần kiểm tra cấu hình phiên đăng nhập.',
+  };
+  const failure = messages[reason] ?? 'Không hoàn tất được đăng nhập. Bấm đăng nhập lại để thử một phiên mới.';
+  const body = `<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Đăng nhập | Phòng nội dung</title><link rel="stylesheet" href="/cloud.css"></head><body><main class="login"><strong>Ngành Kinh tế số · NTTU</strong><h1>Phòng nội dung</h1><p>Đăng nhập tài khoản Google của người quản lý để mở kho bài staging.</p>${failed ? '<p role="alert">' + failure + '</p>' : ''}${ready ? '<a href="/auth/google/start">Đăng nhập bằng Google</a>' : '<p role="status">Đang thiết lập đăng nhập Google. Kho bài chưa được mở truy cập.</p>'}<small>Lịch đăng Facebook đang dừng.</small></main></body></html>`;
   return new Response(body, { headers: { ...UI_HEADERS, 'Content-Type': 'text/html; charset=utf-8' } });
 }
 async function asset(request: Request, env: CloudBindings, path?: string): Promise<Response> {
@@ -71,7 +81,7 @@ export default {
     }
     const session = await ownerSession(request, env);
     if (!session) {
-      if (path === '/' && request.method === 'GET') return loginPage(authConfigured(env), new URL(request.url).searchParams.get('login') === 'failed');
+      if (path === '/' && request.method === 'GET') return loginPage(authConfigured(env), new URL(request.url).searchParams.get('login') === 'failed', new URL(request.url).searchParams.get('reason') ?? '');
       if (path.startsWith('/api/') || path === '/auth/logout' || path === '/manager.html' || path === '/manager.js') return json({ code: 'UNAUTHORIZED' }, 401);
       return json({ code: 'NOT_FOUND' }, 404);
     }

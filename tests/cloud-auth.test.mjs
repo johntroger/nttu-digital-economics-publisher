@@ -70,11 +70,19 @@ test('Callback exchanges only a validated flow and creates a restricted owner se
   assert.equal((await ownerSession(request('/', ownerCookie), env)).email, POLICY.ownerEmail);
   for (const [path, cookies] of [[callback, ''], [callback.replace(/state=.*/, 'state=wrong'), cookie], [callback + '&code=duplicate', cookie]]) {
     const failed = await completeGoogle(request(path, cookies), env, { fetcher, keys });
-    assert.equal(failed.headers.get('Location'), '/?login=failed');
+    assert.equal(failed.headers.get('Location'), '/?login=failed&reason=flow');
   }
   assert.equal(calls, 1);
   const refused = await completeGoogle(request(callback, cookie), env, { fetcher: async () => new Response('', { status: 400 }), keys });
-  assert.equal(refused.headers.get('Location'), '/?login=failed');
+  assert.equal(refused.headers.get('Location'), '/?login=failed&reason=exchange');
+  for (const [error,reason] of [['invalid_client','client'],['invalid_grant','grant'],['arbitrary <script> secret','exchange']]) {
+    const failed = await completeGoogle(request(callback,cookie),env,{keys,fetcher:async()=>Response.json({error,error_description:'private fixture value'},{status:400})});
+    assert.equal(failed.headers.get('Location'),'/?login=failed&reason='+reason);
+  }
+  const other = await completeGoogle(request(callback,cookie),env,{keys,fetcher:async()=>Response.json({id_token:await identity(url.searchParams.get('nonce'),{email:'other@example.com'})})});
+  assert.equal(other.headers.get('Location'),'/?login=failed&reason=owner');
+  const untrusted = await worker.fetch(request('/?login=failed&reason=%3Cscript%3E'),env);
+  assert.doesNotMatch(await untrusted.text(),/<script>/);
 });
 test('Session cookies fail closed for tamper, expiration, wrong owner, duplicate cookie and key rotation', async () => {
   const good = '__Host-nttu_session=' + await session();

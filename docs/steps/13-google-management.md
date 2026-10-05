@@ -52,4 +52,14 @@ https://developers.cloudflare.com/workers/static-assets/binding/.
 Pipeline tạo SESSION_SIGNING_KEY ngẫu nhiên một lần trực tiếp trong Cloudflare secret store;
 giữ nguyên khóa đã có và không ghi giá trị vào GitHub, D1, file hoặc log. Google client secret
 do owner lưu trực tiếp dashboard. keep_vars giữ Google client ID qua lần triển khai sau.
-Staging deployment và Google login thật còn chờ kiểm chứng; chưa nghiệm thu Bước 13.
+Staging deployment đã kiểm chứng; Google login thật còn chờ owner thực hiện, chưa nghiệm thu Bước 13.
+
+## Bằng chứng staging
+
+Commit d3446b2ee026a7ddacdb6cd78f7b0e174ff20051, pipeline
+https://github.com/johntroger/nttu-digital-economics-publisher/actions/runs/37283297190:
+Windows/Linux checks và deploy đều success. Kiểm tra endpoint sau deploy: health 200 đúng
+release; D1 private status 200 và paused=true; status ẩn danh/catalog/manager.js 401;
+publish endpoint 501. OAuth start 302 đúng accounts.google.com, đúng client ID owner
+cung cấp và callback staging, cookie HttpOnly. Không lưu giá trị cookie vào bằng chứng.
+Đây mới là kiểm chứng bắt đầu OAuth, chưa xác nhận Google token exchange/owner login thật.

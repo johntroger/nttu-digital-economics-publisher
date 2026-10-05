@@ -47,13 +47,14 @@ export async function verifyGoogleIdentity(token: string, env: CloudBindings, no
   const { payload } = await jwtVerify(token, keys, { algorithms: ['RS256'], audience: cfg.id,
     issuer: ['https://accounts.google.com', 'accounts.google.com'], clockTolerance: 30, maxTokenAge: '2h' });
   if (!payload.exp || typeof payload.sub !== 'string' || !payload.sub || payload.nonce !== nonce
-    || payload.email_verified !== true || payload.email !== POLICY.ownerEmail
-    || (payload.azp !== undefined && payload.azp !== cfg.id)) throw new AuthError('GOOGLE_OWNER_REQUIRED');
+    || (payload.azp !== undefined && payload.azp !== cfg.id)) throw new AuthError('GOOGLE_IDENTITY_INVALID');
+  if (payload.email_verified !== true || payload.email !== POLICY.ownerEmail) throw new AuthError('GOOGLE_OWNER_REQUIRED');
   return { sub: payload.sub, email: POLICY.ownerEmail };
 }
 export async function completeGoogle(request: Request, env: CloudBindings,
   { fetcher = fetch, keys = googleKeys }: { fetcher?: typeof fetch; keys?: JWTVerifyGetKey } = {}): Promise<Response> {
   const cfg = config(env), url = new URL(request.url);
+  let reason = 'flow';
   try {
     if (url.origin !== cfg.origin || url.searchParams.has('error') || url.searchParams.getAll('state').length !== 1
       || url.searchParams.getAll('code').length !== 1) throw new AuthError('OAUTH_CALLBACK_INVALID');
@@ -62,19 +63,31 @@ export async function completeGoogle(request: Request, env: CloudBindings,
       || typeof payload.nonce !== 'string' || typeof payload.verifier !== 'string') throw new AuthError('OAUTH_STATE_INVALID');
     const code = url.searchParams.get('code')!;
     if (!code || code.length > 4096) throw new AuthError('OAUTH_CODE_INVALID');
+    reason = 'exchange';
     const response = await fetcher('https://oauth2.googleapis.com/token', { method: 'POST', redirect: 'error', signal: AbortSignal.timeout(10000),
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({
         code, client_id: cfg.id, client_secret: cfg.secret, grant_type: 'authorization_code',
         redirect_uri: cfg.origin + '/auth/google/callback', code_verifier: payload.verifier,
       }) });
-    if (!response.ok) throw new AuthError('GOOGLE_TOKEN_FAILED');
+    if (!response.ok) {
+      // Only classify a known provider code; never forward descriptions, tokens or secrets.
+      const rejected = await response.json().catch(() => ({})) as { error?: unknown };
+      if (rejected.error === 'invalid_client') reason = 'client';
+      else if (rejected.error === 'invalid_grant') reason = 'grant';
+      throw new AuthError('GOOGLE_TOKEN_FAILED');
+    }
     const tokens = await response.json() as { id_token?: unknown };
     if (typeof tokens.id_token !== 'string' || tokens.id_token.length > 20000) throw new AuthError('GOOGLE_TOKEN_INVALID');
+    reason = 'identity';
     const owner = await verifyGoogleIdentity(tokens.id_token, env, payload.nonce, keys);
+    reason = 'session';
     const session = await new SignJWT({ email: owner.email, csrf: random() }).setProtectedHeader({ alg: 'HS256', typ: 'nttu-session+jwt' })
       .setSubject(owner.sub).setIssuer(cfg.origin).setAudience('nttu-manager').setIssuedAt().setExpirationTime('1h').sign(cfg.key);
     return redirect('/', [setCookie(SESSION, session, 3600), clearFlow()]);
-  } catch { return redirect('/?login=failed', [clearSessionCookie(), clearFlow()]); }
+  } catch (error) {
+    if (error instanceof AuthError && error.message === 'GOOGLE_OWNER_REQUIRED') reason = 'owner';
+    return redirect('/?login=failed&reason=' + reason, [clearSessionCookie(), clearFlow()]);
+  }
 }
 export async function ownerSession(request: Request, env: CloudBindings): Promise<OwnerSession | null> {
   try {
