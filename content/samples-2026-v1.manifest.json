@@ -1,0 +1,241 @@
+{
+  "version": "samples-2026-v1",
+  "input_sha256": "c5054e026e81eb6938be9d11075da42c4caa73f681d11ffb0f552d6d3cf364b4",
+  "built_at": "2026-10-05T05:06:26.013Z",
+  "renderer": "pillow-square-v1",
+  "renderInputs": {
+    "renderer_sha256": "ebaaacca14563ac1a71aa0c60e99f9545dec7b7f20945a9ca5249cb52d7108c4",
+    "logos": [
+      {
+        "file": "nttu.png",
+        "sha256": "ccad82428807595e5555113ae6ab135981ecba4baee38aed0b746a060443b93f",
+        "bbox": [
+          64,
+          30,
+          444,
+          142.5
+        ]
+      },
+      {
+        "file": "fba.png",
+        "sha256": "375a45c22e9d499ec95f7df5a3beba5d669eac121f242ead9dcc37c5c0ee177b",
+        "bbox": [
+          594,
+          32,
+          702,
+          140
+        ]
+      },
+      {
+        "file": "digital-economics.jpg",
+        "sha256": "e13fd1b256cd882cca53563e01fc0a0d193e250cebffd21743a0043b092cebbf",
+        "bbox": [
+          828,
+          24,
+          1008,
+          144
+        ]
+      }
+    ],
+    "fonts": [
+      {
+        "name": "BricolageGrotesque-Bold.ttf",
+        "sha256": "a737b146fe0d77ffe8a86e3cd16700dd431d3b1e420d4fd80e142cd68a1cb50d"
+      },
+      {
+        "name": "WorkSans-Bold.ttf",
+        "sha256": "240d125fc9f8561363dc1ea3f513501253bd70942f41468f48f0b0cafb0c82e2"
+      },
+      {
+        "name": "WorkSans-Regular.ttf",
+        "sha256": "e67985a843df0d3cdee51a3d0f329eb1774a344ad9ff0c9ab923751f1577e2a4"
+      }
+    ]
+  },
+  "registry": {
+    "CAREER-06": {
+      "path": "assets/sources/career/Cam-nang-nghe-Phan-tich-du-lieu-cho-Sinh-vien-Nganh-Kinh-te-so_NTTU.pdf",
+      "sha256": "5d3bb50fd9d9a936746c0ac1809257984686949f8100204b361e9fb857b845ef",
+      "pages": 14
+    },
+    "CAREER-07": {
+      "path": "assets/sources/career/Cam-nang-nghe-Thuong-mai-so-cho-Sinh-vien-Nganh-Kinh-te-so_NTTU.pdf",
+      "sha256": "c57e73f44abe722f3bcea0079c9e1d0a796663994cabfeeac1964585920ce504",
+      "pages": 15
+    },
+    "CAREER-08": {
+      "path": "assets/sources/career/Cam-nang-nghe-Ung-dung-AI-cho-Sinh-vien-Nganh-Kinh-te-so_NTTU.pdf",
+      "sha256": "f756f29aeff7043da5d087d6b79beefefde5a0930de43e9f1ce91d704ade7785",
+      "pages": 16
+    },
+    "CAREER-09": {
+      "path": "assets/sources/career/Cam-nang-Thuc-tap-Viec-lam-them-cho-sinh-vien-Kinh-te-so_NTTU.pdf",
+      "sha256": "4b1a991a8820a8ce8bd304b81fe3e2f0d883ee89f7839d2af6fd4d43b3d84f09",
+      "pages": 15
+    },
+    "BM03": {
+      "path": "assets/sources/program/BM03_XDCT_Ban mo ta CTDT_Kinhteso-K2026-28.07.2026.pdf",
+      "sha256": "e192e5cbc52292f88f8748baab8ca1c30bde80b0c89e74aa1d930dd07f132922",
+      "pages": 107
+    },
+    "BM11": {
+      "path": "assets/sources/program/BM11_XDCT_Muc tieu CDR CTDT_Kinhteso-K2026-28.07.2026.pdf",
+      "sha256": "c08b3536e1fe7df04075e3706761deebddbf1d8762cfc52d089e0639cfe67a61",
+      "pages": 19
+    },
+    "OWNER-2026": {
+      "path": null,
+      "sha256": "1ea8f4a26f02a154707ade8fffd7b2384a86ed573f45882254dff3bd942781a6",
+      "pages": 0
+    }
+  },
+  "samples": [
+    {
+      "id": "P02",
+      "body_sha256": "5fad20f58135f6c0e01cdbec4dca453cbc9714cd72e870b878638be6be717dc5",
+      "caption_sha256": "04613c35626761e1771cb028d88003e601a952d4af6de4defba53d9fedc12925",
+      "image_sha256": "b9a012633c8c1506ec900ab8632c5e49b19fbc958e40df8cd433ba83f277b873",
+      "proof_sha256": "4eb786ad50cd6eaffaabfacdd16efbd257d56c28cfc6264743114c7b1ed39ceb",
+      "source_refs": [
+        {
+          "id": "CAREER-08",
+          "pages": [
+            13,
+            15
+          ],
+          "section": "5.1; 6.1–6.2",
+          "supports": "Giới hạn AI, kiểm chứng kết quả, tư duy phản biện và bảo mật.",
+          "adaptation": "Checklist bốn bước và bài toán 100 → 120 do dự án biên soạn, không phải số liệu khảo sát.",
+          "sha256": "f756f29aeff7043da5d087d6b79beefefde5a0930de43e9f1ce91d704ade7785"
+        }
+      ],
+      "footer_version": "footer-v2",
+      "check_version": 1,
+      "local_checks": "pass",
+      "owner_approval": "pending",
+      "facebook_qa": "not_run",
+      "ready": false
+    },
+    {
+      "id": "P04",
+      "body_sha256": "591727b37f91bb27e439cf920de2501216c7a1d13e1db7497cdb8053734ab637",
+      "caption_sha256": "d4e34544c137665f00439f48886ffe6b05e0ff2d1545fb44c367e64826e9d00d",
+      "image_sha256": "0ce1aab16132ae1322e8b2b8cb983ded7b990aedc501f7a8f55fdc1a6a7b5778",
+      "proof_sha256": "44d966112fb098431b991a7cfc95c2fe18649b2c9051b7d785cfc34bfa9b8509",
+      "source_refs": [
+        {
+          "id": "CAREER-09",
+          "pages": [
+            13
+          ],
+          "section": "4.2–4.3",
+          "supports": "CV nêu dự án/kết quả nếu có; portfolio; kể lại bối cảnh, hành động, kết quả.",
+          "adaptation": "Ví dụ dự án bán hàng là giả định. Khung một dòng CV do dự án phát triển; không khẳng định mọi nhà tuyển dụng dùng cùng tiêu chuẩn.",
+          "sha256": "4b1a991a8820a8ce8bd304b81fe3e2f0d883ee89f7839d2af6fd4d43b3d84f09"
+        }
+      ],
+      "footer_version": "footer-v2",
+      "check_version": 1,
+      "local_checks": "pass",
+      "owner_approval": "pending",
+      "facebook_qa": "not_run",
+      "ready": false
+    },
+    {
+      "id": "P05",
+      "body_sha256": "307e18c78276ce7c505eeed446ab64969bace414db90762851c9449c83aeda0c",
+      "caption_sha256": "f5c59d0efc081ee5e0d0209db9b42f8b01513a02e79fff71e9eaeef296cf78ac",
+      "image_sha256": "ae59d3d18f45db8d4ae6e509072f78811cd7575cc461d5de433c4b1e8ce34bd2",
+      "proof_sha256": "a17449e007d478292c7359514df1da612cc60e428ac5901c2146e9400abb61d4",
+      "source_refs": [
+        {
+          "id": "BM03",
+          "pages": [
+            8
+          ],
+          "section": "1.6.1–1.6.2",
+          "supports": "Nền tảng kinh tế, công nghệ/kinh doanh số, dữ liệu, sản phẩm/dịch vụ và giải quyết vấn đề chuyển đổi số.",
+          "adaptation": "Tình huống cửa hàng và bài tập do dự án biên soạn.",
+          "sha256": "e192e5cbc52292f88f8748baab8ca1c30bde80b0c89e74aa1d930dd07f132922"
+        },
+        {
+          "id": "BM11",
+          "pages": [
+            1,
+            2
+          ],
+          "section": "Mục tiêu chung và PEO2",
+          "supports": "Mục tiêu chương trình; dùng dữ liệu và công cụ số để giải quyết vấn đề.",
+          "adaptation": "Không lấy dòng khóa 2025/04 năm ở thông tin chung; áp dụng đính chính chủ tài khoản cho khóa 2026.",
+          "sha256": "c08b3536e1fe7df04075e3706761deebddbf1d8762cfc52d089e0639cfe67a61"
+        },
+        {
+          "id": "OWNER-2026",
+          "pages": [],
+          "section": "Xác nhận trong hội thoại ngày 04/10/2026",
+          "supports": "Áp dụng khóa 2026, thời gian đào tạo 3,5 năm.",
+          "adaptation": "Đính chính thông tin thời lượng/khóa trong PDF; không sửa file nguồn.",
+          "sha256": "1ea8f4a26f02a154707ade8fffd7b2384a86ed573f45882254dff3bd942781a6"
+        }
+      ],
+      "footer_version": "footer-v2",
+      "check_version": 1,
+      "local_checks": "pass",
+      "owner_approval": "pending",
+      "facebook_qa": "not_run",
+      "ready": false
+    },
+    {
+      "id": "P06",
+      "body_sha256": "e7a2bba342675a2a0542878bbf637c3a54fdaca63e7e028de734884f19ee3bfa",
+      "caption_sha256": "d2b6c7f0005b55a9a24e1b5ab2f08ac3467e5ddfd4ca68c6d9d9fe71da234c2d",
+      "image_sha256": "680d416b996dcbc92177156c86ef815a757793e9c7016aa3692e6063eb46cab4",
+      "proof_sha256": "014f9763ac0f2b51f964604f12a9b93994c165e8d06f99a1c3e2fe6b840b325a",
+      "source_refs": [
+        {
+          "id": "CAREER-06",
+          "pages": [
+            11,
+            12
+          ],
+          "section": "5.2; 5.5",
+          "supports": "Hiểu bài toán kinh doanh, giao tiếp/kể chuyện bằng dữ liệu, dự án có bài toán và khuyến nghị rõ.",
+          "adaptation": "Khung ba câu hỏi và ví dụ cửa hàng do dự án phát triển; dữ liệu giả định, không suy luận nhân quả từ số đơn.",
+          "sha256": "5d3bb50fd9d9a936746c0ac1809257984686949f8100204b361e9fb857b845ef"
+        }
+      ],
+      "footer_version": "footer-v2",
+      "check_version": 1,
+      "local_checks": "pass",
+      "owner_approval": "pending",
+      "facebook_qa": "not_run",
+      "ready": false
+    },
+    {
+      "id": "P08",
+      "body_sha256": "f00f339ef9fd981f8a5226ea1cbd0d9270d24fa26522e99f4f1353e07436121f",
+      "caption_sha256": "c18fff20f2fd9c24ffcb29cd7f08274faabd465e5843db54742b9ce26a6fa550",
+      "image_sha256": "b09bf1987cc78cad93cee47ab5f993082cf644c837928fd59889f40c0905db5d",
+      "proof_sha256": "703b42da76993b4bfc734746bd61659bf1a907ac20ed923be585feddefcd278b",
+      "source_refs": [
+        {
+          "id": "CAREER-07",
+          "pages": [
+            5,
+            12
+          ],
+          "section": "Vận hành sàn TMĐT; 5.1–5.2",
+          "supports": "Thông tin sản phẩm, tồn kho, xử lý đơn, báo cáo và kỹ năng tỉ mỉ/phối hợp.",
+          "adaptation": "Tình huống thiếu hàng, luồng năm việc và bảng luyện tập do dự án biên soạn; không phải hướng dẫn thao tác hoặc quy định của sàn.",
+          "sha256": "c57e73f44abe722f3bcea0079c9e1d0a796663994cabfeeac1964585920ce504"
+        }
+      ],
+      "footer_version": "footer-v2",
+      "check_version": 1,
+      "local_checks": "pass",
+      "owner_approval": "pending",
+      "facebook_qa": "not_run",
+      "ready": false
+    }
+  ]
+}

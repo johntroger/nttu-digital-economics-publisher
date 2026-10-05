@@ -1,0 +1,86 @@
+
+> nttu-digital-economics-publisher@0.1.0 check
+> npm run typecheck && npm test
+
+
+> nttu-digital-economics-publisher@0.1.0 typecheck
+> tsc --noEmit
+
+
+> nttu-digital-economics-publisher@0.1.0 test
+> node --test tests/*.test.mjs
+
+✔ claim atomically pins caption/image/footer and reserves slot/page without attempt (18.5347ms)
+✔ failed eligibility or stale expected version leaves no job/slot/gate/audit side effects (14.0022ms)
+✔ pause, blocks and malformed barrier fail closed at claim (10.7078ms)
+✔ production requires today due slot; trial requires distinct request (13.0474ms)
+✔ actual production day guard blocks intent even if slot still appears held (10.1812ms)
+✔ after midnight an unsent held job cannot publish a previous-day slot (10.952ms)
+✔ two trial requests cannot reserve the same page concurrently; failed claim has no writes (9.8212ms)
+✔ intent records attempt once, snapshot is unchanged and replay never returns a second permit (27.2498ms)
+✔ wrong token, wrong generation, expired lease and mismatched gate cannot write intent (17.4902ms)
+✔ pause then resume invalidates old owner; explicit safe takeover preserves payload (10.8824ms)
+✔ held lease can be taken over only with no attempt; a current owner cannot be displaced (7.9657ms)
+✔ expired requested intent becomes unknown while attempt and page gate remain durable (6.9528ms)
+✔ known wrong source/asset and active-version edit stop sends after a successful claim (6.5348ms)
+✔ cancel only an owned unsent hold; requested jobs cannot free slot or gate (8.3893ms)
+✔ maintenance wins before intent; finishing needs matching owner/proofs and keeps pause/block (7.0968ms)
+✔ intent wins before maintenance; unknown also defers maintenance without writes (6.2473ms)
+✔ old maintenance generation cannot finish a new session even when owner label repeats (5.491ms)
+✔ claim rollback after inserted job and zero-row CAS create no partial ownership (6.02ms)
+✔ intent failure rolls back inserted attempt, counters, slot state and audit (6.3525ms)
+✔ verified retry waits five minutes, reclaims ownership and uses identical snapshot up to three attempts (10.3566ms)
+✔ unverified retry cannot turn an ambiguous outcome into a new intent (9.9255ms)
+✔ verified retry releases page but preserves original post hold; different trial can run (11.9411ms)
+✔ two independent SQLite workers racing same slot produce exactly one complete claim (249.4288ms)
+✔ maintenance and intent race on separate SQLite workers has one winning action (192.8079ms)
+✔ ready requires all gates; a passing score never overrides mandatory failure (3.2142ms)
+✔ mandatory footer is appended once with correct TikTok and one hashtag group (0.6759ms)
+✔ source review expires exactly at deadline, malformed and future reviews fail closed (0.7458ms)
+✔ expired post and source verification newer than QA require review (0.3354ms)
+✔ program facts honor 3.5 years and 2026; missing, wrong and expired facts block (0.6716ms)
+✔ image alignment and footer checks bind to exact content revision and checksum (0.4518ms)
+✔ usage, uncertain hold and prerequisite are hard gates independent of ready (0.4732ms)
+✔ new identity cannot republish identical normalized body from history, including composed footer (0.2899ms)
+✔ stock counts original posts once; reasons can overlap; low threshold is <=3 (3.4531ms)
+✔ all four reserve buckets are ordered before angle preference; exclusion permits next reserve (2.1057ms)
+✔ recent angle loses inside its bucket; stable order then ID makes selection deterministic (0.6861ms)
+✔ invalid or unmet prerequisite reserve is skipped without limiting reserve attempts to three (1.0515ms)
+✔ actual 40 briefs import idempotently as zero eligible with original cohort facts (53.3236ms)
+✔ import rejects duplicate IDs, bad ratios, cycle, unknown prerequisite and conflicting duration (13.2126ms)
+✔ SQL failure during import rolls back the entire batch and permits recovery (27.8624ms)
+✔ database-backed edits invalidate QA and image without silently using older ready version (12.2821ms)
+✔ source and fact reference changes invalidate review; immutable reference contents need new revision (10.6129ms)
+✔ mandatory QA failure and expired source are enforced from persisted data (10.9098ms)
+✔ source/fact references of a held or historical version cannot be rewritten (8.4718ms)
+✔ context isolates page history; unknown lease expiry holds original post across versions (10.495ms)
+✔ confirmed production usage consumes identity; trial history satisfies only its own prerequisites (16.7454ms)
+✔ Vietnam midnight uses the actual Vietnam date, not UTC date (1.1024ms)
+✔ 10h publishing and 8h history are converted independently (0.9644ms)
+✔ calendar normalization cannot silently move an invalid date (0.6262ms)
+✔ missing environment and fake integration outside local fail closed (1.1539ms)
+✔ all environments begin paused without seeded jobs or remote publications (14.978ms)
+✔ one page/date cannot receive two slots; another page stays independent (12.7471ms)
+✔ one active candidate per slot; a confirmed failure permits a replacement (11.7299ms)
+✔ slot and page cannot be mixed and trial requests are idempotency-scoped (11.1469ms)
+✔ job payload is pinned while retry state can change (9.746ms)
+✔ claimed version and page identity cannot be moved underneath a pinned job (8.6569ms)
+✔ a completed image is immutable but can be blocked for later review (9.8448ms)
+✔ an expired lease cannot clear or replace an uncertain page gate (7.9244ms)
+✔ gate cannot point to a job on another page (11.5526ms)
+✔ evidence survives a subsequent finalization transaction rollback (12.243ms)
+✔ new version does not reset production usage; trial does not consume usage (14.6133ms)
+✔ two actual remote IDs stay recorded even when the daily guard conflicts (17.4212ms)
+✔ outbox cannot invent successful delivery and keeps event identity unique (7.0446ms)
+✔ health reports liveness without claiming readiness or leaking account details (5.6143ms)
+✔ an unconfigured or fake production worker fails closed (1.0118ms)
+✔ publishing endpoints cannot claim success before implementation (0.6843ms)
+✔ loopback server serves the worker over real HTTP (55.2997ms)
+ℹ tests 66
+ℹ suites 0
+ℹ pass 66
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 965.8617

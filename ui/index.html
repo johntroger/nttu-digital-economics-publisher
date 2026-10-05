@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="vi">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Kinh tế số | Quản lý nội dung</title><link rel="icon" href="/brand/fba.png"><link rel="stylesheet" href="/ui/style.css"><script src="/ui/app.js" defer></script></head>
+<body>
+<a class="skip" href="#main">Đến nội dung</a>
+<header class="masthead">
+  <div class="logos" aria-label="Trường, Khoa và Ngành"><img class="university" src="/brand/nttu.png" alt="Trường Đại học Nguyễn Tất Thành"><img class="faculty" src="/brand/fba.png" alt="Khoa Quản trị kinh doanh"><img class="program" src="/brand/digital-economics.jpg" alt="Ngành Kinh tế số"></div>
+  <div class="header-status"><span class="pill">Bản local</span><span>Chưa kết nối fanpage</span></div>
+</header>
+<div class="shell">
+<aside class="sidebar">
+  <div class="product-name"><strong>Phòng nội dung</strong><span>Ngành Kinh tế số</span></div>
+  <nav aria-label="Chức năng quản lý">
+    <button data-view="overview" aria-current="page"><span aria-hidden="true">⌂</span>Tổng quan</button>
+    <button data-view="posts"><span aria-hidden="true">▤</span>Kho bài <small id="nav-posts">40</small></button>
+    <button data-view="samples"><span aria-hidden="true">▧</span>Bài mẫu <small>5</small></button>
+    <button data-view="schedule"><span aria-hidden="true">▦</span>Lịch đăng</button>
+    <button data-view="history"><span aria-hidden="true">◷</span>Lịch sử</button>
+    <button data-view="notifications"><span aria-hidden="true">⚑</span>Cảnh báo</button>
+    <button data-view="simulation"><span aria-hidden="true">▷</span>Mô phỏng</button>
+  </nav>
+  <div class="sidebar-note"><span class="dot"></span><strong>Đang chuẩn bị nội dung</strong><p>Google, Facebook và Telegram chưa được kết nối.</p><span class="owner">Chỉ dành cho người quản lý</span></div>
+</aside>
+<main id="main" tabindex="-1">
+  <div class="workspace-bar"><span id="context-label">Kho của dự án</span><label id="source-control">Dữ liệu đang xem <select id="data-source"><option value="main">Kho của dự án</option><option value="demo" disabled>Kết quả mô phỏng</option></select></label></div>
+  <div id="demo-banner" class="notice" hidden>Đang xem dữ liệu mô phỏng. Đây không phải bài đăng hoặc thông báo thật. <button id="back-main">Về kho của dự án</button></div>
+  <div id="load-error" class="error" role="alert" hidden>Không tải được dữ liệu. <button id="reload">Thử lại</button></div>
+  <div id="loading" role="status">Đang tải kho nội dung…</div>
+  <section id="view-overview" class="view" hidden>
+    <div class="page-heading"><div><h1>Chuẩn bị kho nội dung</h1><p>Hoàn thiện bài viết và hình ảnh trước khi bật lịch đăng.</p></div><button class="primary" data-open="posts">Xem kho bài</button></div>
+    <div class="readiness"><div><span>Đề cương trong kho</span><strong id="total">40</strong></div><div><span>Bài đủ điều kiện</span><strong id="ready">0</strong></div><div><span>Số ngày có thể đăng</span><strong id="coverage">0</strong></div><div class="schedule-state"><span>Lịch chưa bật</span><strong>10:00</strong><small>Mỗi ngày, giờ Việt Nam</small></div></div>
+    <div class="overview-grid"><article class="panel preparation"><h2>Những việc cần hoàn thiện</h2><p class="muted">Đề cương là điểm bắt đầu, chưa phải bài sẵn sàng đăng.</p><ul class="task-list"><li><span>1</span><div><strong>Viết nội dung hoàn chỉnh</strong><p>Phát triển đề cương, giữ phần kết bài bắt buộc.</p></div></li><li><span>2</span><div><strong>Chuẩn bị hình ảnh vuông</strong><p>Ảnh 1080 × 1080, ba logo ở hàng trên cùng.</p></div></li><li><span>3</span><div><strong>Đối chiếu nguồn và kiểm định</strong><p>Nội dung, hình ảnh và phiên bản phải khớp nhau.</p></div></li></ul><button class="secondary" data-open="posts">Đọc các đề cương</button></article>
+      <div><article class="panel distribution"><h2>Phân bổ kho bài</h2><div class="allocation"><strong>30</strong><span>Bài theo kế hoạch</span><strong>10</strong><span>Bài dự phòng</span></div><div class="audience"><span>Sinh viên <b>28 bài</b></span><span>Học sinh <b>12 bài</b></span></div><div class="ratio" aria-label="70% sinh viên, 30% học sinh"><span></span><span></span></div><p>32 bài kiến thức và nghề nghiệp<br>8 bài giới thiệu ngành</p></article>
+      <article class="try-panel"><h2>Năm bài mẫu để bạn xem</h2><p>Caption đầy đủ, ảnh vuông và căn cứ biên tập. Các mẫu gốc được giữ để tham khảo.</p><button class="secondary" data-open="samples">Xem bài mẫu</button></article></div>
+    </div><div class="program-info"><strong>Chương trình khóa 2026</strong><span>Thời gian đào tạo: 3,5 năm</span><span>Phần giới thiệu ngành cần căn cứ tài liệu chính thức.</span></div>
+  </section>
+  <section id="view-posts" class="view" hidden>
+    <div class="page-heading"><div><h1>Kho bài</h1><p>40 bài trong kho. Chỉnh sửa để lưu caption, dựng ảnh và xem phiên bản.</p></div><span class="tag">Lưu trên máy</span></div>
+    <div class="filters"><label class="search">Tìm đề cương<input id="search" type="search" placeholder="Tên bài, chủ đề hoặc mã bài…"></label><label>Chủ đề<select id="group"><option value="all">Tất cả chủ đề</option><option value="D">Phân tích dữ liệu</option><option value="A">Ứng dụng AI</option><option value="B">Kinh doanh số</option><option value="S">Kỹ năng nghề nghiệp</option><option value="R">Đổi mới có trách nhiệm</option><option value="I">Giới thiệu ngành</option></select></label><label>Loại kho<select id="pool"><option value="all">Tất cả bài</option><option value="scheduled">Theo kế hoạch</option><option value="reserve">Dự phòng</option></select></label><label>Đối tượng<select id="audience"><option value="all">Tất cả đối tượng</option><option value="student">Sinh viên</option><option value="prospective_student">Học sinh</option></select></label></div>
+    <div class="list-caption"><span id="post-count"></span><button id="clear-filters" class="text-button">Xóa bộ lọc</button></div>
+    <div class="table-wrap"><table class="post-table"><thead><tr><th>Mã</th><th>Đề cương</th><th>Đối tượng</th><th>Loại kho</th><th>Trạng thái</th></tr></thead><tbody id="post-rows"></tbody></table></div>
+    <div id="posts-empty" class="empty" hidden><h2>Không có đề cương phù hợp</h2><p>Thử từ khóa khác hoặc xóa bộ lọc để xem lại toàn bộ kho.</p></div>
+  </section>
+  <section id="view-samples" class="view" hidden>
+    <div class="page-heading"><div><h1>Năm bài mẫu</h1><p>Ba bố cục ảnh, hai cách minh họa. Xem caption và căn cứ của từng bài trước khi mở rộng kho.</p></div><span class="tag">Chờ bạn duyệt</span></div>
+    <p class="sample-note">Đã kiểm tra local. Chưa nhập thành bài sẵn sàng đăng; chưa kiểm tra ảnh sau đăng Facebook.</p>
+    <div id="sample-load-status" role="status"></div><div id="sample-grid" class="sample-grid"></div>
+  </section>
+  <section id="view-schedule" class="view" hidden><div class="page-heading"><div><h1>Lịch đăng</h1><p>Một bài tự động mỗi ngày vào 10:00, giờ Việt Nam.</p></div></div><div id="schedule-content"></div></section>
+  <section id="view-history" class="view" hidden><div class="page-heading"><div><h1>Lịch sử</h1><p>Bài được xác nhận sẽ giữ nội dung và hình ảnh của lần đăng đó.</p></div></div><div id="history-content"></div></section>
+  <section id="view-notifications" class="view" hidden><div class="page-heading"><div><h1>Cảnh báo</h1><p>Các việc cần xử lý và thông báo trong hàng đợi.</p></div></div><div id="notification-content"></div></section>
+  <section id="view-simulation" class="view" hidden>
+    <div class="page-heading"><div><h1>Mô phỏng quy trình</h1><p>Chạy thử bằng bốn bài giả lập, tách riêng kho 40 đề cương.</p></div><span class="tag">Không gọi Facebook hoặc Telegram</span></div>
+    <div class="panel simulation-controls"><label for="scenario">Tình huống kiểm thử</label><div><select id="scenario"><option value="success">Một bài trong ngày</option><option value="reserve">Thử lại rồi lấy dự phòng</option><option value="unknown">Chờ xác minh khi timeout</option></select><button id="run-demo" class="primary">Chạy mô phỏng</button></div><p id="scenario-help">Không gửi trước 10h. Trong cùng ngày chỉ có một bài giả lập được xác nhận.</p><p class="muted">Mỗi lần chạy bắt đầu một phiên mới. Kết quả không lưu sau khi tải lại trang.</p></div>
+    <div id="demo-status" role="status" aria-live="polite"></div><div id="demo-result"></div>
+  </section>
+  <footer class="page-footer">Ngành Kinh tế số, Khoa QTKD, Trường Đại học Nguyễn Tất Thành <span>Bản chạy thử local</span></footer>
+</main>
+</div>
+<dialog id="post-detail" aria-labelledby="detail-title"><div class="drawer-heading"><span id="detail-key" class="tag"></span><button id="close-detail" aria-label="Đóng chi tiết">✕</button></div><h2 id="detail-title"></h2><div id="detail-meta" class="detail-meta"></div>
+  <div id="detail-sample" hidden><p class="sample-note">Bản mẫu thiết kế v1 gốc. Ảnh và caption chưa được nhập vào lượt đăng tự động.</p><img id="sample-image" class="sample-image" alt=""><h3>Caption đầy đủ</h3><pre id="sample-caption" class="sample-caption"></pre><h3>Căn cứ biên tập</h3><ul id="sample-sources"></ul><p class="muted">Kiểm tra local: đạt. Kiểm tra trên Facebook: chưa chạy.</p></div>
+  <div id="detail-brief-only"><h3>Đề cương nội dung</h3><p id="detail-brief"></p><h3>Hướng hình minh họa</h3><p id="detail-image"></p><div class="image-pending"><span aria-hidden="true">▧</span>Chưa có ảnh hoàn chỉnh</div><h3>Nguồn cần đối chiếu</h3><p id="detail-source"></p><h3>Điều kiện chưa đạt</h3><ul id="detail-reasons"></ul><details><summary>Phần kết bài bắt buộc</summary><p id="detail-footer" class="footer-preview"></p></details></div>
+</dialog>
+<script src="/ui/editor.js" defer></script><script src="/ui/backup.js" defer></script>
+</body></html>

@@ -1,0 +1,28 @@
+{
+  "mode": "local-inspection",
+  "database": "C:\\Users\\trant\\CodexProjects\\Facebook\\tmp\\step-02\\catalog.sqlite",
+  "import": {
+    "imported": 0,
+    "unchanged": 40,
+    "batch": "initial-2026-v1"
+  },
+  "stock": {
+    "checked_at": "2026-10-05T02:30:33.500Z",
+    "total_post_count": 40,
+    "eligible_distinct_post_count": 0,
+    "scheduled_count": 0,
+    "reserve_count": 0,
+    "coverage_days": 0,
+    "low_stock": true,
+    "reason_counts": {
+      "BRIEF_ONLY": 40,
+      "NOT_READY": 40,
+      "SOURCE_UNVERIFIED_OR_EXPIRED": 40,
+      "ASSET_NOT_READY": 40,
+      "IMAGE_OUT_OF_SYNC": 40,
+      "CHECKS_INVALID": 40
+    }
+  },
+  "drafts": 40,
+  "note": "Nguồn gợi ý chưa được kiểm định; chưa có caption/PNG hoàn chỉnh. Không đăng bài."
+}

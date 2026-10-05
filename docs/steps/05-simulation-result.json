@@ -1,0 +1,108 @@
+{
+  "mode": "local_fake",
+  "networkCalls": 0,
+  "realContentUsed": false,
+  "clock": "controlled fixture clock",
+  "reports": [
+    {
+      "scenario": "one-post-per-day",
+      "timeline": [
+        {
+          "now": "2026-10-05T02:59:59Z",
+          "status": "not_due",
+          "sends": 0
+        },
+        {
+          "now": "2026-10-05T03:00:00Z",
+          "status": "day_complete",
+          "sends": 1
+        },
+        {
+          "now": "2026-10-05T04:00:00Z",
+          "status": "day_complete",
+          "sends": 0
+        }
+      ],
+      "fakeRequests": 1,
+      "publications": 1,
+      "usedPostIds": [
+        "p1"
+      ],
+      "outbox": [
+        {
+          "event_id": "published:publication:evidence:fixture-4",
+          "state": "pending"
+        },
+        {
+          "event_id": "stock:prod:2:low",
+          "state": "pending"
+        }
+      ]
+    },
+    {
+      "scenario": "three-attempts-then-reserve",
+      "timeline": [
+        {
+          "now": "2026-10-05T03:00:00Z",
+          "status": "retry_wait",
+          "sends": 1,
+          "nextAt": "2026-10-05T03:05:00.000Z"
+        },
+        {
+          "now": "2026-10-05T03:05:00Z",
+          "status": "retry_wait",
+          "sends": 1,
+          "nextAt": "2026-10-05T03:10:00.000Z"
+        },
+        {
+          "now": "2026-10-05T03:10:00Z",
+          "status": "day_complete",
+          "sends": 2
+        }
+      ],
+      "fakeRequests": 4,
+      "publications": 1,
+      "usedPostIds": [
+        "r1"
+      ],
+      "outbox": [
+        {
+          "event_id": "failed:job:fixture-1",
+          "state": "pending"
+        },
+        {
+          "event_id": "published:publication:evidence:fixture-14",
+          "state": "pending"
+        },
+        {
+          "event_id": "stock:prod:2:low",
+          "state": "pending"
+        }
+      ]
+    },
+    {
+      "scenario": "unknown-does-not-repost",
+      "timeline": [
+        {
+          "now": "2026-10-05T03:00:00Z",
+          "status": "reconciliation_required",
+          "sends": 1
+        },
+        {
+          "now": "2026-10-06T03:00:00Z",
+          "status": "reconciliation_required",
+          "sends": 0
+        }
+      ],
+      "fakeRequests": 1,
+      "publications": 0,
+      "usedPostIds": [],
+      "outbox": [
+        {
+          "event_id": "unknown:job:fixture-1:1",
+          "state": "pending"
+        }
+      ]
+    }
+  ]
+}

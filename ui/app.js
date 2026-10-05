@@ -1,0 +1,62 @@
+'use strict';
+const $=id=>document.getElementById(id);
+const state={catalog:null,samples:[],demo:null,source:'main',view:'overview'};
+const groups={D:'Phân tích dữ liệu',A:'Ứng dụng AI',B:'Kinh doanh số',S:'Kỹ năng nghề nghiệp',R:'Đổi mới có trách nhiệm',I:'Giới thiệu ngành'};
+const audience=value=>value==='student'?'Sinh viên':'Học sinh';
+const labels={planned:'Chưa đăng',held:'Đang giữ lượt',requested:'Đã ghi yêu cầu',confirmed:'Đã xác nhận (giả lập)',unknown:'Chờ xác minh',expired:'Đã hết ngày',skipped:'Bỏ lượt',replaced_by_late_publication:'Thay bằng bài đăng muộn',pending:'Chưa gửi',retry_wait:'Chờ thử lại',day_complete:'Ngày đã có bài giả lập',not_due:'Chưa đến 10h',reconciliation_required:'Cần đối chiếu kết quả',budget_exhausted:'Sẽ tiếp tục ở lượt chạy sau'};
+const reasons={BRIEF_ONLY:'Mới có đề cương, chưa có nội dung hoàn chỉnh.',NOT_READY:'Phiên bản chưa được đánh dấu sẵn sàng.',SOURCE_UNVERIFIED_OR_EXPIRED:'Nguồn cần được đối chiếu và kiểm định.',ASSET_NOT_READY:'Chưa có ảnh PNG hoàn chỉnh đạt yêu cầu.',IMAGE_OUT_OF_SYNC:'Ảnh chưa khớp phiên bản nội dung.',CHECKS_INVALID:'Chưa có bộ kiểm định hợp lệ.'};
+function el(tag,text,className){const node=document.createElement(tag);if(text!==undefined)node.textContent=text;if(className)node.className=className;return node;}
+function viTime(value){return new Intl.DateTimeFormat('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(value));}
+function empty(target,title,text){target.replaceChildren();const box=el('div',undefined,'empty');box.append(el('h2',title),el('p',text));target.append(box);}
+function setView(view){if(window.guardEditorNavigation?.(view))return;state.view=view;document.querySelectorAll('.view').forEach(section=>section.hidden=section.id!==`view-${view}`);document.querySelectorAll('[data-view]').forEach(button=>{if(button.dataset.view===view)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');});$('source-control').hidden=!['schedule','history','notifications'].includes(view);renderContext();}
+function renderContext(){$('demo-banner').hidden=state.source!=='demo'||!['schedule','history','notifications'].includes(state.view);$('context-label').textContent=state.source==='demo'&&['schedule','history','notifications'].includes(state.view)?'Kết quả mô phỏng':'Kho của dự án';renderRecords();}
+function renderPosts(){if(!state.catalog)return;const term=$('search').value.trim().normalize('NFD').replace(/\p{M}/gu,'').toLowerCase();const posts=state.catalog.posts.filter(p=>{
+  const text=`${p.key} ${p.title} ${groups[p.group]}`.normalize('NFD').replace(/\p{M}/gu,'').toLowerCase();
+  return text.includes(term)&&($('group').value==='all'||p.group===$('group').value)&&($('pool').value==='all'||p.pool===$('pool').value)&&($('audience').value==='all'||p.audience===$('audience').value);
+});$('post-count').textContent=`${posts.length} / ${state.catalog.posts.length} đề cương`;$('posts-empty').hidden=posts.length!==0;$('post-rows').replaceChildren();
+  for(const p of posts){const row=el('tr');row.append(el('td',p.key));const title=el('td'),button=el('button',p.title,'post-link');button.type='button';button.addEventListener('click',()=>openPost(p));title.append(button,el('span',groups[p.group],'topic'));row.append(title,el('td',audience(p.audience)),el('td',p.pool==='reserve'?'Dự phòng':'Theo kế hoạch'));const status=el('td');status.append(el('span',p.status==='caption'?'Có caption · cần rà soát':'Cần hoàn thiện','brief-badge'));row.append(status);$('post-rows').append(row);}}
+function openPost(p){openSampleDetail(p.key);$('detail-title').textContent=p.title;$('detail-key').textContent=p.key;$('detail-meta').replaceChildren(el('span',groups[p.group]),el('span',audience(p.audience)),el('span',p.level));$('detail-brief').textContent=p.brief;$('detail-image').textContent=p.imageBrief;$('detail-source').textContent=p.sourceHint;$('detail-footer').textContent=state.catalog.footer;$('detail-reasons').replaceChildren(...p.reasons.map(r=>el('li',reasons[r]??r)));$('post-detail').showModal();}
+function renderRecords(){if(!state.catalog)return;const data=state.source==='demo'&&state.demo?state.demo:state.catalog;
+  const schedule=$('schedule-content');schedule.replaceChildren();if(!data.schedule.length)empty(schedule,'Chưa xếp lịch đăng','Kho đang có 40 đề cương, chưa có bài đủ điều kiện. Bạn có thể chạy mô phỏng để xem cách lịch hoạt động.');else{const wrap=el('div',undefined,'table-wrap'),table=el('table'),head=el('thead'),hr=el('tr');['Ngày theo lịch','Bài dự kiến (giả lập)','Trạng thái'].forEach(s=>hr.append(el('th',s)));head.append(hr);table.append(head);const body=el('tbody');for(const s of data.schedule){const row=el('tr');row.append(el('td',s.date),el('td',s.postKey??'Chưa chọn'),el('td',labels[s.status]??s.status));body.append(row);}table.append(body);wrap.append(table);schedule.append(wrap);}
+  const history=$('history-content');history.replaceChildren();if(!data.publications.length)empty(history,'Chưa có bài đã đăng','Hệ thống chưa kết nối fanpage. Lịch sử thật sẽ xuất hiện sau khi kết quả đăng bài được xác nhận.');else for(const p of data.publications){const card=el('article',undefined,'record');card.append(el('h2',`Bài giả lập ${p.postKey}`),el('p',`${viTime(p.confirmedAt)} giờ Việt Nam`),el('p',`Kết quả mô phỏng ${p.remoteId}`));const detail=el('details');detail.append(el('summary','Xem nội dung đã ghi nhận'),el('pre',p.caption));card.append(detail);history.append(card);}
+  const notifications=$('notification-content');notifications.replaceChildren();if(!data.notifications.length){empty(notifications,'Chưa có thông báo trong hàng đợi','Kho chưa có bài đủ điều kiện đăng. Kết nối Telegram và gửi cảnh báo thật sẽ được triển khai ở bước sau.');}else for(const n of data.notifications){const kind=n.payload.kind;const title=kind==='published'?'Bài giả lập đã được xác nhận':kind==='post_failed'?'Bài lỗi cần xử lý':kind==='stock_low'?'Kho sắp hết bài':kind==='stock_empty'?'Cần bổ sung nội dung':kind==='needs_reconciliation'?'Cần đối chiếu kết quả đăng':'Cần xử lý sự cố';const card=el('article',undefined,'record');card.append(el('h2',title),el('p',n.payload.coverageDays!==undefined?`Còn ${n.payload.coverageDays} ngày nội dung đủ điều kiện trong kho giả lập.`:n.payload.job?`Phiên mô phỏng: ${n.payload.job}`:'Thông báo từ phiên mô phỏng.'),el('span',`${labels[n.state]??n.state} qua Telegram`, 'tag'));notifications.append(card);}
+}
+function renderDemo(){const demo=state.demo;if(!demo)return;const box=$('demo-result');box.replaceChildren();const summary=el('div',undefined,'demo-summary');for(const [n,label] of [[demo.requests,'yêu cầu giả lập'],[demo.publications.length,'bài giả lập được xác nhận']]){const item=el('span');item.append(el('strong',String(n)),document.createTextNode(label));summary.append(item);}box.append(summary,el('h2','Các lượt chạy đã thực hiện'));const list=el('ol',undefined,'timeline');for(const t of demo.timeline){const row=el('li'),date=el('time',viTime(t.now));date.dateTime=t.now;const description=el('div');description.append(el('strong',labels[t.status]??t.status),el('span',`${t.sends} yêu cầu giả lập trong lượt này${t.nextAt?`. Thử lại lúc ${viTime(t.nextAt)}`:''}`));row.append(date,description);list.append(row);}box.append(list);const buttons=el('div');for(const [view,label] of [['schedule','Xem lịch mô phỏng'],['history','Xem lịch sử mô phỏng'],['notifications','Xem cảnh báo mô phỏng']]){const button=el('button',label,'secondary');button.addEventListener('click',()=>setView(view));buttons.append(button);}buttons.className='demo-links';box.append(buttons);}
+async function load(){$('loading').hidden=false;$('load-error').hidden=true;try{const response=await fetch('/local-api/catalog');if(!response.ok)throw new Error('LOAD_FAILED');state.catalog=await response.json();$('total').textContent=String(state.catalog.stock.total_post_count);$('ready').textContent=String(state.catalog.stock.eligible_distinct_post_count);$('coverage').textContent=String(state.catalog.stock.coverage_days);$('nav-posts').textContent=String(state.catalog.posts.length);renderPosts();setView(state.view);}catch{$('load-error').hidden=false;}finally{$('loading').hidden=true;}}
+document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',()=>setView(button.dataset.view)));document.querySelectorAll('[data-open]').forEach(button=>button.addEventListener('click',()=>setView(button.dataset.open)));
+['search','group','pool','audience'].forEach(id=>$(id).addEventListener(id==='search'?'input':'change',renderPosts));$('clear-filters').addEventListener('click',()=>{$('search').value='';['group','pool','audience'].forEach(id=>$(id).value='all');renderPosts();});$('close-detail').addEventListener('click',()=>$('post-detail').close());$('reload').addEventListener('click',load);
+$('data-source').addEventListener('change',()=>{state.source=$('data-source').value;renderContext();});$('back-main').addEventListener('click',()=>{state.source='main';$('data-source').value='main';renderContext();});
+const help={success:'Không gửi trước 10h. Trong cùng ngày chỉ có một bài giả lập được xác nhận.',reserve:'Bài chính lỗi ba lần, cách nhau 5 phút. Sau đó hệ thống lấy bài dự phòng trong cùng ngày.',unknown:'Timeout giữ lượt chờ xác minh. Ngày hôm sau cũng không gửi lại hoặc lấy bài dự phòng.'};$('scenario').addEventListener('change',()=>$('scenario-help').textContent=help[$('scenario').value]);
+$('run-demo').addEventListener('click',async()=>{const button=$('run-demo');button.disabled=true;$('demo-status').textContent='Đang chạy mô phỏng…';try{const response=await fetch('/local-api/demo',{method:'POST',headers:{'Content-Type':'application/json','X-Local-Demo':'1'},body:JSON.stringify({scenario:$('scenario').value})});if(!response.ok)throw new Error('DEMO_FAILED');state.demo=await response.json();state.source='demo';$('data-source').querySelector('[value="demo"]').disabled=false;$('data-source').value='demo';renderDemo();renderContext();$('demo-status').textContent='Mô phỏng hoàn tất. Không có bài hoặc tin nhắn thật được gửi.';}catch{$('demo-status').textContent='Không chạy được mô phỏng. Thử lại hoặc tải lại trang.';}finally{button.disabled=false;}});
+async function loadSamples(){
+  $('sample-load-status').textContent='Đang tải năm bản mẫu…';
+  try{
+    const response=await fetch('/local-api/samples');if(!response.ok)throw new Error('SAMPLES_NOT_READY');
+    const data=await response.json();state.samples=data.samples;renderSamples();$('sample-load-status').textContent='';
+  }catch{
+    state.samples=[];$('sample-grid').replaceChildren();$('sample-load-status').replaceChildren(document.createTextNode('Chưa tải được bản mẫu hoặc dữ liệu đã thay đổi. '));
+    const retry=el('button','Thử tải lại','secondary');retry.addEventListener('click',loadSamples);$('sample-load-status').append(retry);
+  }
+}
+function renderSamples(){
+  $('sample-grid').replaceChildren();
+  for(const sample of state.samples){
+    const card=el('article',undefined,'sample-card'),image=el('img');image.src=sample.proofUrl;image.alt=`Ảnh mẫu ${sample.key}: ${sample.title}`;image.width=360;image.height=360;
+    const content=el('div');content.append(el('span',`${sample.key} · ${sample.imageMode==='infographic'?'Infographic':'Minh họa ít chữ'}`,'tag'),el('h2',sample.title),el('p',sample.readerOutcome));
+    const button=el('button','Xem ảnh và caption','secondary');button.addEventListener('click',()=>{
+      const post=state.catalog?.posts.find(p=>p.key===sample.key);
+      if(post)openPost(post);
+    });button.setAttribute('aria-label',`Xem bài mẫu ${sample.key}`);content.append(button);card.append(image,content);$('sample-grid').append(card);
+  }
+}
+function openSampleDetail(key){
+  const sample=state.samples.find(p=>p.key===key);$('detail-sample').hidden=!sample;$('detail-brief-only').hidden=Boolean(sample);
+  if(!sample)return;
+  $('sample-image').src=sample.imageUrl;$('sample-image').alt=`Ảnh mẫu ${sample.key}: ${sample.title}`;
+  $('sample-caption').textContent=sample.caption;$('sample-sources').replaceChildren();
+  for(const source of sample.sources){
+    const item=el('li');item.append(el('strong',`${source.id}${source.pages.length?` · trang PDF ${source.pages.join(', ')}`:''}: ${source.section}`),el('p',source.supports),el('p',source.adaptation));$('sample-sources').append(item);
+  }
+}
+load();loadSamples();
+

@@ -1,0 +1,56 @@
+{
+  "version": "samples-2026-v1",
+  "cohort": 2026,
+  "duration_years": 3.5,
+  "status": "awaiting_owner_review",
+  "reviewed_at": "2026-10-05T04:31:00Z",
+  "review_scope": "Selected claims only; original practice examples; not all claims in source PDFs",
+  "samples": [
+    {
+      "id": "P02",
+      "title": "Dùng AI xong, bạn kiểm tra kết quả thế nào?",
+      "body": "DÙNG AI XONG, BẠN KIỂM TRA KẾT QUẢ THẾ NÀO?\n\nMột câu trả lời mạch lạc vẫn có thể sai. Khi dùng AI cho bài tập hoặc dự án, hãy dành một lượt kiểm tra trước khi đưa kết quả vào sản phẩm của mình.\n\nThử checklist 4 bước:\n1. Thông tin: tách tên, mốc thời gian và nhận định cần xác minh.\n2. Nguồn: mở tài liệu gốc, xem tài liệu có thực sự hỗ trợ kết luận không. Đừng chỉ nhìn tên nguồn AI đưa ra.\n3. Phép tính: tính lại từ dữ liệu đầu vào, kiểm tra đơn vị và cách so sánh.\n4. Bối cảnh: kết quả có trả lời đúng câu hỏi, đúng đối tượng và đúng phạm vi dữ liệu không?\n\nVí dụ giả định: một cửa hàng tăng từ 100 lên 120 đơn. Nếu AI viết “tăng 120%”, hãy tính lại: (120 − 100) / 100 × 100% = 20%. Bạn cũng cần phân biệt số đơn với doanh thu trước khi diễn giải.\n\nBài tập nhỏ: chọn một đoạn AI vừa hỗ trợ bạn viết; đánh dấu một thông tin cần đối chiếu, một phép tính và một điểm còn thiếu bối cảnh. Ghi lại điều đã sửa và lý do sửa.\n\nVới thông tin quan trọng chưa xác minh được, hãy giữ trạng thái “cần kiểm tra”. Chỉ dùng dữ liệu công khai hoặc được phép sử dụng trong bài tập.\n\nLưu checklist này cho lần dùng AI tiếp theo.",
+      "reader_outcome": "Kiểm tra một kết quả AI bằng thông tin, nguồn, phép tính và bối cảnh.",
+      "source_refs": [
+        {"id":"CAREER-08","pages":[13,15],"section":"5.1; 6.1–6.2","supports":"Giới hạn AI, kiểm chứng kết quả, tư duy phản biện và bảo mật.","adaptation":"Checklist bốn bước và bài toán 100 → 120 do dự án biên soạn, không phải số liệu khảo sát."}
+      ],
+      "image": {"template":"checklist","scene":null,"mode":"infographic","headline":"AI trả lời.\nBạn kiểm chứng.","subline":"4 bước trước khi dùng kết quả","accent":"#087D72","ink":"#123E3B","paper":"#EDF7F4","cards":[["Thông tin","Tách điều cần xác minh"],["Nguồn","Mở tài liệu gốc"],["Phép tính","Tính lại, kiểm tra đơn vị"],["Bối cảnh","Đúng câu hỏi, đúng phạm vi"]],"takeaway":"Chưa xác minh? Giữ lại để kiểm tra."}
+    },
+    {
+      "id": "P04",
+      "title": "CV có công cụ rồi, đã có bằng chứng chưa?",
+      "body": "CV CÓ CÔNG CỤ RỒI, ĐÃ CÓ BẰNG CHỨNG CHƯA?\n\n“Biết Excel” cho biết tên công cụ. Một mô tả dự án rõ ràng còn giúp người đọc hiểu bạn đã dùng công cụ để làm việc gì.\n\nNếu bạn đang chuẩn bị ứng tuyển thực tập, thử viết một dòng CV theo khung: việc đã làm → đóng góp của bạn → sản phẩm có thể xem.\n\nVí dụ giả định:\n• Dòng ban đầu: “Có kỹ năng Excel.”\n• Dòng cụ thể hơn: “Trong dự án môn học về bán hàng, tôi chuẩn hóa bảng đơn hàng và tạo báo cáo doanh thu theo nhóm sản phẩm bằng Excel; phụ trách làm sạch dữ liệu và trình bày báo cáo.”\n\nSau đó, gắn một sản phẩm minh chứng nếu được phép chia sẻ: bảng đã ẩn thông tin riêng, ảnh báo cáo hoặc phần trình bày của bạn. Nếu là dự án nhóm, nêu rõ phần việc mình làm.\n\nChưa đo được hiệu quả thì mô tả đúng sản phẩm đã hoàn thành. Đừng thêm tỷ lệ tăng doanh thu hoặc số giờ tiết kiệm chỉ để CV có vẻ ấn tượng. Nếu có số liệu thật, giữ căn cứ để giải thích cách đo.\n\nBài tập nhỏ: chọn một dự án đã làm, viết lại một dòng CV và tự hỏi: “Nếu được hỏi trong phỏng vấn, mình có thể mở sản phẩm và giải thích đóng góp này không?”\n\nBắt đầu từ một bằng chứng rõ, rồi bổ sung khi bạn có trải nghiệm mới.",
+      "reader_outcome": "Viết một dòng CV gắn đóng góp cá nhân với sản phẩm minh chứng, không bịa kết quả.",
+      "source_refs": [{"id":"CAREER-09","pages":[13],"section":"4.2–4.3","supports":"CV nêu dự án/kết quả nếu có; portfolio; kể lại bối cảnh, hành động, kết quả.","adaptation":"Ví dụ dự án bán hàng là giả định. Khung một dòng CV do dự án phát triển; không khẳng định mọi nhà tuyển dụng dùng cùng tiêu chuẩn."}],
+      "image": {"template":"scene","scene":"portfolio","mode":"illustration","headline":"CV cần\nbằng chứng.","subline":"Cho thấy việc bạn đã làm.","accent":"#245CBC","ink":"#183761","paper":"#EFF4FC","cards":[],"takeaway":"Một dự án. Một đóng góp rõ."}
+    },
+    {
+      "id": "P05",
+      "title": "Học Kinh tế số: kết nối kinh doanh với công nghệ",
+      "body": "HỌC KINH TẾ SỐ: KẾT NỐI KINH DOANH VỚI CÔNG NGHỆ\n\nMột cửa hàng có nhiều người xem nhưng ít đơn hàng. Nên đổi nội dung, xem lại giá hay cải thiện cách đặt hàng? Công nghệ có thể hỗ trợ tìm câu trả lời, còn tư duy kinh doanh giúp xác định điều cần hỏi.\n\nTrong tình huống giả định này, bạn có thể bắt đầu từ ba việc: hiểu hành trình mua hàng; xem dữ liệu ở từng bước; đề xuất một thay đổi nhỏ và theo dõi kết quả. Đây là cách hình dung sự kết nối giữa bài toán kinh doanh, dữ liệu và công cụ số.\n\nTheo mục tiêu chương trình ngành Kinh tế số (Chuyên ngành Kinh doanh số) của NTTU, người học được trang bị nền tảng kinh tế cùng kiến thức về công nghệ và kinh doanh số, hướng tới khai thác dữ liệu, phát triển sản phẩm/dịch vụ số và giải quyết vấn đề chuyển đổi số trong tổ chức.\n\nVới khóa 2026, thời gian đào tạo là 3,5 năm. Bên cạnh học công cụ, bạn cần rèn khả năng đặt câu hỏi, phân tích thông tin, giao tiếp và phối hợp để biến ý tưởng thành phương án có thể thực hiện.\n\nNếu đang tìm hiểu ngành, hãy thử chọn một hoạt động kinh doanh quen thuộc và viết: vấn đề gì đang xảy ra, cần dữ liệu nào, công cụ số có thể hỗ trợ ra sao?\n\nBạn muốn tìm hiểu sự kết nối này qua tình huống bán hàng hay chăm sóc khách hàng?",
+      "reader_outcome": "Hiểu ngành qua mối liên hệ bài toán kinh doanh, dữ liệu và công cụ số.",
+      "source_refs": [
+        {"id":"BM03","pages":[8],"section":"1.6.1–1.6.2","supports":"Nền tảng kinh tế, công nghệ/kinh doanh số, dữ liệu, sản phẩm/dịch vụ và giải quyết vấn đề chuyển đổi số.","adaptation":"Tình huống cửa hàng và bài tập do dự án biên soạn."},
+        {"id":"BM11","pages":[1,2],"section":"Mục tiêu chung và PEO2","supports":"Mục tiêu chương trình; dùng dữ liệu và công cụ số để giải quyết vấn đề.","adaptation":"Không lấy dòng khóa 2025/04 năm ở thông tin chung; áp dụng đính chính chủ tài khoản cho khóa 2026."},
+        {"id":"OWNER-2026","pages":[],"section":"Xác nhận trong hội thoại ngày 04/10/2026","supports":"Áp dụng khóa 2026, thời gian đào tạo 3,5 năm.","adaptation":"Đính chính thông tin thời lượng/khóa trong PDF; không sửa file nguồn."}
+      ],
+      "image": {"template":"scene","scene":"bridge","mode":"illustration","headline":"Kinh doanh\nkết nối công nghệ.","subline":"Khởi đầu từ một vấn đề cần giải quyết.","accent":"#0056A6","ink":"#123453","paper":"#EEF5FB","cards":[],"takeaway":"Hiểu bài toán. Dùng dữ liệu. Chọn giải pháp."}
+    },
+    {
+      "id": "P06",
+      "title": "Ba câu hỏi trước khi làm dashboard",
+      "body": "BA CÂU HỎI TRƯỚC KHI LÀM DASHBOARD\n\nBạn có thể tạo nhiều biểu đồ mà vẫn chưa giúp người xem ra quyết định. Trước khi chọn màu hay bố cục, hãy viết một brief ngắn bằng ba câu hỏi.\n\n1. Ai sẽ xem?\nNgười vận hành, người phụ trách bán hàng hay quản lý? Họ hiểu dữ liệu tới đâu và cần xem vào lúc nào?\n\n2. Họ cần quyết định gì?\nVí dụ: nên kiểm tra nhóm sản phẩm nào khi số đơn giảm? Một dashboard nên phục vụ một mục đích rõ, thay vì gom mọi chỉ số có sẵn.\n\n3. Chỉ số nào hỗ trợ quyết định đó?\nChọn chỉ số gắn với câu hỏi, rồi xác định cách tính, đơn vị, kỳ so sánh và nguồn dữ liệu. Nhiều chỉ số hơn chưa chắc dễ hiểu hơn.\n\nVí dụ giả định cho một cửa hàng:\n• Người xem: người phụ trách bán hàng, theo dõi hằng tuần.\n• Quyết định: chọn nhóm sản phẩm cần tìm hiểu nguyên nhân số đơn giảm.\n• Chỉ số: số đơn theo nhóm sản phẩm, so với tuần trước từ bảng đơn hàng.\n\nDashboard này giúp khoanh vùng để tìm hiểu thêm; số đơn giảm chưa đủ chứng minh nguyên nhân hay chỉ ra ngay giải pháp. Bạn vẫn cần xem chất lượng dữ liệu và bối cảnh kinh doanh.\n\nBài tập nhỏ: viết brief ba dòng cho báo cáo bạn đang làm. Sau đó hỏi một người khác: “Nhìn vào báo cáo, bạn biết cần kiểm tra hoặc làm gì tiếp theo không?”\n\nLưu ba câu hỏi này trước lần dựng dashboard tiếp theo.",
+      "reader_outcome": "Tạo brief dashboard ba dòng về người xem, quyết định và chỉ số.",
+      "source_refs": [{"id":"CAREER-06","pages":[11,12],"section":"5.2; 5.5","supports":"Hiểu bài toán kinh doanh, giao tiếp/kể chuyện bằng dữ liệu, dự án có bài toán và khuyến nghị rõ.","adaptation":"Khung ba câu hỏi và ví dụ cửa hàng do dự án phát triển; dữ liệu giả định, không suy luận nhân quả từ số đơn."}],
+      "image": {"template":"flow","scene":null,"mode":"infographic","headline":"Dashboard bắt đầu\ntừ một quyết định.","subline":"Viết brief bằng 3 câu hỏi","accent":"#5B4BA7","ink":"#332B5F","paper":"#F3F0FA","cards":[["Ai xem?","Người dùng và thời điểm"],["Quyết định gì?","Việc cần kiểm tra hoặc làm"],["Chỉ số nào?","Cách tính, đơn vị, nguồn"]],"takeaway":"Đặt câu hỏi trước. Chọn biểu đồ sau."}
+    },
+    {
+      "id": "P08",
+      "title": "Gian hàng online: công việc phía sau một đơn hàng",
+      "body": "GIAN HÀNG ONLINE: CÔNG VIỆC PHÍA SAU MỘT ĐƠN HÀNG\n\nKhách bấm “Mua” chỉ là một điểm trong hành trình. Để đơn hàng được xử lý tốt, người vận hành cần phối hợp thông tin sản phẩm, tồn kho, xử lý đơn và phản hồi khách hàng.\n\nThử hình dung tình huống giả định: một khách đặt sản phẩm màu xanh, nhưng bảng tồn kho chưa cập nhật sau lần bán trước. Nếu phát hiện muộn, nhóm vận hành phải liên hệ để thống nhất cách xử lý thay vì tự đổi sản phẩm.\n\nMột vòng công việc để luyện tập:\n• Trước đơn: mô tả và hình sản phẩm có khớp hàng thực tế không?\n• Khi nhận đơn: kiểm tra sản phẩm, số lượng và khả năng đáp ứng.\n• Khi xử lý: ghi rõ trạng thái và người phụ trách để tránh bỏ sót việc.\n• Sau đơn: tiếp nhận phản hồi, cập nhật tồn kho và ghi lại vấn đề phát sinh.\n• Khi báo cáo: tổng hợp thông tin để nhận biết chỗ cần cải thiện.\n\nĐây là một luồng minh họa; quy trình thực tế còn phụ thuộc mô hình bán hàng và cách tổ chức của từng đơn vị.\n\nBài tập nhỏ: tạo một bảng theo dõi đơn giả định với các cột mã đơn, sản phẩm, số lượng, trạng thái, người phụ trách và ghi chú. Thử đặt một đơn “thiếu hàng” rồi xem ai cần nhận thông tin tiếp theo.\n\nLàm vận hành thương mại số cần sự tỉ mỉ và phối hợp, cùng khả năng đọc dữ liệu. Bạn muốn thử vai trò quản lý sản phẩm hay theo dõi đơn hàng trước?",
+      "reader_outcome": "Nhận biết và mô phỏng các việc vận hành quanh một đơn hàng.",
+      "source_refs": [{"id":"CAREER-07","pages":[5,12],"section":"Vận hành sàn TMĐT; 5.1–5.2","supports":"Thông tin sản phẩm, tồn kho, xử lý đơn, báo cáo và kỹ năng tỉ mỉ/phối hợp.","adaptation":"Tình huống thiếu hàng, luồng năm việc và bảng luyện tập do dự án biên soạn; không phải hướng dẫn thao tác hoặc quy định của sàn."}],
+      "image": {"template":"scene","scene":"operations","mode":"illustration","headline":"Sau nút “Mua”\nlà cả một quy trình.","subline":"Đơn hàng cần nhiều việc phối hợp.","accent":"#B85129","ink":"#63311E","paper":"#FCF2EA","cards":[],"takeaway":"Sản phẩm · Tồn kho · Xử lý đơn · Phản hồi"}
+    }
+  ]
+}

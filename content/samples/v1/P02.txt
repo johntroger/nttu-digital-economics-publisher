@@ -1,0 +1,29 @@
+DÙNG AI XONG, BẠN KIỂM TRA KẾT QUẢ THẾ NÀO?
+
+Một câu trả lời mạch lạc vẫn có thể sai. Khi dùng AI cho bài tập hoặc dự án, hãy dành một lượt kiểm tra trước khi đưa kết quả vào sản phẩm của mình.
+
+Thử checklist 4 bước:
+1. Thông tin: tách tên, mốc thời gian và nhận định cần xác minh.
+2. Nguồn: mở tài liệu gốc, xem tài liệu có thực sự hỗ trợ kết luận không. Đừng chỉ nhìn tên nguồn AI đưa ra.
+3. Phép tính: tính lại từ dữ liệu đầu vào, kiểm tra đơn vị và cách so sánh.
+4. Bối cảnh: kết quả có trả lời đúng câu hỏi, đúng đối tượng và đúng phạm vi dữ liệu không?
+
+Ví dụ giả định: một cửa hàng tăng từ 100 lên 120 đơn. Nếu AI viết “tăng 120%”, hãy tính lại: (120 − 100) / 100 × 100% = 20%. Bạn cũng cần phân biệt số đơn với doanh thu trước khi diễn giải.
+
+Bài tập nhỏ: chọn một đoạn AI vừa hỗ trợ bạn viết; đánh dấu một thông tin cần đối chiếu, một phép tính và một điểm còn thiếu bối cảnh. Ghi lại điều đã sửa và lý do sửa.
+
+Với thông tin quan trọng chưa xác minh được, hãy giữ trạng thái “cần kiểm tra”. Chỉ dùng dữ liệu công khai hoặc được phép sử dụng trong bài tập.
+
+Lưu checklist này cho lần dùng AI tiếp theo.
+
+============
+
+Ngành Kinh tế số (Chuyên ngành Kinh doanh số) giúp người học làm chủ công nghệ AI, blockchain, big data để phân tích dữ liệu và đưa ra quyết định thông minh. Kết hợp kiến thức kinh tế - công nghệ hiện đại, bạn sẽ phát triển tư duy kinh doanh sáng tạo, làm chủ xu hướng chuyển đổi số và tự tin chinh phục thị trường toàn cầu!
+NGÀNH KINH TẾ SỐ, KHOA QTKD, TRƯỜNG ĐẠI HỌC NGUYỄN TẤT THÀNH
+📞 Hotline: 1900 2039 – Ext: 429
+✉️ Email: tran.tung@nttu.edu.vn
+🚩 Địa chỉ: Tầng 1, 331 Đỗ Mười, Phường An Phú Đông, TP. Hồ Chí Minh, Việt Nam
+🌐 Website: https://fba.ntt.edu.vn/kinh-te-so/
+🌟 Fanpage: https://www.facebook.com/NganhKinhTeSoNTTU
+🌟 Tiktok: https://www.tiktok.com/@nganhkinhteso_nttu
+#NTTU #NguyenTatThanhUniversity #nganhkinhteso #kinhteso

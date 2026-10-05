@@ -1,0 +1,32 @@
+node_modules/
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+.wrangler/
+coverage/
+dist/
+tmp/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.db
+# Source documents and originals remain local until the upload scope is agreed.
+assets/sources/
+assets/brand/originals/
+
+# Local tooling, caches and account configuration
+__pycache__/
+*.pyc
+*.log
+.codex/
+.agents/
+.aws/
+.gcm/
+*.pem
+*.key
+# Rendered branded media remains local with the approved source material.
+assets/samples/
+# One-off workspace migration helper is not application source.
+/Finish-Facebook-Migration.cmd

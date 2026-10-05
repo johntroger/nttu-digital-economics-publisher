@@ -1,0 +1,17 @@
+* text=auto
+*.mjs text eol=lf
+*.js text eol=lf
+*.ts text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.sql text eol=lf
+*.py text eol=lf
+.githooks/* text eol=lf
+*.png binary
+*.jpg binary
+*.ttf binary
+# Migration/artifact checksums were pinned before Git: preserve their exact bytes.
+migrations/*.sql -text
+scripts/render-samples.py -text
+content/samples-2026-v1.json -text
