@@ -137,5 +137,6 @@ Chi tiết kiểm thử và giới hạn: `docs/steps/13-google-management.md`.
 Tab Tài nguyên quản lý PDF, logo và ảnh PNG vuông 1080. Mọi file được đọc sau Google
 owner login, giữ checksum và metadata bất biến; upload trùng dùng lại file, lỗi giữa
 R2/D1 có thể tiếp tục bằng tải lại cùng file. Gắn ảnh tạo phiên bản mới cần rà soát.
-Giới hạn staging 256 file/100 MiB; lịch Facebook vẫn dừng. CI đang triển khai bản này.
+Giới hạn staging 256 file/100 MiB; lịch Facebook vẫn dừng. Đã triển khai staging,
+nhập 13 PDF, 3 logo, 5 ảnh mẫu và kiểm SHA-256 tải ngược về. File ẩn danh trả 401.
 Kết quả và tình trạng nghiệm thu remote: `docs/steps/14-private-storage.md`.

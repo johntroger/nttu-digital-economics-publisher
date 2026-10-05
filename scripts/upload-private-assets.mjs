@@ -8,6 +8,15 @@ import { createSourceLibrary } from './source-library.mjs';
 import { checksum, validateFile } from '../src/cloud/storage.ts';
 import { prepareCloud } from './cloud-prepare.mjs';
 
+export function parseD1Output(output) {
+  // Wrangler --json still prefixes file-upload progress on stdout.
+  const match=output.match(/(?:^|\n)(\[\s*\{[\s\S]*\])\s*$/);
+  if(!match)throw new Error('D1 did not return a JSON result');
+  const data=JSON.parse(match[1]);
+  if(!Array.isArray(data)||!data.length||data.some(r=>r.success!==true||!Array.isArray(r.results)))throw new Error('D1 import failed');
+  return data.flatMap(r=>r.results);
+}
+
 export async function privateImportFiles() {
   const manifest=JSON.parse(readFileSync('content/samples-2026-v1.manifest.json','utf8'));
   const report=JSON.parse(readFileSync('assets/samples/v1/render-report.json','utf8'));
@@ -41,7 +50,8 @@ export async function importPrivateAssets() {
   const {directory:prepared}=prepareCloud({databaseId:process.env.STAGING_D1_DATABASE_ID,output:'tmp/step-14/import/config',storageEnabled:true});
   const config=resolve(prepared,'wrangler.json'),cli=resolve('node_modules/wrangler/bin/wrangler.js');
   const run=args=>{const result=spawnSync(process.execPath,[cli,...args],{encoding:'utf8',timeout:180000,env:{...process.env,WRANGLER_SEND_METRICS:'false'}});if(result.status!==0)throw new Error('Private import CLI operation failed: '+args.slice(0,3).join(' '));return result.stdout;};
-  const sql=text=>{const path=resolve(directory,'query.sql');writeFileSync(path,text);const data=JSON.parse(run(['d1','execute','DB','--remote','--config',config,'--file',path,'--json']));if(data.some(r=>r.success!==true))throw new Error('D1 import failed');return data.flatMap(r=>r.results??[]);};
+  // --file uses D1 bulk import and does not return SELECT rows. Direct argv is not a shell.
+  const sql=text=>parseD1Output(run(['d1','execute','DB','--remote','--config',config,'--command',text,'--json']));
   const state=sql("SELECT environment,paused_by_user,maintenance_owner FROM application_state WHERE environment='staging';");
   if(state.length!==1||state[0].environment!=='staging'||state[0].paused_by_user!==1||state[0].maintenance_owner!==null)throw new Error('Staging must be paused and idle');
   // Require the deployed storage migration before uploading any bytes.
