@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { generateKeyPair, exportJWK, createLocalJWKSet, SignJWT, jwtVerify } from 'jose';
-import { startGoogle, completeGoogle, verifyGoogleIdentity, ownerSession, requireMutation, authConfigured } from '../src/cloud/auth.ts';
+import { startGoogle, completeGoogle, verifyGoogleIdentity, ownerSession, requireMutation, authConfigured, probeGoogleExchange } from '../src/cloud/auth.ts';
 import worker from '../src/cloud/worker.ts';
 import { POLICY } from '../src/domain/policy.ts';
 
@@ -60,8 +60,10 @@ test('Callback exchanges only a validated flow and creates a restricted owner se
   let calls = 0;
   const fetcher = async (endpoint, options) => {
     calls++; assert.equal(endpoint, 'https://oauth2.googleapis.com/token'); assert.equal(options.redirect, 'error');
-    assert.equal(options.body.get('client_id'), env.GOOGLE_CLIENT_ID);
-    assert.equal(options.body.get('redirect_uri'), env.AUTH_ORIGIN + '/auth/google/callback');
+    assert.equal(typeof options.body, 'string');
+    const form = new URLSearchParams(options.body);
+    assert.equal(form.get('client_id'), env.GOOGLE_CLIENT_ID);
+    assert.equal(form.get('redirect_uri'), env.AUTH_ORIGIN + '/auth/google/callback');
     return Response.json({ id_token: await identity(url.searchParams.get('nonce')) });
   };
   const success = await completeGoogle(request(callback, cookie), env, { fetcher, keys });
@@ -74,8 +76,8 @@ test('Callback exchanges only a validated flow and creates a restricted owner se
   }
   assert.equal(calls, 1);
   const refused = await completeGoogle(request(callback, cookie), env, { fetcher: async () => new Response('', { status: 400 }), keys });
-  assert.equal(refused.headers.get('Location'), '/?login=failed&reason=exchange');
-  for (const [error,reason] of [['invalid_client','client'],['invalid_grant','grant'],['arbitrary <script> secret','exchange']]) {
+  assert.equal(refused.headers.get('Location'), '/?login=failed&reason=provider');
+  for (const [error,reason] of [['invalid_client','client'],['invalid_grant','grant'],['arbitrary <script> secret','provider']]) {
     const failed = await completeGoogle(request(callback,cookie),env,{keys,fetcher:async()=>Response.json({error,error_description:'private fixture value'},{status:400})});
     assert.equal(failed.headers.get('Location'),'/?login=failed&reason='+reason);
   }
@@ -83,6 +85,14 @@ test('Callback exchanges only a validated flow and creates a restricted owner se
   assert.equal(other.headers.get('Location'),'/?login=failed&reason=owner');
   const untrusted = await worker.fetch(request('/?login=failed&reason=%3Cscript%3E'),env);
   assert.doesNotMatch(await untrusted.text(),/<script>/);
+});
+test('Server exchange diagnostics return only safe categories and never response details', async () => {
+  assert.deepEqual(await probeGoogleExchange(env, async () => Response.json({error:'invalid_client',error_description:'private fixture value'},{status:401})),{category:'client',status:401});
+  assert.deepEqual(await probeGoogleExchange(env, async () => {throw new TypeError('private internal detail');}),{category:'network',status:null});
+  assert.deepEqual(await probeGoogleExchange(env, async () => {throw new DOMException('private detail','TimeoutError');}),{category:'timeout',status:null});
+  assert.deepEqual(await probeGoogleExchange(env, async () => Response.json({error:'invalid_grant'},{status:400})),{category:'grant',status:400});
+  assert.deepEqual(await probeGoogleExchange(env, async () => Response.json({access_token:'private fixture value'})),{category:'response',status:200});
+  assert.equal((await worker.fetch(request('/api/staging/auth-check'),env)).status,401);
 });
 test('Session cookies fail closed for tamper, expiration, wrong owner, duplicate cookie and key rotation', async () => {
   const good = '__Host-nttu_session=' + await session();

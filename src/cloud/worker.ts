@@ -1,6 +1,6 @@
 import { assertStaging, readStatus, recordHeartbeat } from './runtime.ts';
 import type { CloudBindings } from './runtime.ts';
-import { startGoogle, completeGoogle, ownerSession, requireMutation, clearSessionCookie, authConfigured, AuthError } from './auth.ts';
+import { startGoogle, completeGoogle, ownerSession, requireMutation, clearSessionCookie, authConfigured, probeGoogleExchange, AuthError } from './auth.ts';
 import { cloudCatalog, cloudPost, saveCloudCaption, CatalogError } from './catalog.ts';
 
 const UI_HEADERS = { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer',
@@ -11,6 +11,11 @@ function loginPage(ready: boolean, failed: boolean, reason = ''): Response {
     client: 'Google từ chối cấu hình ứng dụng. Cần kiểm tra Client ID và Client Secret có thuộc cùng một OAuth Client.',
     grant: 'Google từ chối mã đăng nhập. Bấm đăng nhập lại để lấy mã mới; nếu lặp lại cần kiểm tra callback.',
     exchange: 'Chưa trao đổi được token với Google. Thử lại; nếu lặp lại cần kiểm tra cấu hình kết nối.',
+    network: 'Máy chủ chưa kết nối được đến Google. Cần kiểm tra kết nối từ Cloudflare.',
+    timeout: 'Google chưa phản hồi trong thời gian cho phép. Thử đăng nhập lại.',
+    provider: 'Google trả về lỗi khi trao đổi mã đăng nhập. Cần kiểm tra phản hồi của dịch vụ.',
+    request: 'Google từ chối định dạng yêu cầu đăng nhập. Cần kiểm tra cấu hình ứng dụng.',
+    response: 'Phản hồi từ Google chưa có token đăng nhập hợp lệ. Cần kiểm tra cấu hình ứng dụng.',
     identity: 'Chưa xác minh được thông tin đăng nhập Google. Cần kiểm tra bước xác minh token.',
     owner: 'Tài khoản Google chưa được cấp quyền quản lý. Chọn tài khoản quản lý đã đăng ký.',
     session: 'Chưa tạo được phiên quản lý. Cần kiểm tra cấu hình phiên đăng nhập.',
@@ -71,6 +76,11 @@ export default {
           publishingImplemented: false, heartbeatCount: row.heartbeat_count,
           lastScheduledAt: row.last_scheduled_at });
       } catch { return json({ code: 'DATABASE_NOT_READY' }, 503); }
+    }
+    if (path === '/api/staging/auth-check') {
+      if (!await authorized(request, env)) return json({ code: 'UNAUTHORIZED' }, 401);
+      if (request.method !== 'POST') return json({ code: 'METHOD_NOT_ALLOWED' }, 405);
+      return json(await probeGoogleExchange(env));
     }
     if (['/api/trial-publish', '/api/publishing/resume'].includes(path)) return json({ code: 'CLOUD_FEATURE_PENDING' }, 501);
     if (request.method === 'GET' && path === '/cloud.css') return asset(request, env);

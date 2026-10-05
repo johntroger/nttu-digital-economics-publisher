@@ -6,6 +6,11 @@ const SESSION = '__Host-nttu_session', FLOW = '__Host-nttu_oauth';
 const googleKeys = createRemoteJWKSet(new URL('https://www.googleapis.com/oauth2/v3/certs'), { timeoutDuration: 5000 });
 export interface OwnerSession { email: string; sub: string; csrf: string }
 export class AuthError extends Error {}
+class ExchangeError extends AuthError {
+  reason: string;
+  status: number | null;
+  constructor(reason: string, status: number | null = null) { super('GOOGLE_EXCHANGE_FAILED'); this.reason = reason; this.status = status; }
+}
 function config(env: CloudBindings) {
   if (!env.AUTH_ORIGIN || !/^https:\/\/nttu-publisher-staging\.[a-z0-9-]+\.workers\.dev$/.test(env.AUTH_ORIGIN)
     || !env.GOOGLE_CLIENT_ID || !/^[\w-]+\.apps\.googleusercontent\.com$/.test(env.GOOGLE_CLIENT_ID)
@@ -15,6 +20,35 @@ function config(env: CloudBindings) {
     key: new TextEncoder().encode(env.SESSION_SIGNING_KEY) };
 }
 export function authConfigured(env: CloudBindings): boolean { try { config(env); return true; } catch { return false; } }
+async function exchange(env: CloudBindings, code: string, verifier: string, fetcher: typeof fetch) {
+  const cfg = config(env);
+  let response: Response;
+  try {
+    response = await fetcher('https://oauth2.googleapis.com/token', { method: 'POST', redirect: 'error', signal: AbortSignal.timeout(10000),
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
+      body: new URLSearchParams({ code, client_id: cfg.id, client_secret: cfg.secret, grant_type: 'authorization_code',
+        redirect_uri: cfg.origin + '/auth/google/callback', code_verifier: verifier }).toString() });
+  } catch (error) {
+    throw new ExchangeError(error instanceof Error && ['TimeoutError', 'AbortError'].includes(error.name) ? 'timeout' : 'network');
+  }
+  const data = await response.json().catch(() => null) as { error?: unknown; id_token?: unknown } | null;
+  if (!response.ok) {
+    const known: Record<string,string> = { invalid_client: 'client', invalid_grant: 'grant', invalid_request: 'request', unauthorized_client: 'client', unsupported_grant_type: 'request' };
+    const reason = typeof data?.error === 'string' ? known[data.error] : undefined;
+    throw new ExchangeError(reason ?? 'provider', response.status);
+  }
+  if (typeof data?.id_token !== 'string' || data.id_token.length > 20000) throw new ExchangeError('response', response.status);
+  return data.id_token;
+}
+// Bearer-protected server diagnostic: a deliberately invalid code can never create a user session.
+// Only a fixed category/status is returned; response bodies and configured secrets stay private.
+export async function probeGoogleExchange(env: CloudBindings, fetcher: typeof fetch = fetch) {
+  try { await exchange(env, 'nttu-invalid-diagnostic-code', 'd'.repeat(64), fetcher); return { category: 'unexpected', status: 200 }; }
+  catch (error) {
+    if (error instanceof ExchangeError) return { category: error.reason, status: error.status };
+    return { category: 'configuration', status: null };
+  }
+}
 function random() { return Array.from(crypto.getRandomValues(new Uint8Array(32)), byte => byte.toString(16).padStart(2, '0')).join(''); }
 function cookie(request: Request, name: string) {
   const found = (request.headers.get('Cookie') ?? '').split(';').map(item => item.trim()).filter(item => item.startsWith(name + '='));
@@ -64,27 +98,15 @@ export async function completeGoogle(request: Request, env: CloudBindings,
     const code = url.searchParams.get('code')!;
     if (!code || code.length > 4096) throw new AuthError('OAUTH_CODE_INVALID');
     reason = 'exchange';
-    const response = await fetcher('https://oauth2.googleapis.com/token', { method: 'POST', redirect: 'error', signal: AbortSignal.timeout(10000),
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({
-        code, client_id: cfg.id, client_secret: cfg.secret, grant_type: 'authorization_code',
-        redirect_uri: cfg.origin + '/auth/google/callback', code_verifier: payload.verifier,
-      }) });
-    if (!response.ok) {
-      // Only classify a known provider code; never forward descriptions, tokens or secrets.
-      const rejected = await response.json().catch(() => ({})) as { error?: unknown };
-      if (rejected.error === 'invalid_client') reason = 'client';
-      else if (rejected.error === 'invalid_grant') reason = 'grant';
-      throw new AuthError('GOOGLE_TOKEN_FAILED');
-    }
-    const tokens = await response.json() as { id_token?: unknown };
-    if (typeof tokens.id_token !== 'string' || tokens.id_token.length > 20000) throw new AuthError('GOOGLE_TOKEN_INVALID');
+    const token = await exchange(env, code, payload.verifier, fetcher);
     reason = 'identity';
-    const owner = await verifyGoogleIdentity(tokens.id_token, env, payload.nonce, keys);
+    const owner = await verifyGoogleIdentity(token, env, payload.nonce, keys);
     reason = 'session';
     const session = await new SignJWT({ email: owner.email, csrf: random() }).setProtectedHeader({ alg: 'HS256', typ: 'nttu-session+jwt' })
       .setSubject(owner.sub).setIssuer(cfg.origin).setAudience('nttu-manager').setIssuedAt().setExpirationTime('1h').sign(cfg.key);
     return redirect('/', [setCookie(SESSION, session, 3600), clearFlow()]);
   } catch (error) {
+    if (error instanceof ExchangeError) reason = error.reason;
     if (error instanceof AuthError && error.message === 'GOOGLE_OWNER_REQUIRED') reason = 'owner';
     return redirect('/?login=failed&reason=' + reason, [clearSessionCookie(), clearFlow()]);
   }
