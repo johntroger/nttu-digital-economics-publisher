@@ -112,3 +112,12 @@ Trước push vẫn chạy đầy đủ `npm run check` và `npm run test:images
 Checkout mới cài hook bằng `npm run hooks:install`; cần lấy lại tài nguyên private từ backup để
 chạy đầy đủ ứng dụng. GitHub quản lý mã nguồn; ứng dụng hiện vẫn chạy local.
 Chi tiết: `docs/steps/11-github-ci.md`.
+
+## Bước 12: chuẩn bị staging
+
+`npm run cloud:prepare` tạo cấu hình riêng; `npm run test:cloud` kiểm tra bundle, migration
+và scheduled heartbeat bằng Workers/D1 local. Worker staging chỉ kiểm tra hoạt động,
+không phục vụ GUI/kho private hoặc đăng bài. CI có job deploy sau kiểm tra, mặc định tắt
+cho tới khi tài khoản Cloudflare và GitHub staging secrets/variables đã được thiết lập.
+167 test local và 131 portable đạt. Chưa deploy thật; còn chờ chủ tài khoản tạo Cloudflare.
+Runbook và phần việc còn lại: `docs/steps/12-staging-foundation.md`.

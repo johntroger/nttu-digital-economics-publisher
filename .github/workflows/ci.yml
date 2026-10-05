@@ -8,7 +8,8 @@ permissions:
   contents: read
 concurrency:
   group: code-checks-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Never interrupt a remote migration/deployment when a newer push arrives.
+  cancel-in-progress: false
 jobs:
   portable-checks:
     name: Portable checks (${{ matrix.os }})
@@ -32,3 +33,37 @@ jobs:
         run: npm ci --ignore-scripts
       - name: Typecheck, portable tests and repository content check
         run: npm run check:ci
+      - name: Build Workers and test local D1 runtime
+        if: matrix.os == 'ubuntu-latest'
+        run: npm run test:cloud
+  deploy-staging:
+    name: Deploy staging foundation
+    needs: portable-checks
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.STAGING_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: staging
+    concurrency:
+      group: deploy-staging
+      cancel-in-progress: false
+    steps:
+      - name: Check out the tested SHA
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Set up Node 24
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+      - name: Deploy and verify staging health
+        run: npm run deploy:staging
+        env:
+          STAGING_D1_DATABASE_ID: ${{ vars.STAGING_D1_DATABASE_ID }}
+          STAGING_WORKER_URL: ${{ vars.STAGING_WORKER_URL }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          STAGING_HEALTH_TOKEN: ${{ secrets.STAGING_HEALTH_TOKEN }}

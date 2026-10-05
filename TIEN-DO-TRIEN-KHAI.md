@@ -63,3 +63,12 @@ Pre-push kiểm tra đầy đủ local; repository guard chặn file riêng và 
 PDF/logo gốc/ảnh mẫu/database/backup/tài khoản không đưa vào repository.
 Báo cáo: docs/steps/11-github-ci.md. Dừng trước bước 12: đề xuất chuẩn bị staging cloud.
 GitHub quản lý mã nguồn/CI; ứng dụng chưa chạy cloud hoặc đăng Facebook thật.
+
+## Mốc hiện hành — bước 12 (05/10/2026)
+
+Được phê duyệt và đã xây nền Worker staging, chuẩn bị schema D1 riêng, heartbeat không đăng,
+status riêng có secret, CI smoke cloud local và pipeline staging sau CI mặc định chưa bật.
+167/167 Node/SQLite/HTTP, 131/131 portable và smoke Wrangler/workerd/D1 local đạt.
+Chưa triển khai thật: người dùng chưa có tài khoản Cloudflare, cần đăng ký/xác thực để tiếp tục.
+Bước 12 chưa nghiệm thu cloud; không tuyên bố chạy khi máy tắt và không chuyển bước 13.
+Chi tiết: docs/steps/12-staging-foundation.md. Tài liệu/logo/database private vẫn local.

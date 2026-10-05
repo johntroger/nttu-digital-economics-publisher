@@ -796,3 +796,12 @@ repository guard. Kiểm thử local đầy đủ 157 Node/SQLite/HTTP + 9 image
 ngoài Git. Hook pre-push bắt buộc kiểm tra local trên checkout đã cài hook; không coi nó là
 branch protection máy chủ. Ứng dụng vẫn local, chưa dùng GitHub như scheduler production.
 Xem docs/steps/11-github-ci.md. Dừng trước bước 12, đề xuất chuẩn bị staging cloud để kiểm thử.
+
+### Cập nhật triển khai bước 12 — 05/10/2026
+
+Đã chuẩn bị Worker/D1 staging và pipeline theo SHA đã CI đạt, mặc định chưa bật deploy.
+Heartbeat mỗi giờ chỉ kiểm tra nền, không thay lịch đăng. 167 test local, 131 portable và
+smoke Workers/D1 local đạt. Chưa deploy thật do cần thiết lập tài khoản Cloudflare mới;
+bước 12 còn mở, chưa bắt đầu bước 13. GUI/dựng ảnh local cần chuyển API sang D1/R2 và
+Google auth ở các bước tiếp theo đã trình/phê duyệt riêng. Không tải private tài liệu/logo
+lên cloud trong bước này. Chi tiết và cổng nghiệm thu: docs/steps/12-staging-foundation.md.
