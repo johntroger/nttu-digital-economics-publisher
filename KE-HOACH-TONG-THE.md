@@ -800,9 +800,10 @@ Xem docs/steps/11-github-ci.md. Dừng trước bước 12, đề xuất chuẩn
 ### Cập nhật triển khai bước 12 — 05/10/2026
 
 Đã chuẩn bị Worker/D1 staging và pipeline theo SHA đã CI đạt, mặc định chưa bật deploy.
-Heartbeat mỗi 5 phút chỉ kiểm tra nền, không thay lịch đăng. 169 test local, 133 portable và
-smoke Workers/D1 local đạt, CI hai nền tảng đạt. Đã đăng nhập Cloudflare và tạo D1 staging;
-chưa deploy vì còn token/phê duyệt setup cụ thể theo auto-review. Bước 12 còn mở,
-chưa bắt đầu bước 13. GUI/dựng ảnh local cần chuyển API sang D1/R2 và
+Heartbeat mỗi 5 phút chỉ kiểm tra nền, không thay lịch đăng. 171 test local, 135 portable và
+smoke Workers/D1 local đạt, CI kiểm tra hai nền tảng đạt. Worker/D1 staging đã triển khai;
+cron thật14:35:31VN ngày05/10 ghi D1, health/privacy/pause kiểm tra đạt. Secrets/variables và
+subdomain đã duyệt cụ thể; không tạo gói trả phí/production. Chưa bắt đầu bước13.
+GUI/dựng ảnh local cần chuyển API sang D1/R2 và
 Google auth ở các bước tiếp theo đã trình/phê duyệt riêng. Không tải private tài liệu/logo
 lên cloud trong bước này. Chi tiết và cổng nghiệm thu: docs/steps/12-staging-foundation.md.

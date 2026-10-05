@@ -6,7 +6,7 @@ import { openCatalog } from '../scripts/catalog-store.mjs';
 import { prepareCloud } from '../scripts/cloud-prepare.mjs';
 import worker from '../src/cloud/worker.ts';
 import { recordHeartbeat, HEARTBEAT_CRON } from '../src/cloud/runtime.ts';
-import { deploymentSettings, ensureStagingResources } from '../scripts/cloud-deploy.mjs';
+import { deploymentSettings, ensureStagingResources, verifyStaging } from '../scripts/cloud-deploy.mjs';
 
 const token = 'test-only-' + 'x'.repeat(40);
 function fixture() {
@@ -148,4 +148,27 @@ test('account subdomain is created only for the explicit not-registered error, n
       : Response.json({ success: false, errors: [{ code: 10000 }] }, { status: 403 });
   }), /permissions/);
   assert.equal(mutations, 0);
+});
+test('first-deployment verification tolerates transient DNS failure and still verifies identity/privacy', async () => {
+  let time = 0, calls = 0;
+  const settings = { url: 'https://staging.invalid', releaseSha: 'a'.repeat(40), token: 'test-only' };
+  await verifyStaging(settings, { now: () => time, pause: async milliseconds => { time += milliseconds; }, timeoutMs: 20000,
+    fetcher: async (url, options) => {
+      if (++calls <= 2) throw new TypeError('Temporary DNS failure');
+      if (url.endsWith('/health')) return Response.json({ release: settings.releaseSha, environment: 'staging', publishingImplemented: false });
+      return options.headers ? Response.json({ paused: true, databaseChecked: true }) : Response.json({}, { status: 401 });
+    } });
+  assert.equal(time, 10000); assert.equal(calls, 5);
+});
+test('deployment verification times out without accepting wrong release, unpaused state or public private status', async () => {
+  const settings = { url: 'https://staging.invalid', releaseSha: 'a'.repeat(40), token: 'test-only' };
+  for (const failure of ['release', 'paused', 'privacy']) {
+    let time = 0;
+    await assert.rejects(verifyStaging(settings, { now: () => time, pause: async milliseconds => { time += milliseconds; }, timeoutMs: 10000,
+      fetcher: async (url, options) => {
+        if (url.endsWith('/health')) return Response.json({ release: failure === 'release' ? 'wrong' : settings.releaseSha, environment: 'staging', publishingImplemented: false });
+        return options.headers ? Response.json({ paused: failure !== 'paused', databaseChecked: true }) : Response.json({}, { status: failure === 'privacy' ? 200 : 401 });
+      } }), /bounded waiting/);
+    assert.equal(time, 10000);
+  }
 });

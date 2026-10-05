@@ -116,9 +116,9 @@ Chi tiết: `docs/steps/11-github-ci.md`.
 ## Bước 12: chuẩn bị staging
 
 `npm run cloud:prepare` tạo cấu hình riêng; `npm run test:cloud` kiểm tra bundle, migration
-và scheduled heartbeat bằng Workers/D1 local. Worker staging chỉ kiểm tra hoạt động,
-không phục vụ GUI/kho private hoặc đăng bài. CI có job deploy sau kiểm tra, mặc định tắt
-cho tới khi tài khoản Cloudflare và GitHub staging secrets/variables đã được thiết lập.
-169 test local và 133 portable đạt; CI Ubuntu/Windows đạt. Đã đăng nhập Cloudflare và tạo
-D1 staging riêng. Chưa deploy thật; còn token pipeline/phê duyệt thao tác lưu secret setup.
+và scheduled heartbeat bằng Workers/D1 local. Nền staging đã triển khai thật, D1 riêng và
+cron mỗi 5 phút đã ghi nhận hoạt động. Worker chưa phục vụ GUI/kho private hoặc đăng bài.
+CI deploy main sau kiểm tra, đã bật với secrets/variables riêng staging.
+171 test local và 135 portable đạt; kiểm tra ảnh qua pre-push. Health:
+https://nttu-publisher-staging.nttu-kts-johntroger.workers.dev/health.
 Runbook và phần việc còn lại: `docs/steps/12-staging-foundation.md`.

@@ -68,9 +68,10 @@ GitHub quản lý mã nguồn/CI; ứng dụng chưa chạy cloud hoặc đăng 
 
 Được phê duyệt và đã xây nền Worker staging, chuẩn bị schema D1 riêng, heartbeat không đăng,
 status riêng có secret, CI smoke cloud local và pipeline staging sau CI mặc định chưa bật.
-169/169 Node/SQLite/HTTP, 133/133 portable và smoke Wrangler/workerd/D1 local đạt.
-CI GitHub Ubuntu/Windows đạt. Người dùng đã tạo/xác minh Cloudflare, đăng nhập OAuth và
-tạo D1 staging riêng vùng APAC. Chưa deploy: còn token CI/quyền Workers Scripts và
-phê duyệt tạo/lưu secret setup cụ thể do automatic approval review yêu cầu.
-Bước 12 chưa nghiệm thu cloud; không tuyên bố chạy khi máy tắt và không chuyển bước 13.
+171/171 Node/SQLite/HTTP, 135/135 portable và smoke Wrangler/workerd/D1 local đạt.
+CI kiểm tra Ubuntu/Windows đạt. Cloudflare Worker và D1 staging riêng đã triển khai thật;
+cron độc lập máy cá nhân đã ghi heartbeat lúc14:35:31VN ngày05/10. Health/D1=200,
+anonymous status=401, endpoint đăng=501. Đã sửa chờ health của địa chỉ mới tối đa5phút.
+Setup secrets/variables/subdomain đã được người dùng duyệt cụ thể sau yêu cầu auto-review.
+Chưa đưa GUI/kho private lên cloud và chưa đăng Facebook. Không chuyển bước13.
 Chi tiết: docs/steps/12-staging-foundation.md. Tài liệu/logo/database private vẫn local.

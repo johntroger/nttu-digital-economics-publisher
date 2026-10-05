@@ -1,10 +1,10 @@
 # Bước 12 — nền staging Cloudflare
 
 Phê duyệt: người dùng yêu cầu thực hiện bước 12. Ngày: 05/10/2026.
-Trạng thái: code/kiểm thử local và CI GitHub đã đạt. Chủ tài khoản đã tạo/xác minh Cloudflare,
-đăng nhập Wrangler; đã tạo D1 staging riêng vùng APAC. Chưa deploy vì còn thiết lập token
-pipeline và phê duyệt cụ thể thao tác tạo/lưu secret kiểm tra staging vào GitHub.
-Bước 12 chưa được nghiệm thu cloud và chưa chuyển bước 13.
+Trạng thái: nền staging đã triển khai trên Cloudflare, D1 hoạt động và đã quan sát cron thật.
+Địa chỉ: https://nttu-publisher-staging.nttu-kts-johntroger.workers.dev/health.
+Chủ tài khoản đã tạo/xác minh Cloudflare, cung cấp token trực tiếp vào GitHub và phê duyệt
+cụ thể variables/secret/subdomain. Chưa bắt đầu bước 13 hoặc bật lịch đăng Facebook.
 
 ## Phạm vi đã xây
 
@@ -33,26 +33,28 @@ Bước 12 chưa được nghiệm thu cloud và chưa chuyển bước 13.
 
 ## Kiểm thử
 
-Strict TypeScript, **169/169 Node/SQLite/HTTP** và **133/133 portable** đạt.
-12 ca mới kiểm tra cấu hình, quyền đọc, schema/pause, cron, duplicate/out-of-order,
-pause thay đổi giữa đọc/ghi, giới hạn endpoint, checksum migration và chặn đích sai.
+Strict TypeScript, **171/171 Node/SQLite/HTTP** và **135/135 portable** đạt.
+14 ca mới kiểm tra cấu hình, quyền đọc, schema/pause, cron, duplicate/out-of-order,
+pause thay đổi giữa đọc/ghi, giới hạn endpoint, checksum migration, chặn đích sai và
+chờ health khi DNS chưa sẵn sàng. Pre-push tiếp tục chạy 9/9 kiểm thử ảnh.
 
 `npm run test:cloud` đã đạt với Wrangler/workerd và D1 local thật:
 bundle dry-run → áp dụng 7 migration → HTTP health/status → gọi scheduled handler →
 đọc lại heartbeat từ D1 → xác nhận endpoint đăng vẫn bị chặn.
-Đây là runtime mô phỏng trên máy, chưa chứng minh cloud chạy khi máy tính tắt.
+Smoke local là bằng chứng riêng; nghiệm thu cloud dựa endpoint và cron thật ở mục sau.
 Pre-push tiếp tục kiểm tra ảnh và toàn bộ test local. Không sửa GUI nên không chạy lại
 42 ca trình duyệt đã đạt ở bước 10.
 
-## Thiết lập còn cần làm trong chính bước 12
+## Thiết lập thực tế và cách tái triển khai
 
 1. Đã hoàn tất: chủ tài khoản đăng ký Cloudflare và xác minh email.
    Không cần gửi mật khẩu hoặc token vào hội thoại. Không mua gói hoặc bật R2 ở bước này.
 2. Đã đăng nhập đúng owner email qua OAuth. Đã tạo D1 `nttu-publisher-staging` vùng APAC,
-   trống, chưa áp dụng migration remote. Không tạo tài nguyên production hoặc R2.
+   đã áp dụng đầy đủ 7 migration remote; không nhập kho/tài liệu riêng.
+   Không tạo tài nguyên production hoặc R2.
    Quyền OAuth hiện hành tạo được D1 nhưng truy cập Workers subdomain còn HTTP403;
    pipeline dùng API token Workers Scripts/D1 do owner tạo, không sao chép OAuth vào GitHub.
-3. Thiết lập GitHub Actions repository variables/secrets dành riêng staging. Variables:
+3. Đã thiết lập GitHub Actions repository variables/secrets dành riêng staging. Variables:
    `STAGING_D1_DATABASE_ID`, `STAGING_WORKER_URL` (Workers.dev staging),
    `CLOUDFLARE_ACCOUNT_ID`. Secrets: `CLOUDFLARE_API_TOKEN` giới hạn account và quyền
    Workers Scripts Edit, D1 Edit, Account Settings Read; `STAGING_HEALTH_TOKEN`
@@ -61,12 +63,25 @@ Pre-push tiếp tục kiểm tra ảnh và toàn bộ test local. Không sửa G
    environment secrets vì private repository trên GitHub Free không hỗ trợ tính năng này.
    Không đặt credential production vào pipeline staging; trước production chốt lại phạm vi
    secret/release theo gói GitHub thực tế, không tự nâng gói.
-4. Chỉ sau xác minh đích/quyền mới bật repository variable `STAGING_DEPLOY_ENABLED=true`.
-   Chạy workflow main đã CI đạt; kiểm tra endpoint và SHA trực tiếp. Pipeline Actions là
+4. Đã bật repository variable `STAGING_DEPLOY_ENABLED=true` sau phê duyệt cụ thể.
+   Main sau CI đạt tự triển khai staging và kiểm tra endpoint/SHA. Pipeline Actions là
    đầu mối deploy duy nhất, không bật thêm Workers Builds.
-5. Chờ lượt cron thật, đọc `lastScheduledAt/heartbeatCount`, ghi bằng chứng thời gian UTC
-   và Việt Nam. Cloudflare cho biết cập nhật Cron có thể mất tới 15 phút; không coi deploy
-   thành công là bằng chứng cron đã chạy. Sau bước này mới báo nền cloud nghiệm thu đạt.
+5. Đã quan sát cron thật ở **07:35:31 UTC / 14:35:31 Việt Nam ngày 05/10/2026**.
+   Khi kiểm tra 07:36:29 UTC: heartbeatCount=1, D1 checked=true, paused=true;
+   health/private status=200, anonymous status=401, endpoint publish=501.
+   Chỉ gửi GET status; không gửi yêu cầu kích hoạt cron remote hoặc dựa cron trên máy.
+   Bằng chứng local không chứa token: `tmp/cloud/remote-evidence.json` (được cập nhật mỗi lần đọc).
+   Cron chạy trong Cloudflare, độc lập server local/máy cá nhân. Chưa nghiệm thu luồng đăng.
+
+Lần deploy đầu đã tải Worker/migration nhưng job kết luận failure khi địa chỉ mới chưa
+truy cập được trong khoảng chờ ngắn. Sau đó endpoint hoạt động và cron ghi D1. Đã sửa
+verification chờ tối đa 5 phút, vẫn bắt buộc đúng SHA/pause/privacy; không coi lỗi mạng là
+thành công hoặc hạ yêu cầu kiểm tra. Hai test bổ sung chứng minh retry và timeout chặn sai.
+Theo dõi pipeline hiện hành: https://github.com/johntroger/nttu-digital-economics-publisher/actions.
+
+Dừng staging tự triển khai: đặt `STAGING_DEPLOY_ENABLED=false` (không gỡ Worker/cron đã có).
+Dừng cron nền: cấu hình crons=[] rồi triển khai SHA đã kiểm thử. Không có endpoint resume
+publishing và không có token Meta trên Worker này.
 
 ## Giới hạn và phần việc sau
 
@@ -91,6 +106,8 @@ và tạo/mã hóa/lưu `STAGING_HEALTH_TOKEN`, với lý do chưa có trusted a
 payload secret cụ thể và đích GitHub. Helper không chạy ở lần bị từ chối. Sau đó người dùng
 đã phê duyệt cụ thể subdomain `nttu-kts-johntroger`, variables staging và tạo/lưu
 `STAGING_HEALTH_TOKEN` vào repository private `johntroger/nttu-digital-economics-publisher`.
-Đây là phụ thuộc phê duyệt từ auto-review, không phải yêu cầu duyệt lại toàn bộ bước 12.
+Helper chỉ chạy sau phê duyệt đó và đã lưu secret bằng sealed-box vào GitHub.
+Không còn vướng mắc approval ở phần setup này; giá trị secret không in ra hoặc commit.
 
-Dừng trong bước 12 chờ token/phê duyệt setup, chưa triển khai và chưa bắt đầu bước 13.
+Phạm vi bước 13 đề xuất: đăng nhập Google owner và chuyển API/giao diện quản lý lên staging,
+giữ kho/đăng bài dừng. Chỉ code bước đó sau phê duyệt mới của người dùng.

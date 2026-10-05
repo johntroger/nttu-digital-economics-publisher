@@ -37,6 +37,27 @@ export async function ensureStagingResources(settings, env, fetcher = fetch) {
   const result = await created.json();
   if (!created.ok || !result.success || result.result?.subdomain !== expected) throw new Error('Workers subdomain setup failed');
 }
+export async function verifyStaging(settings, { fetcher = fetch, now = Date.now,
+  pause = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds)), timeoutMs = 300000 } = {}) {
+  const deadline = now() + timeoutMs;
+  do {
+    try {
+      const health = await fetcher(settings.url + '/health', { signal: AbortSignal.timeout(5000), redirect: 'error' });
+      const body = await health.json();
+      const status = await fetcher(settings.url + '/api/staging/status', {
+        headers: { Authorization: 'Bearer ' + settings.token }, signal: AbortSignal.timeout(5000), redirect: 'error',
+      });
+      const privateBody = await status.json();
+      const anonymous = await fetcher(settings.url + '/api/staging/status', { signal: AbortSignal.timeout(5000), redirect: 'error' });
+      if (health.status === 200 && body.release === settings.releaseSha && body.environment === 'staging'
+        && body.publishingImplemented === false && status.status === 200 && privateBody.paused === true
+        && privateBody.databaseChecked === true && anonymous.status === 401) return;
+    } catch {}
+    if (now() >= deadline) break;
+    await pause(Math.min(5000, deadline - now()));
+  } while (now() < deadline);
+  throw new Error('Deployment health/identity verification failed after bounded waiting. No publishing was enabled.');
+}
 export async function deployStaging(env = process.env) {
   const settings = deploymentSettings(env);
   const head = spawnSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' });
@@ -57,23 +78,7 @@ export async function deployStaging(env = process.env) {
     run(['d1', 'migrations', 'apply', 'DB', '--remote', '--config', config]);
     run(['deploy', '--config', config, '--secrets-file', secretsFile, '--message', 'Staging foundation ' + settings.releaseSha]);
   } finally { rmSync(secretsFile, { force: true }); }
-  let verified = false;
-  for (let attempt = 0; attempt < 12; attempt++) {
-    try {
-      const health = await fetch(settings.url + '/health', { signal: AbortSignal.timeout(5000) });
-      const body = await health.json();
-      const status = await fetch(settings.url + '/api/staging/status', {
-        headers: { Authorization: 'Bearer ' + settings.token }, signal: AbortSignal.timeout(5000),
-      });
-      const privateBody = await status.json();
-      const anonymous = await fetch(settings.url + '/api/staging/status', { signal: AbortSignal.timeout(5000) });
-      verified = health.status === 200 && body.release === settings.releaseSha && body.environment === 'staging'
-        && body.publishingImplemented === false && status.status === 200 && privateBody.paused === true && anonymous.status === 401;
-    } catch {}
-    if (verified) break;
-    await new Promise(resolve => setTimeout(resolve, 2000));
-  }
-  if (!verified) throw new Error('Deployment health/identity verification failed. No publishing was enabled.');
+  await verifyStaging(settings);
   console.log('Staging deployment verified: ' + settings.url + ' release ' + settings.releaseSha);
   console.log('Cloud cron delivery remains to be observed; local cron tests are not proof of remote scheduling.');
 }
