@@ -1,6 +1,6 @@
 # Bước 15 — Đối chiếu nguồn và rà soát trên cloud
 
-Người dùng cho phép triển khai bước tiếp theo ngày 05/10/2026. Đang thực hiện.
+Người dùng cho phép triển khai bước tiếp theo ngày 05/10/2026. Đã triển khai staging.
 
 Phạm vi: registry metadata của 13 PDF đã nhập và xác nhận OWNER-2026 (khóa 2026,
 3,5 năm); chọn tài liệu/trang/mục/nhận định/cách áp dụng khi lưu caption; mở PDF
@@ -50,7 +50,15 @@ screenshot nguồn/rà soát; renderer native dùng extension frame, không ph�
 trong main DOM. Playwright headless không hỗ trợ PDF navigation theo tài liệu:
 https://playwright.dev/docs/api/class-page. Inline chỉ dành PDF chuẩn checksum-pinned;
 library download vẫn attachment/sandbox, auth + no-store + nosniff giữ nguyên.
-Deployment đang thực hiện.
+Deployment mã 4d9b3a7b1b5b69ef9d44f2cff66d5f168c5d4e1f đã thành công:
+https://github.com/johntroger/nttu-digital-economics-publisher/actions/runs/37307994800.
+Kiểm thử cuối: TypeScript, 196 Node tests và 9 image checks đạt; 13 GUI checks đạt.
+Đối chiếu remote ngày 05/10/2026: health step 15 đúng release, migration 11 hiện hữu,
+13 PDF đúng checksum registry, 21 file complete, 40 bài. 28 endpoint ẩn danh trả 401;
+health bearer không đọc được library/sources/audit. paused=true, publish trả 501.
+Không có review/request fixture trong cloud (cả hai count=0). Kiểm thử ghi/lưu/rà soát
+và viewer dùng database/profile cục bộ cô lập; thao tác owner trên staging thật còn
+chờ người dùng nghiệm thu. Không coi metadata tồn tại là chứng minh nội dung đúng.
 
 Rà soát đồng thời: một receipt/version/check, mọi request ID đều có mapping fingerprint
 bất biến đến receipt. Dùng lại request ID với payload khác bị từ chối, kể cả request
