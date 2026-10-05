@@ -6,6 +6,7 @@ import { prepareCloud } from './cloud-prepare.mjs';
 import { resolve } from 'node:path';
 import { createServer } from 'node:net';
 import { HEARTBEAT_CRON } from '../src/cloud/runtime.ts';
+import { runManagementSmoke } from './cloud-management-smoke.mjs';
 const output = 'tmp/cloud-smoke/' + randomUUID();
 const { directory } = prepareCloud({ output });
 const configPath = resolve(directory, 'wrangler.json');
@@ -51,10 +52,11 @@ try {
   assert(scheduled.status === 200, 'Scheduled handler must succeed');
   const after = await status(); assert(after.heartbeatCount === 1 && after.lastScheduledAt > 0, 'Cron must write to D1');
   assert((await fetch(base + '/api/trial-publish', { method: 'POST' })).status === 501, 'Publish must stay disabled');
-  console.log('Cloud smoke passed: bundle, 7 D1 migrations, private status, scheduled heartbeat, publishing disabled. This is local emulation, not deployed cloud.');
+  console.log('Cloud smoke passed: bundle, 9 D1 migrations, private status, scheduled heartbeat, publishing disabled. This is local emulation, not deployed cloud.');
 } catch (error) {
   console.error(logs.replaceAll(token, '[redacted]')); throw error;
 } finally {
   child.kill();
   await Promise.race([new Promise(resolve => child.once('exit', resolve)), new Promise(resolve => setTimeout(resolve, 5000))]);
 }
+await runManagementSmoke();

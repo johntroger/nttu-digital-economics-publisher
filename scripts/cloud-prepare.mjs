@@ -3,8 +3,9 @@ import { createHash } from 'node:crypto';
 import { resolve, relative, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { HEARTBEAT_CRON } from '../src/cloud/runtime.ts';
+import { cloudSeedSQL } from './cloud-seed.mjs';
 
-export function prepareCloud({ databaseId = '00000000-0000-0000-0000-000000000000', output = 'tmp/cloud', releaseSha = 'local' } = {}) {
+export function prepareCloud({ databaseId = '00000000-0000-0000-0000-000000000000', output = 'tmp/cloud', releaseSha = 'local', origin = process.env.STAGING_WORKER_URL ?? '' } = {}) {
   if (!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(databaseId)) throw new Error('Invalid D1 database ID');
   if (releaseSha !== 'local' && !/^[a-f0-9]{40}$/i.test(releaseSha)) throw new Error('Release must be a full commit SHA');
   const root = resolve('.'), directory = resolve(output);
@@ -23,10 +24,17 @@ export function prepareCloud({ databaseId = '00000000-0000-0000-0000-00000000000
     hashes.push({ name, checksum });
   }
   writeFileSync(resolve(directory, 'migrations', '0007_cloud_runtime.sql'), readFileSync('cloud/runtime.sql'));
+  writeFileSync(resolve(directory, 'migrations', '0008_owner_management.sql'), readFileSync('cloud/owner-management.sql'));
+  writeFileSync(resolve(directory, 'migrations', '0009_staging_briefs.sql'), cloudSeedSQL());
+  const assets = resolve(directory, 'assets'); mkdirSync(assets, { recursive: true });
+  for (const name of ['manager.html', 'manager.js', 'cloud.css']) writeFileSync(resolve(assets, name), readFileSync(resolve('ui/cloud', name)));
   const config = {
     name: 'nttu-publisher-staging', main: relative(directory, resolve('src/cloud/worker.ts')).split(sep).join('/'),
     compatibility_date: '2026-10-05', workers_dev: true, preview_urls: false,
-    vars: { APP_ENV: 'staging', INTEGRATION_MODE: 'unconfigured', RELEASE_SHA: releaseSha },
+    // Preserve dashboard-managed OAuth client ID across deployments.
+    keep_vars: true,
+    vars: { APP_ENV: 'staging', INTEGRATION_MODE: 'unconfigured', RELEASE_SHA: releaseSha, AUTH_ORIGIN: origin },
+    assets: { directory: './assets', binding: 'ASSETS', run_worker_first: true },
     triggers: { crons: [HEARTBEAT_CRON] },
     d1_databases: [{ binding: 'DB', database_name: 'nttu-publisher-staging', database_id: databaseId, migrations_dir: './migrations' }],
     observability: { enabled: false },

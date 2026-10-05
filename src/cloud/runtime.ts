@@ -3,13 +3,19 @@ export interface Statement {
   bind(...values: (string | number | null)[]): Statement;
   first<T>(): Promise<T | null>;
   run(): Promise<unknown>;
+  all?<T>(): Promise<{ results: T[] }>;
 }
 export interface CloudBindings {
   APP_ENV?: string;
   INTEGRATION_MODE?: string;
-  DB?: { prepare(sql: string): Statement };
+  DB?: { prepare(sql: string): Statement; batch?(statements: Statement[]): Promise<unknown[]> };
   STAGING_HEALTH_TOKEN?: string;
   RELEASE_SHA?: string;
+  AUTH_ORIGIN?: string;
+  GOOGLE_CLIENT_ID?: string;
+  GOOGLE_CLIENT_SECRET?: string;
+  SESSION_SIGNING_KEY?: string;
+  ASSETS?: { fetch(request: Request): Promise<Response> };
 }
 export const HEARTBEAT_CRON = '*/5 * * * *';
 export const STATUS_SQL = `SELECT r.environment, r.last_scheduled_at, r.heartbeat_count,

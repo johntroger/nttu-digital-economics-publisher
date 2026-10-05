@@ -24,6 +24,7 @@
     "deploy:staging": "node scripts/cloud-deploy.mjs"
   },
   "devDependencies": {
+    "jose": "6.2.12",
     "typescript": "https://registry.npmjs.org/typescript/-/typescript-6.0.3.tgz",
     "wrangler": "4.147.0"
   }

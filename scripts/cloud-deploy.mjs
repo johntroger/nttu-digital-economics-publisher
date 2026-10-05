@@ -3,6 +3,23 @@ import { writeFileSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { prepareCloud } from './cloud-prepare.mjs';
 import { pathToFileURL } from 'node:url';
+import { randomBytes } from 'node:crypto';
+
+export async function ensureSessionSecret(env, fetcher = fetch) {
+  const endpoint = 'https://api.cloudflare.com/client/v4/accounts/' + env.CLOUDFLARE_ACCOUNT_ID
+    + '/workers/scripts/nttu-publisher-staging/secrets';
+  const headers = { Authorization: 'Bearer ' + env.CLOUDFLARE_API_TOKEN, 'Content-Type': 'application/json' };
+  const response = await fetcher(endpoint, { headers, redirect: 'error', signal: AbortSignal.timeout(10000) });
+  const data = await response.json();
+  if (!response.ok || !data.success || !Array.isArray(data.result)) throw new Error('Cannot check staging secret names');
+  if (!data.result.some(item => item.name === 'GOOGLE_CLIENT_SECRET')) throw new Error('Store GOOGLE_CLIENT_SECRET in the staging Worker before deployment');
+  if (data.result.some(item => item.name === 'SESSION_SIGNING_KEY')) return;
+  // Generate once in memory and store only in Cloudflare. Never rotate on an ordinary deployment.
+  const created = await fetcher(endpoint, { method: 'PUT', headers, redirect: 'error', signal: AbortSignal.timeout(10000),
+    body: JSON.stringify({ name: 'SESSION_SIGNING_KEY', text: randomBytes(32).toString('hex'), type: 'secret_text' }) });
+  const result = await created.json();
+  if (!created.ok || !result.success) throw new Error('Cannot create staging session signing secret');
+}
 
 export function deploymentSettings(env) {
   const databaseId = env.STAGING_D1_DATABASE_ID;
@@ -64,6 +81,7 @@ export async function deployStaging(env = process.env) {
   const dirty = spawnSync('git', ['status', '--porcelain', '--untracked-files=no'], { encoding: 'utf8' });
   if (head.status !== 0 || head.stdout.trim() !== settings.releaseSha || dirty.status !== 0 || dirty.stdout.trim()) throw new Error('Deployment must use the clean tested checkout of release SHA');
   await ensureStagingResources(settings, env);
+  await ensureSessionSecret(env);
   const { directory } = prepareCloud({ databaseId: settings.databaseId, releaseSha: settings.releaseSha });
   const config = resolve(directory, 'wrangler.json');
   const secretsFile = resolve(directory, 'deploy-secrets.json');

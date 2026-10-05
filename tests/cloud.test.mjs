@@ -6,7 +6,24 @@ import { openCatalog } from '../scripts/catalog-store.mjs';
 import { prepareCloud } from '../scripts/cloud-prepare.mjs';
 import worker from '../src/cloud/worker.ts';
 import { recordHeartbeat, HEARTBEAT_CRON } from '../src/cloud/runtime.ts';
-import { deploymentSettings, ensureStagingResources, verifyStaging } from '../scripts/cloud-deploy.mjs';
+import { deploymentSettings, ensureStagingResources, verifyStaging, ensureSessionSecret } from '../scripts/cloud-deploy.mjs';
+
+test('Session signing secret is created once in Cloudflare without overwriting an existing key', async () => {
+  const env = { CLOUDFLARE_ACCOUNT_ID: 'c'.repeat(32), CLOUDFLARE_API_TOKEN: 'fixture-only-token' };
+  const calls = [];
+  await ensureSessionSecret(env, async (url, options) => {
+    calls.push({ url, options });
+    return Response.json(options.method === 'PUT' ? { success: true } : { success: true, result: [{ name: 'GOOGLE_CLIENT_SECRET' }] });
+  });
+  assert.equal(calls.length, 2); assert.match(calls[0].url, /\/workers\/scripts\/nttu-publisher-staging\/secrets$/);
+  const body = JSON.parse(calls[1].options.body); assert.equal(body.name, 'SESSION_SIGNING_KEY');
+  assert.match(body.text, /^[a-f0-9]{64}$/); assert.equal(body.type, 'secret_text');
+  let existingCalls = 0;
+  await ensureSessionSecret(env, async () => { existingCalls++; return Response.json({ success: true, result: [{ name: 'GOOGLE_CLIENT_SECRET' }, { name: 'SESSION_SIGNING_KEY' }] }); });
+  assert.equal(existingCalls, 1);
+  await assert.rejects(ensureSessionSecret(env, async () => Response.json({ success: true, result: [] })));
+  await assert.rejects(ensureSessionSecret(env, async () => Response.json({ success: false }, { status: 403 })));
+});
 
 const token = 'test-only-' + 'x'.repeat(40);
 function fixture() {
@@ -73,21 +90,25 @@ test('unexpected cron and malformed scheduled times cannot write heartbeat', asy
     assert.equal(db.prepare('SELECT heartbeat_count FROM cloud_runtime').get().heartbeat_count, 0);
   } finally { db.close(); }
 });
-test('cloud exposes no local GUI, content, source, backup or mutation endpoints', async () => {
+test('cloud exposes only login publicly and blocks private GUI, content, source and publishing', async () => {
   const { db, env } = fixture(); try {
-    for (const path of ['/', '/assets/sources/BM03.pdf', '/editor-assets/anything.png']) assert.equal((await worker.fetch(request(path, true), env)).status, 404);
-    for (const path of ['/api/editor/posts', '/api/publishing/resume', '/api/trial-publish']) assert.equal((await worker.fetch(request(path, true), env)).status, 501);
-    assert.equal((await worker.fetch(new Request('https://staging.invalid/api/staging/status', { method: 'POST' }), env)).status, 501);
+    assert.equal((await worker.fetch(request('/'), env)).status, 200);
+    assert.equal((await worker.fetch(request('/manager.html'), env)).status, 401);
+    for (const path of ['/assets/sources/BM03.pdf', '/editor-assets/anything.png']) assert.equal((await worker.fetch(request(path, true), env)).status, 404);
+    assert.equal((await worker.fetch(request('/api/editor/posts'), env)).status, 401);
+    for (const path of ['/api/publishing/resume', '/api/trial-publish']) assert.equal((await worker.fetch(request(path, true), env)).status, 501);
+    assert.equal((await worker.fetch(new Request('https://staging.invalid/api/staging/status', { method: 'POST' }), env)).status, 401);
   } finally { db.close(); }
 });
 test('cloud migration preparation preserves original schema hashes and never imports private data', () => {
   const { directory, config } = prepareCloud({ output: 'tmp/tests/cloud-preparation' });
   assert.equal(config.vars.APP_ENV, 'staging'); assert.deepEqual(config.triggers.crons, [HEARTBEAT_CRON]);
-  assert.equal('assets' in config, false); assert.equal('r2_buckets' in config, false);
+  assert.equal(config.keep_vars, true);
+  assert.equal(config.assets.run_worker_first, true); assert.equal('r2_buckets' in config, false);
   const db = new DatabaseSync(':memory:'); try {
     db.exec('PRAGMA foreign_keys=ON');
     for (const name of readdirSync(directory + '/migrations').sort()) db.exec(readFileSync(directory + '/migrations/' + name, 'utf8'));
-    assert.equal(db.prepare('SELECT count(*) AS n FROM posts').get().n, 0);
+    assert.equal(db.prepare('SELECT count(*) AS n FROM posts').get().n, 40);
     const reference = openCatalog(); try {
       assert.deepEqual(db.prepare('SELECT * FROM schema_migrations ORDER BY name').all(), reference.prepare('SELECT * FROM schema_migrations ORDER BY name').all());
     } finally { reference.close(); }
