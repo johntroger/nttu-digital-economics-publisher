@@ -42,7 +42,8 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.STAGING_DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    environment: staging
+    # Repository secrets support a private repository on GitHub Free.
+    # No production credentials are configured in this repository.
     concurrency:
       group: deploy-staging
       cancel-in-progress: false

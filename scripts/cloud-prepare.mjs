@@ -2,6 +2,7 @@ import { readFileSync, readdirSync, mkdirSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { resolve, relative, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { HEARTBEAT_CRON } from '../src/cloud/runtime.ts';
 
 export function prepareCloud({ databaseId = '00000000-0000-0000-0000-000000000000', output = 'tmp/cloud', releaseSha = 'local' } = {}) {
   if (!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(databaseId)) throw new Error('Invalid D1 database ID');
@@ -26,7 +27,7 @@ export function prepareCloud({ databaseId = '00000000-0000-0000-0000-00000000000
     name: 'nttu-publisher-staging', main: relative(directory, resolve('src/cloud/worker.ts')).split(sep).join('/'),
     compatibility_date: '2026-10-05', workers_dev: true, preview_urls: false,
     vars: { APP_ENV: 'staging', INTEGRATION_MODE: 'unconfigured', RELEASE_SHA: releaseSha },
-    triggers: { crons: ['17 * * * *'] },
+    triggers: { crons: [HEARTBEAT_CRON] },
     d1_databases: [{ binding: 'DB', database_name: 'nttu-publisher-staging', database_id: databaseId, migrations_dir: './migrations' }],
     observability: { enabled: false },
   };

@@ -11,7 +11,7 @@ export interface CloudBindings {
   STAGING_HEALTH_TOKEN?: string;
   RELEASE_SHA?: string;
 }
-export const HEARTBEAT_CRON = '17 * * * *';
+export const HEARTBEAT_CRON = '*/5 * * * *';
 export const STATUS_SQL = `SELECT r.environment, r.last_scheduled_at, r.heartbeat_count,
   a.paused_by_user, (SELECT count(*) FROM schema_migrations) AS migration_count
   FROM cloud_runtime r JOIN application_state a ON a.environment=r.environment

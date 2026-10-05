@@ -17,11 +17,32 @@ export function deploymentSettings(env) {
   if (!env.CLOUDFLARE_ACCOUNT_ID || !/^[a-f0-9]{32}$/i.test(env.CLOUDFLARE_ACCOUNT_ID) || !env.CLOUDFLARE_API_TOKEN) throw new Error('Cloudflare deployment credentials missing');
   return { databaseId, releaseSha, token, url: url.origin };
 }
+export async function ensureStagingResources(settings, env, fetcher = fetch) {
+  const prefix = 'https://api.cloudflare.com/client/v4/accounts/' + env.CLOUDFLARE_ACCOUNT_ID;
+  const headers = { Authorization: 'Bearer ' + env.CLOUDFLARE_API_TOKEN, 'Content-Type': 'application/json' };
+  const database = await fetcher(prefix + '/d1/database/' + settings.databaseId, { headers });
+  const db = await database.json();
+  if (!database.ok || !db.success || db.result?.name !== 'nttu-publisher-staging') {
+    throw new Error('D1 identity check failed; no migrations applied');
+  }
+  const expected = new URL(settings.url).hostname.split('.')[1];
+  const response = await fetcher(prefix + '/workers/subdomain', { headers });
+  const data = await response.json();
+  if (response.ok && data.success && data.result?.subdomain) {
+    if (data.result.subdomain !== expected) throw new Error('Existing Workers subdomain differs; no account domain was changed');
+    return;
+  }
+  if (!data.errors?.some(error => error.code === 10007)) throw new Error('Cannot read Workers subdomain; verify token permissions');
+  const created = await fetcher(prefix + '/workers/subdomain', { method: 'PUT', headers, body: JSON.stringify({ subdomain: expected }) });
+  const result = await created.json();
+  if (!created.ok || !result.success || result.result?.subdomain !== expected) throw new Error('Workers subdomain setup failed');
+}
 export async function deployStaging(env = process.env) {
   const settings = deploymentSettings(env);
   const head = spawnSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' });
   const dirty = spawnSync('git', ['status', '--porcelain', '--untracked-files=no'], { encoding: 'utf8' });
   if (head.status !== 0 || head.stdout.trim() !== settings.releaseSha || dirty.status !== 0 || dirty.stdout.trim()) throw new Error('Deployment must use the clean tested checkout of release SHA');
+  await ensureStagingResources(settings, env);
   const { directory } = prepareCloud({ databaseId: settings.databaseId, releaseSha: settings.releaseSha });
   const config = resolve(directory, 'wrangler.json');
   const secretsFile = resolve(directory, 'deploy-secrets.json');

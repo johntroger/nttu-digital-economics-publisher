@@ -119,5 +119,6 @@ Chi tiết: `docs/steps/11-github-ci.md`.
 và scheduled heartbeat bằng Workers/D1 local. Worker staging chỉ kiểm tra hoạt động,
 không phục vụ GUI/kho private hoặc đăng bài. CI có job deploy sau kiểm tra, mặc định tắt
 cho tới khi tài khoản Cloudflare và GitHub staging secrets/variables đã được thiết lập.
-167 test local và 131 portable đạt. Chưa deploy thật; còn chờ chủ tài khoản tạo Cloudflare.
+169 test local và 133 portable đạt; CI Ubuntu/Windows đạt. Đã đăng nhập Cloudflare và tạo
+D1 staging riêng. Chưa deploy thật; còn token pipeline/phê duyệt thao tác lưu secret setup.
 Runbook và phần việc còn lại: `docs/steps/12-staging-foundation.md`.

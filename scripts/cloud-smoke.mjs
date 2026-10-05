@@ -5,6 +5,7 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { prepareCloud } from './cloud-prepare.mjs';
 import { resolve } from 'node:path';
 import { createServer } from 'node:net';
+import { HEARTBEAT_CRON } from '../src/cloud/runtime.ts';
 const output = 'tmp/cloud-smoke/' + randomUUID();
 const { directory } = prepareCloud({ output });
 const configPath = resolve(directory, 'wrangler.json');
@@ -46,7 +47,7 @@ try {
     assert(response.status === 200, 'D1 status must be healthy'); return response.json();
   };
   const before = await status(); assert(before.paused === true && before.heartbeatCount === 0, 'Fresh D1 must start paused');
-  const scheduled = await fetch(base + '/__scheduled?cron=' + encodeURIComponent('17 * * * *'));
+  const scheduled = await fetch(base + '/__scheduled?cron=' + encodeURIComponent(HEARTBEAT_CRON));
   assert(scheduled.status === 200, 'Scheduled handler must succeed');
   const after = await status(); assert(after.heartbeatCount === 1 && after.lastScheduledAt > 0, 'Cron must write to D1');
   assert((await fetch(base + '/api/trial-publish', { method: 'POST' })).status === 501, 'Publish must stay disabled');

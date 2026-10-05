@@ -76,6 +76,7 @@ Mốc bước 11: 157/157 Node local, 9/9 image, 121/121 portable. CI GitHub th�
 Windows thành công; repository riêng tư đã tạo/main đã push. Private tài liệu/logo/ảnh mẫu,
 database/backup và tài khoản giữ ngoài Git. Xem docs/steps/11-github-ci.md.
 
-Mốc bước 12: 167/167 Node local, 131/131 portable, smoke Workers/D1 local đạt (bundle,
-7 migration, status bảo vệ, cron heartbeat). Chưa có Cloudflare account/deploy/bằng chứng
-cron thật; cổng cloud chưa đạt. Pipeline staging giữ tắt. Xem docs/steps/12-staging-foundation.md.
+Mốc bước 12: 169/169 Node local, 133/133 portable, smoke Workers/D1 local đạt (bundle,
+7 migration, status bảo vệ, cron heartbeat). CI Ubuntu/Windows đạt. Đã có Cloudflare account
+và D1 staging riêng; chưa deploy/bằng chứng cron thật; cổng cloud chưa đạt. Pipeline staging
+giữ tắt chờ token/phê duyệt setup. Xem docs/steps/12-staging-foundation.md.

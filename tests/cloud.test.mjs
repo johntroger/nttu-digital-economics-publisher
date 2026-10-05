@@ -6,7 +6,7 @@ import { openCatalog } from '../scripts/catalog-store.mjs';
 import { prepareCloud } from '../scripts/cloud-prepare.mjs';
 import worker from '../src/cloud/worker.ts';
 import { recordHeartbeat, HEARTBEAT_CRON } from '../src/cloud/runtime.ts';
-import { deploymentSettings } from '../scripts/cloud-deploy.mjs';
+import { deploymentSettings, ensureStagingResources } from '../scripts/cloud-deploy.mjs';
 
 const token = 'test-only-' + 'x'.repeat(40);
 function fixture() {
@@ -118,4 +118,34 @@ test('pause changed between read and heartbeat write prevents the write', async 
     await recordHeartbeat({ cron: HEARTBEAT_CRON, scheduledTime: 1000 }, env);
     assert.equal(db.prepare('SELECT heartbeat_count FROM cloud_runtime').get().heartbeat_count, 0);
   } finally { db.close(); }
+});
+test('deployment validates D1 identity and preserves an existing account subdomain', async () => {
+  const calls = [];
+  const fetcher = async (url, options) => {
+    calls.push({ url, method: options.method ?? 'GET' });
+    return Response.json({ success: true, result: url.includes('/d1/') ? { name: 'nttu-publisher-staging' } : { subdomain: 'example' } });
+  };
+  const settings = { databaseId: 'test-id', url: 'https://nttu-publisher-staging.example.workers.dev' };
+  await ensureStagingResources(settings, { CLOUDFLARE_ACCOUNT_ID: 'account', CLOUDFLARE_API_TOKEN: 'test-only' }, fetcher);
+  assert.equal(calls.length, 2); assert.ok(calls.every(call => call.method === 'GET'));
+  await assert.rejects(ensureStagingResources({ ...settings, url: 'https://nttu-publisher-staging.different.workers.dev' }, {}, fetcher), /differs/);
+  await assert.rejects(ensureStagingResources(settings, {}, async () => Response.json({ success: true, result: { name: 'production' } })), /D1 identity/);
+});
+test('account subdomain is created only for the explicit not-registered error, never for missing permission', async () => {
+  const settings = { databaseId: 'test-id', url: 'https://nttu-publisher-staging.example.workers.dev' };
+  const calls = [];
+  const fetcher = async (url, options) => {
+    calls.push(options.method ?? 'GET');
+    if (url.includes('/d1/')) return Response.json({ success: true, result: { name: 'nttu-publisher-staging' } });
+    if (options.method === 'PUT') { assert.equal(JSON.parse(options.body).subdomain, 'example'); return Response.json({ success: true, result: { subdomain: 'example' } }); }
+    return Response.json({ success: false, errors: [{ code: 10007 }] }, { status: 404 });
+  };
+  await ensureStagingResources(settings, {}, fetcher); assert.deepEqual(calls, ['GET', 'GET', 'PUT']);
+  let mutations = 0;
+  await assert.rejects(ensureStagingResources(settings, {}, async (url, options) => {
+    if (options.method === 'PUT') mutations++;
+    return url.includes('/d1/') ? Response.json({ success: true, result: { name: 'nttu-publisher-staging' } })
+      : Response.json({ success: false, errors: [{ code: 10000 }] }, { status: 403 });
+  }), /permissions/);
+  assert.equal(mutations, 0);
 });
