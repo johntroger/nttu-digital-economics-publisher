@@ -75,3 +75,24 @@ anonymous status=401, endpoint đăng=501. Đã sửa chờ health của địa 
 Setup secrets/variables/subdomain đã được người dùng duyệt cụ thể sau yêu cầu auto-review.
 Chưa đưa GUI/kho private lên cloud và chưa đăng Facebook. Không chuyển bước13.
 Chi tiết: docs/steps/12-staging-foundation.md. Tài liệu/logo/database private vẫn local.
+
+## Mốc hiện hành — bước 13–17 (05/10/2026)
+
+Đã triển khai Google owner login và quản lý caption/phiên bản cloud (13),
+R2 private cho 13 PDF/3 logo/5 ảnh mẫu (14), căn cứ theo trang và receipt rà soát
+(15), dựng ảnh vuông với ba logo/font chuẩn trong trình duyệt (16), sao lưu
+cloud và khôi phục SQLite riêng (17). Bản sao thật gồm 40 bài/40 phiên bản và
+21 tài nguyên; ZIP đã kiểm tra và restore quarantine/paused. Chưa có cloud
+publisher, Gemini runtime, Meta hoặc Telegram live tại mốc này. Các báo cáo
+docs/steps/13-google-management.md đến 17-cloud-backups.md ghi bằng chứng cụ thể.
+Các mốc cũ phía trên là lịch sử và không phản ánh tình trạng cloud hiện hành.
+
+## Bước 18 — đang nghiệm thu (06/10/2026)
+
+Người quản lý đã chọn Telegram và hàng chờ. Đã xây/triển khai tab Cảnh báo,
+thiết lập chat cá nhân và nền gửi bền vững có intent/receipt, retry/backoff,
+delivery_unknown, chặn đổi đích, auth/CSRF. 220 Node tests, 21 GUI checks và
+9 kiểm tra ảnh đạt; CI Windows/Ubuntu và native Workers fetch/D1/R2 đạt.
+Người quản lý đã tạo bot, lưu token qua Cloudflare và gửi /start; chờ lưu mã
+chat/bật cấu hình rồi nghiệm thu tin thật. Chưa chuyển Bước 19. Chi tiết:
+docs/steps/18-telegram-outbox.md.

@@ -1,7 +1,8 @@
 # Bước 18 — Telegram và hàng chờ thông báo
 
 Phê duyệt 06/10/2026: người quản lý chọn kết nối Telegram và hàng chờ.
-Đang triển khai staging; chưa nghiệm thu gửi thật. Facebook vẫn dừng.
+Đã triển khai nền trên staging; đang chờ hoàn tất cấu hình để nghiệm thu gửi thật.
+Facebook vẫn dừng.
 
 Tab Cảnh báo có trạng thái, tin kiểm thử, lấy mã chat từ /start và thử lại
 sau khi sửa kết nối. Giữ palette campus #07559D/#F2F6FA/#253347/#FFFFFF,
@@ -46,3 +47,17 @@ Nguồn chính thức:
 - https://core.telegram.org/bots/api#sendmessage
 - https://core.telegram.org/bots/api#getupdates
 - https://core.telegram.org/bots/faq
+
+## Nghiệm thu nền đã đạt
+
+220/220 Node tests, 21/21 GUI checks và 9/9 kiểm tra ảnh đạt. CI Windows/Ubuntu
+và native Workers Telegram fetch đạt. Đã khôi phục lại ZIP thật Bước 17 bằng
+mã mới, đủ 40 bài/40 phiên bản/21 tài nguyên, integrity/foreign keys đạt.
+Staging release ae08c3f2ae896bb7c9a029020256f7bc1e3b7920 qua GitHub Actions;
+13 migrations, 40 private paths không đăng nhập trả 401, health bearer không
+được đọc Telegram. Dữ liệu gốc giữ nguyên checksum, lịch dừng, publish 501.
+Đã gọi getUpdates thật qua phiên Google owner và nhận mã chat cá nhân /start.
+Token không đọc/đưa vào chat hoặc Git. Chờ người quản lý lưu TELEGRAM_CHAT_ID,
+TELEGRAM_ENABLED=true và kiểm tra tin thật; chưa có receipt gửi thật.
+Bằng chứng riêng: tmp/step-18/browser-results.json, telegram-desktop.png,
+telegram-mobile.png, remote-evidence.json. Không coi thử giả lập là live pass.
