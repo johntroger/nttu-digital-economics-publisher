@@ -22,6 +22,7 @@
     "check:ci": "npm run typecheck && npm run test:portable && npm run check:repository",
     "hooks:install": "git config core.hooksPath .githooks",
     "cloud:prepare": "node scripts/cloud-prepare.mjs",
+    "cloud:import:batch": "node scripts/cloud-batch-import.mjs",
     "test:cloud": "node scripts/cloud-smoke.mjs",
     "test:cloud:workflow": "node scripts/cloud-workflow-smoke.mjs",
     "deploy:staging": "node scripts/cloud-deploy.mjs"
