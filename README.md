@@ -184,3 +184,11 @@ tế, retry/dự phòng, unknown, crash và rollback. Chạy `npm run test:cloud
 Tab **Lịch đăng** hiển thị kiểm tra điều kiện chỉ đọc; chưa có bài được cấp quyền
 đăng thật. Bộ giả lập không có trong bundle Worker, không ghi lịch sử staging
 và không gửi Facebook/Telegram thật. Xem `docs/steps/19-cloud-workflow.md`.
+
+## Bước 20: kiểm tra kết nối Meta chỉ đọc
+
+Tab **Lịch đăng** có phần kết nối fanpage thử, kiểm tra Page token, đúng app/Trang,
+scope và thời hạn qua hai GET Graph. Secret chỉ nằm trong Worker; receipt vận hành
+không có trong backup nội dung. Kết quả mới có hiệu lực 10 phút và bị vô hiệu hóa
+khi cấu hình thay đổi. Chưa bật lịch hoặc đăng bài; nghiệm thu thật còn được ghi
+nhận sau kiểm tra. Chi tiết: `docs/steps/20-meta-test-connection.md`.

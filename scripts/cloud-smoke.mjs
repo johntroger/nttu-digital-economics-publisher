@@ -55,7 +55,7 @@ try {
   assert(scheduled.status === 200, 'Scheduled handler must succeed');
   const after = await status(); assert(after.heartbeatCount === 1 && after.lastScheduledAt > 0, 'Cron must write to D1');
   assert((await fetch(base + '/api/trial-publish', { method: 'POST' })).status === 501, 'Publish must stay disabled');
-    console.log('Cloud smoke passed: bundle, 13 D1 migrations, private status, scheduled heartbeat, publishing disabled. This is local emulation, not deployed cloud.');
+    console.log('Cloud smoke passed: bundle, 14 D1 migrations, private status, scheduled heartbeat, publishing disabled. This is local emulation, not deployed cloud.');
 } catch (error) {
   console.error(logs.replaceAll(token, '[redacted]')); throw error;
 } finally {
@@ -106,3 +106,24 @@ try{
   const response=await telegram.dispatchFetch(telegramOrigin+'/api/telegram/discover',{method:'POST',headers:{Cookie:'__Host-nttu_session='+jwt,Origin:telegramOrigin,'X-CSRF-Token':'c'.repeat(64),'Content-Type':'application/json'},body:'{}'});
   const result=await response.json();assert(response.status===200&&result.chatIds?.[0]==='12345678','Native Telegram fetch/JSON failed: '+JSON.stringify(result));assert(telegramCalls===1,'Exactly one fixture API call required');console.log('Telegram native Workers fetch passed: bounded JSON POST, private chat discovery; no external Telegram request.');
 }finally{await telegram.dispose();}
+
+// Graph transport runs inside actual workerd; all provider responses stay internal to this fixture.
+const metaApp='123456789012345',metaPage='123456789012346',metaSecret='fixture_secret_'+'s'.repeat(32),metaToken='fixture_token_'+'t'.repeat(80);
+let metaCalls=0,metaRedirect=false;
+const meta=new Miniflare(convertV4MiniflareOptions({workers:[{name:'meta-fixture',modules:true,scriptPath:resolve(directory,'bundle/worker.js'),compatibilityDate:'2026-10-05',d1Databases:['DB'],bindings:{APP_ENV:'staging',INTEGRATION_MODE:'unconfigured',AUTH_ORIGIN:telegramOrigin,GOOGLE_CLIENT_ID:'fixture.apps.googleusercontent.com',GOOGLE_CLIENT_SECRET:'fixture-only-secret',SESSION_SIGNING_KEY:signing,META_APP_ID:metaApp,META_APP_SECRET:metaSecret,META_PAGE_ID:metaPage,META_PAGE_ACCESS_TOKEN:metaToken,META_API_VERSION:'v24.0',META_CONNECTION_PURPOSE:'test'},outboundService:async request=>{
+ metaCalls++;assert(request.method==='GET','Meta diagnostic must never issue writes');const url=new URL(request.url);assert(url.origin==='https://graph.facebook.com','Only fixed Graph origin allowed');
+ if(metaRedirect)return new Response(null,{status:302,headers:{Location:'https://untrusted.invalid'}});
+ if(url.pathname.endsWith('/debug_token')){assert(url.searchParams.get('input_token')===metaToken,'Debug token must be encoded correctly');assert(request.headers.get('Authorization')==='Bearer '+metaApp+'|'+metaSecret,'App credential must survive native fetch');return Response.json({data:{is_valid:true,type:'PAGE',app_id:metaApp,scopes:['pages_read_engagement','pages_manage_posts'],expires_at:0,data_access_expires_at:0}});}
+ assert(url.pathname==='/v24.0/me'&&url.searchParams.get('fields')==='id,name','Only Page identity may be read');assert(/^[a-f0-9]{64}$/.test(url.searchParams.get('appsecret_proof')??''),'Native HMAC proof required');assert(request.headers.get('Authorization')==='Bearer '+metaToken,'Page token must remain server-side');return Response.json({id:metaPage,name:'Native Meta fixture Page'});
+}}]}));
+try{
+ const db=await meta.getD1Database('DB');
+ for(const sql of ["CREATE TABLE cloud_runtime(id INTEGER,environment TEXT,last_scheduled_at INTEGER,heartbeat_count INTEGER)","INSERT INTO cloud_runtime VALUES(1,'staging',NULL,0)","CREATE TABLE application_state(environment TEXT,paused_by_user INTEGER,maintenance_owner TEXT)","INSERT INTO application_state VALUES('staging',1,NULL)","CREATE TABLE schema_migrations(name TEXT)","INSERT INTO schema_migrations VALUES('1'),('2'),('3'),('4'),('5'),('6')","CREATE TABLE cloud_meta_checks(id TEXT,request_id TEXT UNIQUE,config_hash TEXT,actor TEXT,checked_at INTEGER,state TEXT,reason TEXT,page_id TEXT,page_name TEXT,scopes_json TEXT,expires_at INTEGER,data_access_expires_at INTEGER)"])await db.prepare(sql).run();
+ const jwt=await new SignJWT({email:POLICY.ownerEmail,csrf:'c'.repeat(64)}).setSubject('fixture').setProtectedHeader({alg:'HS256',typ:'nttu-session+jwt'}).setIssuer(telegramOrigin).setAudience('nttu-manager').setIssuedAt().setExpirationTime('1h').sign(new TextEncoder().encode(signing));
+ const headers={Cookie:'__Host-nttu_session='+jwt,Origin:telegramOrigin,'X-CSRF-Token':'c'.repeat(64),'Content-Type':'application/json'},url=telegramOrigin+'/api/meta/check',requestId=randomUUID();
+ assert((await meta.dispatchFetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})).status===401,'Anonymous Meta probe forbidden');assert(metaCalls===0,'Anonymous probe makes no Graph call');
+ const probe=id=>meta.dispatchFetch(url,{method:'POST',headers,body:JSON.stringify({requestId:id})});
+ const first=await (await probe(requestId)).json();assert(first.verifiedReadOnly===true&&first.pageId===metaPage&&metaCalls===2,'Native Meta read-only check failed');await probe(requestId);assert(metaCalls===2,'Receipt replay must not call Graph');
+ metaRedirect=true;const blocked=await (await probe(randomUUID())).json();assert(blocked.reason==='META_REDIRECT_BLOCKED'&&blocked.verifiedReadOnly===false&&metaCalls===3,'Meta redirect must not be followed');
+ console.log('Meta native Workers fetch passed: server credentials, bounded GETs, pinned app/Page, receipt replay and blocked redirects; no external Graph request.');
+}finally{await meta.dispose();}

@@ -18,6 +18,12 @@ export interface CloudBindings {
   TELEGRAM_BOT_TOKEN?: string;
   TELEGRAM_CHAT_ID?: string;
   TELEGRAM_ENABLED?: string;
+  META_APP_ID?: string;
+  META_APP_SECRET?: string;
+  META_PAGE_ID?: string;
+  META_PAGE_ACCESS_TOKEN?: string;
+  META_API_VERSION?: string;
+  META_CONNECTION_PURPOSE?: string;
   ASSETS?: { fetch(request: Request): Promise<Response> };
   MEDIA?: {
     put(key: string, data: ArrayBuffer | Uint8Array, options?: { onlyIf?: { etagDoesNotMatch: string }; httpMetadata?: { contentType: string }; customMetadata?: Record<string,string> }): Promise<unknown>;

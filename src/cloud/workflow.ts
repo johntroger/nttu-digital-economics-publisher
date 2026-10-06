@@ -11,6 +11,6 @@ export async function cloudWorkflowStatus(env:CloudBindings){
     publishTime:POLICY.publishTime,historyCheckTime:POLICY.historyCheckTime,timeZone:POLICY.timeZone,
     maxAttempts:POLICY.maxPublishAttempts,retryMinutes:POLICY.retryDelayMinutes,
     totalPosts:audit.total,structurallyReviewable:audit.canReview,reviewedPosts:audit.reviewed,
-    eligibleToPublish:0,blockers:['SCHEDULE_PAUSED','META_NOT_CONNECTED','LIVE_PUBLISHER_NOT_IMPLEMENTED'],
+    eligibleToPublish:0,blockers:['SCHEDULE_PAUSED','TRIAL_PUBLICATION_NOT_VERIFIED','LIVE_PUBLISHER_NOT_IMPLEMENTED'],
     note:'Rà soát cấu trúc và xác nhận nội dung chưa cấp quyền đăng Facebook.'};
 }

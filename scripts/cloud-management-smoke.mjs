@@ -18,12 +18,13 @@ import {saveArtwork} from '../src/cloud/artwork.ts';
 import {createBackup,continueBackup,checkBackup,backupManifest,backupFile} from '../src/cloud/backups.ts';
 import {BACKUP_SCHEMA} from '../src/cloud/backup-schema.ts';
 import {enqueueTelegramTest,dispatchTelegram} from '../src/cloud/telegram.ts';
+import {metaStatus,checkMeta} from '../src/cloud/meta.ts';
 
 export async function managementFixture({testOnlyMigration}={}) {
   const output = 'tmp/cloud-management/' + crypto.randomUUID();
   const origin = 'https://nttu-publisher-staging.example.workers.dev';
   const { directory } = prepareCloud({ output, origin, storageEnabled: true });
-  if(testOnlyMigration)writeFileSync(resolve(directory,'migrations','0014_test_only_workflow.sql'),testOnlyMigration);
+  if(testOnlyMigration)writeFileSync(resolve(directory,'migrations','0015_test_only_workflow.sql'),testOnlyMigration);
   const configPath = resolve(directory, 'wrangler.json'), state = resolve(directory, 'state');
   const migration = spawnSync(process.execPath, [resolve('node_modules/wrangler/bin/wrangler.js'), 'd1', 'migrations', 'apply', 'DB', '--local', '--config', configPath, '--persist-to', state],
     { encoding: 'utf8', timeout: 120000, env: { ...process.env, WRANGLER_SEND_METRICS: 'false', CI: 'true' } });
@@ -35,7 +36,7 @@ export async function managementFixture({testOnlyMigration}={}) {
     ASSETS: { async fetch(request) {
       const name = new URL(request.url).pathname.slice(1);
       if(name.startsWith('fonts/')&&([...DESIGN_REGISTRY.fonts.map(f=>'fonts/'+f.name),'fonts/BricolageGrotesque-OFL.txt','fonts/WorkSans-OFL.txt']).includes(name))return new Response(readFileSync(resolve('assets',name)),{headers:{'Content-Type':name.endsWith('.ttf')?'font/ttf':'text/plain'}});
-      if (!['manager.html','manager.js','cloud.css','artwork.js','artwork-ui.js','backups.js','zip.js','telegram-ui.js'].includes(name)) return new Response('', { status: 404 });
+      if (!['manager.html','manager.js','cloud.css','artwork.js','artwork-ui.js','backups.js','zip.js','telegram-ui.js','meta-ui.js'].includes(name)) return new Response('', { status: 404 });
       return new Response(readFileSync(resolve('ui/cloud', name)), { headers: { 'Content-Type': name.endsWith('.html') ? 'text/html; charset=utf-8' : name.endsWith('.js') ? 'text/javascript; charset=utf-8' : 'text/css; charset=utf-8' } });
     } },
   };
@@ -107,6 +108,10 @@ export async function runManagementSmoke() {
     const telegram=await dispatchTelegram(f.env,{transport:async()=>{notifications++;return Response.json({ok:true,result:{message_id:1,chat:{id:12345678,type:'private'}}});}});
     assert.equal(telegram.state,'delivered');assert.equal(notifications,1);assert.equal((await f.env.DB.prepare('SELECT state FROM notification_outbox').first()).state,'delivered');
     console.log('Telegram D1 runtime passed: conditional durable intent and atomic delivery receipt; transport is mocked, no Telegram request.');
+    Object.assign(f.env,{META_APP_ID:'123456789012345',META_APP_SECRET:'fixture_secret_'+'s'.repeat(32),META_PAGE_ID:'123456789012346',META_PAGE_ACCESS_TOKEN:'fixture_token_'+'t'.repeat(80),META_API_VERSION:'v24.0',META_CONNECTION_PURPOSE:'test'});
+    let graphCalls=0;const meta=await checkMeta(f.env,f.owner,{requestId:crypto.randomUUID()},{transport:async(url,init)=>{graphCalls++;assert.equal(init.method,'GET');return Response.json(String(url).includes('/debug_token')?{data:{is_valid:true,type:'PAGE',app_id:f.env.META_APP_ID,scopes:['pages_read_engagement','pages_manage_posts'],expires_at:0,data_access_expires_at:0}}:{id:f.env.META_PAGE_ID,name:'D1 fixture Page'});}});
+    assert.equal(meta.verifiedReadOnly,true);assert.equal(graphCalls,2);assert.equal((await metaStatus(f.env)).lastCheck.verifiedReadOnly,true);assert.equal((await f.env.DB.prepare('SELECT count(*) n FROM page_connections').first()).n,0);
+    console.log('Meta D1 checks passed: durable read-only receipt, pinned Page/app and no live page connection; Graph transport mocked.');
     console.log('Cloud source/review D1/R2 passed: version provenance, page validation, image alignment, CAS receipt and no readiness.');
     console.log('Private storage D1/R2 local passed: conditional upload, deduplication, verified download, PDF and new image version.');
     console.log('Management local D1 passed: concurrent CAS, duplicate rollback, owner API, bounded JSON and private UI. Google login is not emulated as remote acceptance.');
