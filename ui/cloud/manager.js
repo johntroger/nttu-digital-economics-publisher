@@ -167,6 +167,8 @@ for (const button of document.querySelectorAll('[data-view]')) button.addEventLi
   $('other-content').append(heading, text);
   if(view==='history'){
     text.textContent='Lịch sử kho nội dung và bài kiểm thử kỹ thuật được ghi nhận riêng.';
+    const publicationHistory=document.createElement('section');$('other-content').append(publicationHistory);
+    api('/api/catalog').then(data=>{for(const row of data.publications){const article=document.createElement('article');article.className='backup-row';const title=document.createElement('h3');title.textContent=(row.publication_type==='content_trial'?'Bài thử nội dung P01 · ':'')+row.caption_snapshot.split('\n')[0];const time=document.createElement('p');time.textContent='Đã xác minh · '+new Date(row.confirmed_at).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh'});const caption=document.createElement('pre');caption.className='history-caption';caption.textContent=row.caption_snapshot;const link=document.createElement('a');link.href='https://www.facebook.com/'+row.remote_id;link.textContent='Mở bài đã đăng trên Facebook';link.target='_blank';link.rel='noopener';article.append(title,time,caption,link);publicationHistory.append(article);}}).catch(e=>message(e.message,true));
     const trialHistory=document.createElement('section');trialHistory.id='trial-history';$('other-content').append(trialHistory);
     api('/api/meta/trial').then(data=>{if(!data.trial){trialHistory.textContent='Chưa có bài kiểm thử kỹ thuật.';return;}const t=data.trial,p=document.createElement('p');p.textContent='Bài kiểm thử Tập Viết · '+t.state+' · '+t.requestId;trialHistory.append(p);const caption=document.createElement('p');caption.textContent=t.caption;trialHistory.append(caption);if(t.url){const a=document.createElement('a');a.href=t.url;a.textContent='Mở bài thử trên Facebook';a.target='_blank';a.rel='noopener';trialHistory.append(a);}}).catch(e=>message(e.message,true));
   }
@@ -180,7 +182,7 @@ for (const button of document.querySelectorAll('[data-view]')) button.addEventLi
       preflight.textContent=`${report.totalPosts} bài trong kho · ${report.reviewedPosts} bài đã rà soát · ${report.eligibleToPublish} bài được cấp quyền đăng. Chưa bật bộ đăng Facebook thật. Bộ giả lập chỉ chạy trong kho kiểm thử riêng.`;
     }).catch(()=>{preflight.textContent='Chưa kiểm tra được điều kiện vận hành. Lịch đăng vẫn dừng.';});
   }
-  for (const row of catalog[view === 'history' ? 'publications' : view === 'schedule' ? 'schedule' : 'notifications'] ?? []) {
+  for (const row of (view==='history'?[]:catalog[view === 'schedule' ? 'schedule' : 'notifications']) ?? []) {
     const item = document.createElement('p');
     item.textContent = view === 'history' ? `${row.confirmed_at} · ${row.caption_snapshot}`
       : view === 'schedule' ? `${row.business_date} · ${row.status}` : `${row.event_id} · ${row.state}`;

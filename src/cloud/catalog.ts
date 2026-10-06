@@ -32,7 +32,7 @@ function model(row: Row) {
 export async function cloudCatalog(env: CloudBindings) {
   const state=await readStatus(env);
   const posts = await rows(env, POST_SQL + ' ORDER BY p.content_key');
-  const publications = await rows(env, `SELECT pub.remote_id,pub.confirmed_at,pub.caption_snapshot FROM publications pub UNION ALL SELECT remote_id,strftime('%Y-%m-%dT%H:%M:%fZ',confirmed_at/1000.0,'unixepoch'),caption FROM cloud_content_trial WHERE state='published' ORDER BY confirmed_at DESC LIMIT 100`);
+  const publications = await rows(env, `SELECT pub.remote_id,pub.confirmed_at,pub.caption_snapshot,'daily' publication_type FROM publications pub UNION ALL SELECT remote_id,strftime('%Y-%m-%dT%H:%M:%fZ',confirmed_at/1000.0,'unixepoch'),caption,'content_trial' FROM cloud_content_trial WHERE state='published' ORDER BY confirmed_at DESC LIMIT 100`);
   const notifications = await rows(env, 'SELECT event_id,state FROM notification_outbox ORDER BY event_id LIMIT 100');
   const schedule = await rows(env, 'SELECT business_date,status FROM schedule_slots ORDER BY business_date LIMIT 100');
   return { mode: 'staging', posts: posts.map(model), publications, notifications, schedule,
