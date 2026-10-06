@@ -52,8 +52,15 @@ D1 thật, auth và cô lập staging. Bộ kiểm thử cloud đầy đủ gồ
 Telegram native fetch và bundle không chứa fake harness đạt.
 22 kiểm tra giao diện cloud đạt, gồm desktop/mobile và trạng thái Lịch đăng.
 Bằng chứng riêng ngoài Git: tmp/step-19/d1-results.json, browser-results.json,
-workflow-desktop.png, workflow-mobile.png. Full tests/pre-push/CI và nghiệm thu
-staging cuối cùng được ghi trong mốc tiến độ sau khi hoàn tất.
+workflow-desktop.png, workflow-mobile.png.
+
+Toàn bộ 237 Node/SQLite/HTTP tests và 9 kiểm tra ảnh đạt ở pre-push. Release
+d563017b8d37f14539d0db0abf57900bb3f83254 qua CI Windows/Ubuntu và triển khai
+staging thành công (Actions run 37406369014). Nghiệm thu thật ngày 06/10:
+41 đường dẫn private trả 401, health bearer không đọc được owner workflow;
+40 đề cương/21 tài nguyên/13 PDF chuẩn giữ checksum, không có bảng fixture,
+0 publish_jobs/publications và publish endpoint vẫn 501. Lịch đang dừng.
+Bằng chứng riêng: tmp/step-19/remote-evidence.json.
 
 Chạy riêng: npm run test:cloud:workflow. CI Ubuntu gọi từ npm run test:cloud;
 Node portable chạy suite mới trên Ubuntu/Windows. Không thêm dependency.

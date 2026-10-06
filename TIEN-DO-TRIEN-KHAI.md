@@ -99,7 +99,7 @@ người quản lý xác nhận nhận được. Lịch Facebook vẫn dừng; n
 đăng/tồn kho sẽ thuộc bước cloud publisher được phê duyệt sau. Chưa chuyển Bước 19. Chi tiết:
 docs/steps/18-telegram-outbox.md.
 
-## Bước 19 — kiểm thử local đã đạt, chờ CI/staging (06/10/2026)
+## Bước 19 — đã nghiệm thu phạm vi giả lập (06/10/2026)
 
 Được duyệt phạm vi điều phối cloud và giả lập. Nền runner D1 bất đồng bộ đã
 kiểm thử intent/receipt, ngày thực tế, retry 5 phút/ba lần, dự phòng, unknown,
@@ -107,5 +107,8 @@ kiểm thử intent/receipt, ngày thực tế, retry 5 phút/ba lần, dự ph�
 22 kiểm tra giao diện đạt. GET /api/workflow riêng cho Google owner chỉ đọc;
 tab Lịch đăng hiển thị điều kiện và không có quyền bật giả lập hay đăng thật.
 Schema/engine fixture không đưa vào staging, không thay kho 40 bài hay 21 tài
-nguyên. CI và nghiệm thu staging của release cuối chờ xác nhận. Chưa triển
-khai Bước 20. Chi tiết: docs/steps/19-cloud-workflow.md.
+nguyên. 237 Node tests/9 kiểm tra ảnh đạt; CI Windows/Ubuntu và triển khai
+staging release d563017b8d37f14539d0db0abf57900bb3f83254 đạt. 41 private paths
+trả 401, không có bảng giả lập/job/publication trên staging, checksum gốc giữ
+nguyên, lịch vẫn dừng/publish 501. Chưa triển khai Bước 20.
+Chi tiết: docs/steps/19-cloud-workflow.md.
