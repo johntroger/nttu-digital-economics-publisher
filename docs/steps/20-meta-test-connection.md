@@ -37,11 +37,27 @@ và loại dữ liệu vận hành khỏi backup. HMAC được đối chiếu �
 24 kiểm tra giao diện cloud đạt, có desktop/mobile và vô hiệu hóa xác minh khi
 token cấu hình thay đổi. Bằng chứng riêng: tmp/step-20/browser-results.json.
 
-Runtime cloud đang được kiểm thử lại sau bổ sung appsecret_proof trước triển khai.
-CI/pre-push và nghiệm thu Graph thật được ghi nhận sau khi thực hiện; kiểm thử
-giả không thay thế xác minh Meta thật. Chưa nghiệm thu hoàn tất Bước 20.
+Runtime Workers/D1/R2 và native fetch đã đạt sau bổ sung appsecret_proof.
+Pre-push đạt 247 Node/SQLite/HTTP tests, 9 kiểm tra ảnh và TypeScript/repository
+guard. Release dde79e2b7d83890bb8c1a24fe23c5f11fcf1d6cb qua CI Windows/Ubuntu
+và deploy staging thành công, Actions run 37410103574.
 
-Người quản lý xác nhận Trang thử Tập Viết, ID 100071169616416, đã tạo ứng dụng
+Nghiệm thu remote giữ nguyên 40 đề cương, 21 tài nguyên và checksum 13 PDF;
+44 đường dẫn private trả 401 cho ẩn danh, health bearer không đọc được owner
+routes. Migration 14 có trên D1, không có bảng fixture, 0 publications/jobs,
+lịch dừng và publish endpoint vẫn 501. Bằng chứng: tmp/step-20/remote-evidence.json.
+
+Kiểm tra Graph thật ngày 06/10/2026 ban đầu chặn META_PAGE_MISMATCH đúng thiết kế.
+Người quản lý đối chiếu GET me?fields=id,name và xác nhận Page ID thực của Trang
+Tập Viết là 551227411605506, rồi tự sửa biến Text trong Cloudflare. Kiểm tra lại
+lúc 10:46 giờ Việt Nam thành công: token loại PAGE thuộc App 1125636386458970,
+đúng Trang, có pages_read_engagement/pages_manage_posts. Không đăng bài.
+Token có hạn đến 12:00 ngày 06/10/2026 giờ Việt Nam, quyền dữ liệu có hạn đến
+10:27:17 ngày 04/01/2027. Cần cấu hình token phù hợp vận hành trước thử đăng/lịch.
+Bằng chứng riêng: tmp/step-20/staging-meta-verified.png; screenshot không chứa token.
+Bước 20 đạt phạm vi kết nối đọc và kiểm tra quyền, chưa chứng minh đăng thành công.
+
+Người quản lý xác nhận Trang thử Tập Viết, ID 551227411605506, đã tạo ứng dụng
 Meta và lưu hai Secret/bốn biến Text trực tiếp vào Worker. Chưa lưu credentials
 Meta vào GitHub. Việc kiểm tra thật chỉ thực hiện từ phiên owner trên staging.
 Không bắt đầu Bước 21 khi chưa có phê duyệt riêng.
