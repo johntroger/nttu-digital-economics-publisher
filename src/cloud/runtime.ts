@@ -24,6 +24,7 @@ export interface CloudBindings {
   META_PAGE_ACCESS_TOKEN?: string;
   META_API_VERSION?: string;
   META_CONNECTION_PURPOSE?: string;
+  DAILY_PUBLISHING_ENABLED?: string;
   ASSETS?: { fetch(request: Request): Promise<Response> };
   MEDIA?: {
     put(key: string, data: ArrayBuffer | Uint8Array, options?: { onlyIf?: { etagDoesNotMatch: string }; httpMetadata?: { contentType: string }; customMetadata?: Record<string,string> }): Promise<unknown>;
@@ -48,7 +49,7 @@ export async function readStatus(env: CloudBindings): Promise<RuntimeStatus> {
   assertStaging(env);
   if (!env.DB) throw new Error('D1 binding missing');
   const row = await env.DB.prepare(STATUS_SQL).first<RuntimeStatus>();
-  if (!row || row.environment !== 'staging' || row.paused_by_user !== 1 || row.migration_count !== 6) {
+  if (!row || row.environment !== 'staging' || ![0,1].includes(row.paused_by_user) || row.migration_count !== 6) {
     throw new Error('Database identity, schema or pause state is invalid');
   }
   return row;
@@ -63,6 +64,6 @@ export async function recordHeartbeat(event: { cron: string; scheduledTime: numb
   // Recheck pause in the write itself, instead of trusting the earlier observation.
   await env.DB!.prepare(`UPDATE cloud_runtime SET last_scheduled_at=?, heartbeat_count=heartbeat_count+1
     WHERE id=1 AND environment='staging' AND (last_scheduled_at IS NULL OR last_scheduled_at < ?)
-    AND EXISTS (SELECT 1 FROM application_state WHERE environment='staging' AND paused_by_user=1)`)
+    AND EXISTS (SELECT 1 FROM application_state WHERE environment='staging' AND paused_by_user IN (0,1))`)
     .bind(event.scheduledTime, event.scheduledTime).run();
 }

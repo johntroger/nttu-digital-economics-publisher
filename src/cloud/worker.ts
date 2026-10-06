@@ -10,6 +10,7 @@ import {listBackups,createBackup,continueBackup,checkBackup,backupManifest,backu
 import {telegramStatus,enqueueTelegramTest,retryTelegram,dispatchTelegram,discoverTelegram} from './telegram.ts';
 import {cloudWorkflowStatus} from './workflow.ts';
 import {metaStatus,checkMeta,monitorMetaExpiry} from './meta.ts';
+import {dailyStatus,configureDaily,activateDaily,pauseDaily,reconcileDaily,runDaily} from './daily.ts';
 import {trialStatus,prepareTrial,sendTrial,reconcileTrial} from './meta-trial.ts';
 
 const UI_HEADERS = { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer',
@@ -73,17 +74,17 @@ export default {
     try { assertStaging(env); } catch { return json({ code: 'CONFIGURATION_NOT_READY' }, 503); }
     const path = new URL(request.url).pathname;
     if (request.method === 'GET' && path === '/health') {
-      return json({ service: 'nttu-publisher', step: 21, environment: 'staging',trialPublishingImplemented:true,
-        integrationMode: 'unconfigured', publishingImplemented: false,
-        databaseChecked: false, schedulerImplemented: false, heartbeatImplemented: true,
+      return json({ service: 'nttu-publisher', step: 25, environment: 'staging',trialPublishingImplemented:true,
+        integrationMode: 'unconfigured', publishingImplemented: true,
+        databaseChecked: false, schedulerImplemented: true, heartbeatImplemented: true,
         release: env.RELEASE_SHA ?? 'local' });
     }
     if (request.method === 'GET' && path === '/api/staging/status') {
       if (!await authorized(request, env)) return json({ code: 'UNAUTHORIZED' }, 401);
       try {
         const row = await readStatus(env);
-        return json({ environment: row.environment, databaseChecked: true, paused: true,
-          publishingImplemented: false, heartbeatCount: row.heartbeat_count,
+        return json({ environment: row.environment, databaseChecked: true, paused: row.paused_by_user===1, publishingEnabled: env.DAILY_PUBLISHING_ENABLED==='true'&&row.paused_by_user===0,
+          publishingImplemented: true, heartbeatCount: row.heartbeat_count,
           lastScheduledAt: row.last_scheduled_at });
       } catch { return json({ code: 'DATABASE_NOT_READY' }, 503); }
     }
@@ -102,11 +103,17 @@ export default {
     const session = await ownerSession(request, env);
     if (!session) {
       if (path === '/' && request.method === 'GET') return loginPage(authConfigured(env), new URL(request.url).searchParams.get('login') === 'failed', new URL(request.url).searchParams.get('reason') ?? '');
-      if (path.startsWith('/api/') || path.startsWith('/fonts/') || ['/auth/logout','/manager.html','/manager.js','/artwork.js','/artwork-ui.js','/backups.js','/zip.js','/telegram-ui.js','/meta-ui.js','/meta-trial-ui.js'].includes(path)) return json({ code: 'UNAUTHORIZED' }, 401);
+      if (path.startsWith('/api/') || path.startsWith('/fonts/') || ['/auth/logout','/manager.html','/manager.js','/artwork.js','/artwork-ui.js','/backups.js','/zip.js','/telegram-ui.js','/meta-ui.js','/meta-trial-ui.js','/daily-ui.js'].includes(path)) return json({ code: 'UNAUTHORIZED' }, 401);
       return json({ code: 'NOT_FOUND' }, 404);
     }
     try {
       if (path === '/api/me' && request.method === 'GET') return json({ email: session.email, csrf: session.csrf });
+      if(path==='/api/daily')return request.method==='GET'?json(await dailyStatus(env)):json({code:'METHOD_NOT_ALLOWED'},405);
+      if(['/api/daily/configure','/api/daily/activate','/api/daily/pause','/api/daily/reconcile'].includes(path)){
+        if(request.method!=='POST')return json({code:'METHOD_NOT_ALLOWED'},405);
+        requireMutation(request,env,session);const data=await input(request);
+        return json(path.endsWith('/configure')?await configureDaily(env,session,data):path.endsWith('/activate')?await activateDaily(env,session,data):path.endsWith('/pause')?await pauseDaily(env):await reconcileDaily(env,data));
+      }
       if(path==='/api/workflow')return request.method==='GET'?json(await cloudWorkflowStatus(env)):json({code:'METHOD_NOT_ALLOWED'},405);
       if(path==='/api/meta')return request.method==='GET'?json(await metaStatus(env)):json({code:'METHOD_NOT_ALLOWED'},405);
       if(path==='/api/meta/check'){
@@ -185,7 +192,7 @@ export default {
         }
         return json({ code: 'METHOD_NOT_ALLOWED' }, 405);
       }
-      if (['/', '/manager.html', '/manager.js','/artwork.js','/artwork-ui.js','/backups.js','/zip.js','/telegram-ui.js','/meta-ui.js','/meta-trial-ui.js'].includes(path) && request.method === 'GET') return asset(request, env, path === '/' ? '/manager.html' : undefined);
+      if (['/', '/manager.html', '/manager.js','/artwork.js','/artwork-ui.js','/backups.js','/zip.js','/telegram-ui.js','/meta-ui.js','/meta-trial-ui.js','/daily-ui.js'].includes(path) && request.method === 'GET') return asset(request, env, path === '/' ? '/manager.html' : undefined);
       if (path.startsWith('/api/')) return json({ code: 'CLOUD_FEATURE_PENDING' }, 501);
     } catch (error) {
       if (error instanceof AuthError) return json({ code: 'CSRF_REQUIRED' }, 403);
@@ -196,6 +203,14 @@ export default {
   },
   async scheduled(event: { cron: string; scheduledTime: number }, env: CloudBindings): Promise<void> {
     await recordHeartbeat(event, env);
+    // A durable send intent survives any error; the next tick reconciles before sending.
+    let dailyState='unconfigured';
+    try{dailyState=(await runDaily(env)).state;}catch{
+      dailyState='runtime_error';
+      if(env.DAILY_PUBLISHING_ENABLED==='true')await env.DB!.prepare('INSERT INTO notification_outbox(event_id,payload_json) VALUES(?,?) ON CONFLICT(event_id) DO NOTHING').bind('daily-runtime:'+new Date().toISOString().slice(0,10),JSON.stringify({kind:'connection_error',environment:'staging',title:'Luồng đăng bài cần kiểm tra; đối soát trước khi gửi lại'})).run();
+    }
+    // Defer notification delivery to the next tick after a send/recovery-heavy invocation.
+    if(!['unconfigured','paused','not_due','prepared','day_complete','reconciliation_required'].includes(dailyState))return;
     await monitorMetaExpiry(env);
     await dispatchTelegram(env);
   },

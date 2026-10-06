@@ -22,7 +22,7 @@ export function verifyCloudBundle(bundle){
   if(snapshot.format!=='nttu-cloud-snapshot-v1'||snapshot.id!==manifest.id||snapshot.schemaVersion!==manifest.schemaVersion||snapshot.schemaFingerprint!==manifest.schemaFingerprint||snapshot.release!==manifest.release||snapshot.capturedAt!==manifest.capturedAt||JSON.stringify(snapshot.counts)!==JSON.stringify(manifest.counts))fail('BACKUP_SNAPSHOT_INVALID');
   if(!snapshot.tables||Object.keys(snapshot.tables).sort().join('|')!==BACKUP_SCHEMA.tables.map(t=>t.name).join('|'))fail('BACKUP_SCHEMA_UNSUPPORTED');
   for(const t of BACKUP_SCHEMA.tables){const rows=snapshot.tables[t.name];if(!Array.isArray(rows)||rows.length>5000)fail('BACKUP_SNAPSHOT_INVALID');for(const r of rows)if(!r||typeof r!=='object'||Array.isArray(r)||Object.keys(r).sort().join('|')!==[...t.columns].sort().join('|')||Object.values(r).some(v=>v!==null&&typeof v!=='string'&&(typeof v!=='number'||!Number.isFinite(v))))fail('BACKUP_SNAPSHOT_INVALID');}
-  const t=snapshot.tables;if(t.page_connections.length||t.publish_jobs.length||t.application_state.some(r=>r.paused_by_user!==1||r.maintenance_owner!==null))fail('BACKUP_CONNECTED_OR_BUSY');
+  const t=snapshot.tables;if(t.publish_jobs.some(r=>['held','publish_requested','evidence_pending','retry_wait','unknown'].includes(r.state))||t.application_state.some(r=>r.paused_by_user!==1||r.maintenance_owner!==null))fail('BACKUP_CONNECTED_OR_BUSY');
   const counts={posts:t.posts.length,versions:t.post_versions.length,files:t.cloud_library.length,reviews:t.cloud_reviews.length};if(JSON.stringify(counts)!==JSON.stringify(manifest.counts))fail('BACKUP_SNAPSHOT_INVALID');
   for(const l of t.cloud_library){const path='objects/'+l.kind+'/'+l.checksum;if(l.state!=='complete'||l.storage_key!=='private/v1/'+l.kind+'/'+l.checksum||!manifest.files.some(f=>f.path===path&&f.sha256===l.checksum&&f.size===l.size_bytes))fail('BACKUP_ASSET_INVALID');}
   if(manifest.files.length!==1+t.cloud_library.length+BACKUP_SCHEMA.extra.length)fail('BACKUP_FILES_MISSING_OR_EXTRA');
@@ -37,7 +37,7 @@ export function restoreCloudBundle({bundle,requestId,confirmQuarantine=false}){
   for(const parent of ['tmp','tmp/step-17','tmp/step-17/restores'])if(existsSync(parent)&&lstatSync(parent).isSymbolicLink())fail('BACKUP_PATH_INVALID');
   if(existsSync(target)){if(lstatSync(target).isSymbolicLink())fail('BACKUP_PATH_INVALID');const result=jsonFile(join(target,'restore-result.json'),10000);if(result.manifestHash!==manifestHash)fail('BACKUP_REQUEST_REUSED');return {...result,replayed:true};}
   if(existsSync(building))fail('BACKUP_RESTORE_INCOMPLETE');
-  const trusted=trustedSchema(),business=trusted.definitions.filter(d=>!['cloud_backups','cloud_backup_checks','cloud_telegram_runtime','cloud_telegram_attempts','cloud_meta_checks','cloud_meta_trial'].includes(d.tbl_name));
+  const trusted=trustedSchema(),business=trusted.definitions.filter(d=>!['cloud_backups','cloud_backup_checks','cloud_telegram_runtime','cloud_telegram_attempts','cloud_meta_checks','cloud_meta_trial','cloud_daily_config'].includes(d.tbl_name));
   if(hash(JSON.stringify(business))!==BACKUP_SCHEMA.fingerprint||JSON.stringify(verified.snapshot.tables.schema_migrations)!==JSON.stringify(trusted.migrations))fail('BACKUP_SCHEMA_UNSUPPORTED');
   mkdirSync(building,{recursive:true});const database=join(building,'warehouse.sqlite'),db=new DatabaseSync(database);
   try{
@@ -46,7 +46,7 @@ export function restoreCloudBundle({bundle,requestId,confirmQuarantine=false}){
     for(const d of trusted.definitions.filter(d=>d.type==='index'))db.exec(d.sql);
     if(db.prepare('PRAGMA integrity_check').get().integrity_check!=='ok'||db.prepare('PRAGMA foreign_key_check').all().length)fail('BACKUP_DATABASE_INVALID');
     for(const d of trusted.definitions.filter(d=>d.type==='trigger'))db.exec(d.sql);
-    db.exec("UPDATE application_state SET paused_by_user=1,blocked_reasons='[\"RESTORED_BACKUP\"]'; UPDATE post_versions SET status='quarantined',check_version=check_version+1; UPDATE simulation_settings SET enabled=0; UPDATE notification_outbox SET state='quarantined',next_at=NULL WHERE state!='delivered'; INSERT INTO cloud_telegram_runtime(id) VALUES(1);");
+    db.exec("UPDATE application_state SET paused_by_user=1,blocked_reasons='[\"RESTORED_BACKUP\"]'; UPDATE post_versions SET status='quarantined',check_version=check_version+1; UPDATE simulation_settings SET enabled=0; UPDATE notification_outbox SET state='quarantined',next_at=NULL WHERE state!='delivered'; INSERT INTO cloud_telegram_runtime(id) VALUES(1); INSERT INTO cloud_daily_config(id) VALUES(1);");
     db.exec('COMMIT; PRAGMA foreign_keys=ON');if(db.prepare('PRAGMA integrity_check').get().integrity_check!=='ok'||db.prepare('PRAGMA foreign_key_check').all().length)fail('BACKUP_DATABASE_INVALID');
   }catch(error){try{db.exec('ROLLBACK');}catch{}if(error.code?.startsWith('BACKUP_'))throw error;fail('BACKUP_DATABASE_INVALID');}finally{db.close();}
   for(const file of verified.manifest.files){const output=join(building,file.path);mkdirSync(dirname(output),{recursive:true});copyFileSync(join(verified.root,file.path),output);}

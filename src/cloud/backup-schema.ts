@@ -1,7 +1,7 @@
 // Trusted schema/resource metadata; no snapshot contents.
 export const BACKUP_SCHEMA = {
   "version": 12,
-  "fingerprint": "8031b351673aa9a2bb45114ed36ba5ebed412e08808be88399169e75251ee045",
+  "fingerprint": "568735a7a1e1a71709ef12c171ce17a27603d4bef155277918257dbe4e6460e7",
   "tables": [
     {
       "name": "actual_day_guards",

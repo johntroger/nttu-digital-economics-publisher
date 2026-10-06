@@ -2,6 +2,7 @@ import {createArtworkBuilder} from './artwork-ui.js';
 import {createBackupsPanel} from './backups.js';
 import {createTelegramPanel} from './telegram-ui.js';
 import {createMetaPanel} from './meta-ui.js';
+import {createDailyPanel} from './daily-ui.js';
 import {createTrialPanel} from './meta-trial-ui.js';
 const $ = id => document.getElementById(id);
 let session, catalog, selected, resources, sourceCatalog, postAudit, pendingSave, pendingImage, pendingReview, saving = false, opening = 0;
@@ -9,6 +10,7 @@ const artworkBuilder=createArtworkBuilder({root:$('editor'),getPost:()=>selected
 const backupsPanel=createBackupsPanel({root:$('main'),api,message});
 const telegramPanel=createTelegramPanel({root:$('main'),api,message});
 const metaPanel=createMetaPanel({api,message});
+const dailyPanel=createDailyPanel({api,message});
 const trialPanel=createTrialPanel({api,message,csrf:()=>session.csrf});
 const mediaSection = document.createElement('section'); mediaSection.className = 'media-section';
 const mediaHeading = document.createElement('h3'); mediaHeading.textContent = 'Ảnh minh họa của phiên bản';
@@ -168,6 +170,7 @@ for (const button of document.querySelectorAll('[data-view]')) button.addEventLi
   }
   if(view==='schedule'){
     metaPanel.mount($('other-content'));metaPanel.load().catch(e=>message(e.message,true));
+    dailyPanel.mount($('other-content'));dailyPanel.load().catch(e=>message(e.message,true));
     trialPanel.mount($('other-content'));trialPanel.load().catch(e=>message(e.message,true));
     const preflight=document.createElement('p');preflight.id='workflow-preflight';preflight.setAttribute('role','status');preflight.textContent='Đang kiểm tra điều kiện vận hành…';$('other-content').append(preflight);
     api('/api/workflow').then(report=>{

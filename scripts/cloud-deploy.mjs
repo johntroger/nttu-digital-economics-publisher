@@ -67,7 +67,7 @@ export async function verifyStaging(settings, { fetcher = fetch, now = Date.now,
       const privateBody = await status.json();
       const anonymous = await fetcher(settings.url + '/api/staging/status', { signal: AbortSignal.timeout(5000), redirect: 'error' });
       if (health.status === 200 && body.release === settings.releaseSha && body.environment === 'staging'
-        && body.publishingImplemented === false && status.status === 200 && privateBody.paused === true
+        && body.publishingImplemented === true && body.schedulerImplemented === true && status.status === 200 && privateBody.paused === true
         && privateBody.databaseChecked === true && anonymous.status === 401) return;
     } catch {}
     if (now() >= deadline) break;

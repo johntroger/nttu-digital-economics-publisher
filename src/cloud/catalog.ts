@@ -30,13 +30,13 @@ function model(row: Row) {
     imageUrl: row.image_file_id ? '/api/library/files/' + row.image_file_id : null, ready: false };
 }
 export async function cloudCatalog(env: CloudBindings) {
-  await readStatus(env);
+  const state=await readStatus(env);
   const posts = await rows(env, POST_SQL + ' ORDER BY p.content_key');
   const publications = await rows(env, `SELECT pub.remote_id,pub.confirmed_at,pub.caption_snapshot FROM publications pub ORDER BY pub.confirmed_at DESC LIMIT 100`);
   const notifications = await rows(env, 'SELECT event_id,state FROM notification_outbox ORDER BY event_id LIMIT 100');
   const schedule = await rows(env, 'SELECT business_date,status FROM schedule_slots ORDER BY business_date LIMIT 100');
   return { mode: 'staging', posts: posts.map(model), publications, notifications, schedule,
-    footer: FOOTER, separator: CAPTION_SEPARATOR, paused: true, publishingImplemented: false,
+    footer: FOOTER, separator: CAPTION_SEPARATOR, paused: state.paused_by_user===1, publishingImplemented: true,
     cloudImagesConfigured: Boolean(env.MEDIA), cloudDocumentsConfigured: Boolean(env.MEDIA) };
 }
 export async function cloudPost(env: CloudBindings, id: string) {

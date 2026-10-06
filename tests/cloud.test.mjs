@@ -43,7 +43,7 @@ test('staging liveness exposes no database or account data, and makes no D1 call
   const response = await worker.fetch(request('/health'), { APP_ENV: 'staging', INTEGRATION_MODE: 'unconfigured' });
   const body = await response.json();
   assert.equal(response.status, 200); assert.equal(body.databaseChecked, false);
-  assert.equal(body.schedulerImplemented, false); assert.equal(body.publishingImplemented, false);
+  assert.equal(body.schedulerImplemented, true); assert.equal(body.publishingImplemented, true);
   assert.equal(body.environment, 'staging');
 });
 test('cloud foundation rejects missing, local, fake and production configurations', async () => {
@@ -63,7 +63,7 @@ test('D1 status is private and fails closed when the token is absent or incorrec
 });
 test('missing or mismatched D1 schema/identity/pause returns sanitized unavailable status', async () => {
   const { db, env } = fixture(); try {
-    for (const changed of [{ ...env, DB: undefined }, env]) {
+    for (const changed of [{ ...env, DB: undefined }]) {
       if (changed === env) db.exec("UPDATE application_state SET paused_by_user=0 WHERE environment='staging'");
       const response = await worker.fetch(request('/api/staging/status', true), changed);
       assert.equal(response.status, 503); assert.deepEqual(await response.json(), { code: 'DATABASE_NOT_READY' });
@@ -131,7 +131,7 @@ test('deployment refuses placeholders, production targets and incomplete release
     { STAGING_WORKER_URL: 'https://nttu-publisher-staging.example.workers.dev/extra' },
     { CLOUDFLARE_API_TOKEN: '' }]) assert.throws(() => deploymentSettings({ ...valid, ...patch }));
 });
-test('pause changed between read and heartbeat write prevents the write', async () => {
+test('heartbeat continues when a configured schedule is unpaused', async () => {
   const { db, env } = fixture(); try {
     const prepare = env.DB.prepare;
     env.DB.prepare = sql => {
@@ -139,7 +139,7 @@ test('pause changed between read and heartbeat write prevents the write', async 
       return prepare(sql);
     };
     await recordHeartbeat({ cron: HEARTBEAT_CRON, scheduledTime: 1000 }, env);
-    assert.equal(db.prepare('SELECT heartbeat_count FROM cloud_runtime').get().heartbeat_count, 0);
+    assert.equal(db.prepare('SELECT heartbeat_count FROM cloud_runtime').get().heartbeat_count, 1);
   } finally { db.close(); }
 });
 test('deployment validates D1 identity and preserves an existing account subdomain', async () => {
@@ -178,7 +178,7 @@ test('first-deployment verification tolerates transient DNS failure and still ve
   await verifyStaging(settings, { now: () => time, pause: async milliseconds => { time += milliseconds; }, timeoutMs: 20000,
     fetcher: async (url, options) => {
       if (++calls <= 2) throw new TypeError('Temporary DNS failure');
-      if (url.endsWith('/health')) return Response.json({ release: settings.releaseSha, environment: 'staging', publishingImplemented: false });
+      if (url.endsWith('/health')) return Response.json({ release: settings.releaseSha, environment: 'staging', publishingImplemented: true, schedulerImplemented: true });
       return options.headers ? Response.json({ paused: true, databaseChecked: true }) : Response.json({}, { status: 401 });
     } });
   assert.equal(time, 10000); assert.equal(calls, 5);
@@ -189,7 +189,7 @@ test('deployment verification times out without accepting wrong release, unpause
     let time = 0;
     await assert.rejects(verifyStaging(settings, { now: () => time, pause: async milliseconds => { time += milliseconds; }, timeoutMs: 10000,
       fetcher: async (url, options) => {
-        if (url.endsWith('/health')) return Response.json({ release: failure === 'release' ? 'wrong' : settings.releaseSha, environment: 'staging', publishingImplemented: false });
+        if (url.endsWith('/health')) return Response.json({ release: failure === 'release' ? 'wrong' : settings.releaseSha, environment: 'staging', publishingImplemented: true, schedulerImplemented: true });
         return options.headers ? Response.json({ paused: failure !== 'paused', databaseChecked: true }) : Response.json({}, { status: failure === 'privacy' ? 200 : 401 });
       } }), /bounded waiting/);
     assert.equal(time, 10000);
