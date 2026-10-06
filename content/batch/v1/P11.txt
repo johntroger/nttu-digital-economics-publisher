@@ -1,0 +1,26 @@
+TRƯỚC PHÂN TÍCH: KIỂM TRA DỮ LIỆU TRỐNG, TRÙNG VÀ SAI KIỂU
+
+Trước khi dựng biểu đồ, hãy dành một lượt kiểm tra bảng dữ liệu. Một ô trống, hai bản ghi giống nhau hoặc một ngày bị nhập sai có thể làm kết quả khác đi.
+
+Tình huống giả định: bảng đơn hàng có mã DH01 hai lần, một ô doanh thu trống và một cột ngày chứa cả “05/06” lẫn “chưa giao”. Chưa nên xóa hoặc đổi toàn bộ ngay.
+
+Hãy kiểm tra theo thứ tự:
+1. Trống: thông tin bị thiếu hay không áp dụng? Có nguồn để bổ sung không?
+2. Trùng: cùng một đơn bị nhập lại, hay hai dòng của hai sản phẩm trong một đơn?
+3. Sai kiểu: cột đó phải chứa ngày, số hay trạng thái? Các giá trị hiện tại có cùng ý nghĩa không?
+
+Giữ một bản gốc trước khi xử lý. Ghi lại quy tắc đã chọn và những dòng còn chưa xác minh. Một quyết định làm sạch cần có lý do; không phải cứ ô trống là điền 0, cứ giống nhau là xóa.
+
+Thử tạo bảng sáu dòng với ba lỗi trên, rồi viết nhật ký sửa. Nhờ một người khác đọc và giải thích xem bạn đã giữ lại dữ liệu nào, sửa gì và vì sao.
+
+============
+
+Ngành Kinh tế số (Chuyên ngành Kinh doanh số) giúp người học làm chủ công nghệ AI, blockchain, big data để phân tích dữ liệu và đưa ra quyết định thông minh. Kết hợp kiến thức kinh tế - công nghệ hiện đại, bạn sẽ phát triển tư duy kinh doanh sáng tạo, làm chủ xu hướng chuyển đổi số và tự tin chinh phục thị trường toàn cầu!
+NGÀNH KINH TẾ SỐ, KHOA QTKD, TRƯỜNG ĐẠI HỌC NGUYỄN TẤT THÀNH
+📞 Hotline: 1900 2039 – Ext: 429
+✉️ Email: tran.tung@nttu.edu.vn
+🚩 Địa chỉ: Tầng 1, 331 Đỗ Mười, Phường An Phú Đông, TP. Hồ Chí Minh, Việt Nam
+🌐 Website: https://fba.ntt.edu.vn/kinh-te-so/
+🌟 Fanpage: https://www.facebook.com/NganhKinhTeSoNTTU
+🌟 Tiktok: https://www.tiktok.com/@nganhkinhteso_nttu
+#NTTU #NguyenTatThanhUniversity #nganhkinhteso #kinhteso

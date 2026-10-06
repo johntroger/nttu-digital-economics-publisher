@@ -1,0 +1,1458 @@
+{
+  "version": "batch-2026-v1",
+  "input_sha256": "7259edfc958a8d5711c400ce6e2ec5897191e9b542692c9f93c7dd37095272fd",
+  "approval_sha256": "d7de042ec128c7814a09efc8b7977f0ace9af8293f70a2df83b549e373dc409d",
+  "built_at": "2026-10-06T07:44:47.379Z",
+  "ready": false,
+  "published": false,
+  "source_registry": {
+    "CAREER-01": {
+      "id": "CAREER-01",
+      "name": "Cam-nang-nghe-Chuyen-doi-so-cho-Sinh-vien-Nganh-Kinh-te-so_NTTU.pdf",
+      "pages": 13,
+      "sha256": "bd001e821b1c65eea96b29393ac6aaa3142e251eac963c4057d9a933d7fc868d",
+      "authority": "document",
+      "path": "assets/sources/career/Cam-nang-nghe-Chuyen-doi-so-cho-Sinh-vien-Nganh-Kinh-te-so_NTTU.pdf"
+    },
+    "CAREER-02": {
+      "id": "CAREER-02",
+      "name": "Cam-nang-nghe-Kinh-doanh-so-cho-Sinh-vien-Nganh-Kinh-te-so_NTTU.pdf",
+      "pages": 15,
+      "sha256": "2a3c0a1e03d36b3629a49aa1f71581bf8e3ad90f9c49f5d26bda6b58a7afd4c9",
+      "authority": "document",
+      "path": "assets/sources/career/Cam-nang-nghe-Kinh-doanh-so-cho-Sinh-vien-Nganh-Kinh-te-so_NTTU.pdf"
+    },
+    "CAREER-03": {
+      "id": "CAREER-03",
+      "name": "Cam-nang-nghe-Marketing-so-cho-Sinh-vien-nganh-Kinh-te-so_NTTU.pdf",
+      "pages": 15,
+      "sha256": "65054d14581803e2691a64602f34d9477981f19807ca36e0df5458ec0c1f6b55",
+      "authority": "document",
+      "path": "assets/sources/career/Cam-nang-nghe-Marketing-so-cho-Sinh-vien-nganh-Kinh-te-so_NTTU.pdf"
+    },
+    "CAREER-04": {
+      "id": "CAREER-04",
+      "name": "Cam-nang-nghe-nghiep-Linh-vuc-Web3-Blockchain-cho-Sinh-vien-nganh-Kinh-te-so_NTTU.pdf",
+      "pages": 16,
+      "sha256": "e6c0de6ca1f02577fb18b41045c099b78101c4e3a6b8e1830fdfb65e325d0ca2",
+      "authority": "document",
+      "path": "assets/sources/career/Cam-nang-nghe-nghiep-Linh-vuc-Web3-Blockchain-cho-Sinh-vien-nganh-Kinh-te-so_NTTU.pdf"
+    },
+    "CAREER-05": {
+      "id": "CAREER-05",
+      "name": "Cam-nang-Nghe-nghiep-Nganh-Kinh-te-so-V1.pdf",
+      "pages": 28,
+      "sha256": "58ee768c8fd6a34ac258966c1e8c4361e15d2231262e8a3baf3286c97e152a8c",
+      "authority": "document",
+      "path": "assets/sources/career/Cam-nang-Nghe-nghiep-Nganh-Kinh-te-so-V1.pdf"
+    },
+    "CAREER-06": {
+      "id": "CAREER-06",
+      "name": "Cam-nang-nghe-Phan-tich-du-lieu-cho-Sinh-vien-Nganh-Kinh-te-so_NTTU.pdf",
+      "pages": 14,
+      "sha256": "5d3bb50fd9d9a936746c0ac1809257984686949f8100204b361e9fb857b845ef",
+      "authority": "document",
+      "path": "assets/sources/career/Cam-nang-nghe-Phan-tich-du-lieu-cho-Sinh-vien-Nganh-Kinh-te-so_NTTU.pdf"
+    },
+    "CAREER-07": {
+      "id": "CAREER-07",
+      "name": "Cam-nang-nghe-Thuong-mai-so-cho-Sinh-vien-Nganh-Kinh-te-so_NTTU.pdf",
+      "pages": 15,
+      "sha256": "c57e73f44abe722f3bcea0079c9e1d0a796663994cabfeeac1964585920ce504",
+      "authority": "document",
+      "path": "assets/sources/career/Cam-nang-nghe-Thuong-mai-so-cho-Sinh-vien-Nganh-Kinh-te-so_NTTU.pdf"
+    },
+    "CAREER-08": {
+      "id": "CAREER-08",
+      "name": "Cam-nang-nghe-Ung-dung-AI-cho-Sinh-vien-Nganh-Kinh-te-so_NTTU.pdf",
+      "pages": 16,
+      "sha256": "f756f29aeff7043da5d087d6b79beefefde5a0930de43e9f1ce91d704ade7785",
+      "authority": "document",
+      "path": "assets/sources/career/Cam-nang-nghe-Ung-dung-AI-cho-Sinh-vien-Nganh-Kinh-te-so_NTTU.pdf"
+    },
+    "CAREER-09": {
+      "id": "CAREER-09",
+      "name": "Cam-nang-Thuc-tap-Viec-lam-them-cho-sinh-vien-Kinh-te-so_NTTU.pdf",
+      "pages": 15,
+      "sha256": "4b1a991a8820a8ce8bd304b81fe3e2f0d883ee89f7839d2af6fd4d43b3d84f09",
+      "authority": "document",
+      "path": "assets/sources/career/Cam-nang-Thuc-tap-Viec-lam-them-cho-sinh-vien-Kinh-te-so_NTTU.pdf"
+    },
+    "CAREER-10": {
+      "id": "CAREER-10",
+      "name": "Phan-tich-vi-tri-co-hoi-viec-lam-Nganh-Kinh-te-so-NTTU.pdf",
+      "pages": 18,
+      "sha256": "36ccee6a5e3a30efd63dac50b2a534bb1ba730633d794c1af3e678f4b4ddd466",
+      "authority": "document",
+      "path": "assets/sources/career/Phan-tich-vi-tri-co-hoi-viec-lam-Nganh-Kinh-te-so-NTTU.pdf"
+    },
+    "BM03": {
+      "id": "BM03",
+      "name": "BM03_XDCT_Ban mo ta CTDT_Kinhteso-K2026-28.07.2026.pdf",
+      "pages": 107,
+      "sha256": "e192e5cbc52292f88f8748baab8ca1c30bde80b0c89e74aa1d930dd07f132922",
+      "authority": "document",
+      "path": "assets/sources/program/BM03_XDCT_Ban mo ta CTDT_Kinhteso-K2026-28.07.2026.pdf"
+    },
+    "BM11": {
+      "id": "BM11",
+      "name": "BM11_XDCT_Muc tieu CDR CTDT_Kinhteso-K2026-28.07.2026.pdf",
+      "pages": 19,
+      "sha256": "c08b3536e1fe7df04075e3706761deebddbf1d8762cfc52d089e0639cfe67a61",
+      "authority": "document",
+      "path": "assets/sources/program/BM11_XDCT_Muc tieu CDR CTDT_Kinhteso-K2026-28.07.2026.pdf"
+    },
+    "BM12": {
+      "id": "BM12",
+      "name": "BM12_XDCT_CTDT_Kinhteso-K2026-28.07.2026.pdf",
+      "pages": 75,
+      "sha256": "e1ba10c22d96db4b12944217c7aa42184068d039bc47841d8b1d96b3d7f58289",
+      "authority": "document",
+      "path": "assets/sources/program/BM12_XDCT_CTDT_Kinhteso-K2026-28.07.2026.pdf"
+    },
+    "OWNER-2026": {
+      "id": "OWNER-2026",
+      "name": "Xác nhận khóa 2026 — thời gian đào tạo 3,5 năm",
+      "pages": 0,
+      "sha256": "1ea8f4a26f02a154707ade8fffd7b2384a86ed573f45882254dff3bd942781a6",
+      "authority": "user_confirmation"
+    }
+  },
+  "renderer_sha256": "a5ccf8a42d02f7e10191071f358af0c422476fe321eb41c92fe7f926090d3c56",
+  "base_renderer_sha256": "ebaaacca14563ac1a71aa0c60e99f9545dec7b7f20945a9ca5249cb52d7108c4",
+  "fonts": [
+    {
+      "name": "BricolageGrotesque-Bold.ttf",
+      "sha256": "a737b146fe0d77ffe8a86e3cd16700dd431d3b1e420d4fd80e142cd68a1cb50d"
+    },
+    {
+      "name": "WorkSans-Bold.ttf",
+      "sha256": "240d125fc9f8561363dc1ea3f513501253bd70942f41468f48f0b0cafb0c82e2"
+    },
+    {
+      "name": "WorkSans-Regular.ttf",
+      "sha256": "e67985a843df0d3cdee51a3d0f329eb1774a344ad9ff0c9ab923751f1577e2a4"
+    }
+  ],
+  "posts": [
+    {
+      "id": "P01",
+      "pool": "main",
+      "group": "D",
+      "audience": "HS",
+      "body_sha256": "6fbf3902adc2318a770e070a4e650535a836cdb5a8a166517cbac3f7ffdf40af",
+      "caption_sha256": "6ee55f3f8b556298f1da92a276b421e3064a27a8e95fa410495dcd53d4c59cc2",
+      "image_sha256": "768a2322450779c9d3629213442f9ff344ee13bb30f11a6978e68c8cc0ccb251",
+      "proof_sha256": "4c3135184953d956c983fcba25319d50e5f442465fc60bda964dce7d19fbaaac",
+      "caption_path": "content/batch/v1/P01.txt",
+      "image_path": "assets/batch/v1/P01.png",
+      "footer_version": "footer-v2",
+      "owner_approval": "pending",
+      "ready": false,
+      "source_refs": [
+        {
+          "id": "CAREER-06",
+          "pages": [
+            11,
+            12
+          ],
+          "section": "5.1–5.2; 5.5",
+          "supports": "Làm sạch dữ liệu, tư duy bài toán kinh doanh, kiểm chứng và trình bày kết quả; cấu trúc dự án có quy trình rõ.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "5d3bb50fd9d9a936746c0ac1809257984686949f8100204b361e9fb857b845ef"
+        }
+      ],
+      "external_refs": []
+    },
+    {
+      "id": "P02",
+      "pool": "main",
+      "group": "A",
+      "audience": "SV",
+      "body_sha256": "5fad20f58135f6c0e01cdbec4dca453cbc9714cd72e870b878638be6be717dc5",
+      "caption_sha256": "04613c35626761e1771cb028d88003e601a952d4af6de4defba53d9fedc12925",
+      "image_sha256": "b9a012633c8c1506ec900ab8632c5e49b19fbc958e40df8cd433ba83f277b873",
+      "proof_sha256": "4eb786ad50cd6eaffaabfacdd16efbd257d56c28cfc6264743114c7b1ed39ceb",
+      "caption_path": "content/batch/v1/P02.txt",
+      "image_path": "assets/batch/v1/P02.png",
+      "footer_version": "footer-v2",
+      "owner_approval": "approved",
+      "ready": false,
+      "source_refs": [
+        {
+          "id": "CAREER-08",
+          "pages": [
+            13,
+            15
+          ],
+          "section": "5.1; 6.1–6.2",
+          "supports": "Giới hạn AI, kiểm chứng kết quả, tư duy phản biện và bảo mật.",
+          "adaptation": "Checklist bốn bước và bài toán 100 → 120 do dự án biên soạn, không phải số liệu khảo sát.",
+          "revision": "f756f29aeff7043da5d087d6b79beefefde5a0930de43e9f1ce91d704ade7785"
+        }
+      ],
+      "external_refs": []
+    },
+    {
+      "id": "P03",
+      "pool": "main",
+      "group": "B",
+      "audience": "SV",
+      "body_sha256": "d7130ff7af59b6664f6fce10246e27053c41e527acf5b9fa3b9e1457f8bd45ba",
+      "caption_sha256": "d3e8c1433f72977c034632052d96ab11f1ad2eb77ad16de824948d53e28ad548",
+      "image_sha256": "1eebe662839aa7fdd118a2b4f5c3dfd1c62aae425167d787ac4e41f91dac1cfe",
+      "proof_sha256": "c369eccc416618dee92d608cf1528875a265af7a51c9dc2fff0d7772342ad75c",
+      "caption_path": "content/batch/v1/P03.txt",
+      "image_path": "assets/batch/v1/P03.png",
+      "footer_version": "footer-v2",
+      "owner_approval": "pending",
+      "ready": false,
+      "source_refs": [
+        {
+          "id": "CAREER-02",
+          "pages": [
+            12,
+            14
+          ],
+          "section": "5.1–5.2; 6.1–6.2",
+          "supports": "Lắng nghe, đồng cảm, hiểu nhu cầu, tư vấn giải pháp và tư vấn trung thực.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "2a3c0a1e03d36b3629a49aa1f71581bf8e3ad90f9c49f5d26bda6b58a7afd4c9"
+        }
+      ],
+      "external_refs": []
+    },
+    {
+      "id": "P04",
+      "pool": "main",
+      "group": "S",
+      "audience": "SV",
+      "body_sha256": "591727b37f91bb27e439cf920de2501216c7a1d13e1db7497cdb8053734ab637",
+      "caption_sha256": "d4e34544c137665f00439f48886ffe6b05e0ff2d1545fb44c367e64826e9d00d",
+      "image_sha256": "0ce1aab16132ae1322e8b2b8cb983ded7b990aedc501f7a8f55fdc1a6a7b5778",
+      "proof_sha256": "44d966112fb098431b991a7cfc95c2fe18649b2c9051b7d785cfc34bfa9b8509",
+      "caption_path": "content/batch/v1/P04.txt",
+      "image_path": "assets/batch/v1/P04.png",
+      "footer_version": "footer-v2",
+      "owner_approval": "approved",
+      "ready": false,
+      "source_refs": [
+        {
+          "id": "CAREER-09",
+          "pages": [
+            13
+          ],
+          "section": "4.2–4.3",
+          "supports": "CV nêu dự án/kết quả nếu có; portfolio; kể lại bối cảnh, hành động, kết quả.",
+          "adaptation": "Ví dụ dự án bán hàng là giả định. Khung một dòng CV do dự án phát triển; không khẳng định mọi nhà tuyển dụng dùng cùng tiêu chuẩn.",
+          "revision": "4b1a991a8820a8ce8bd304b81fe3e2f0d883ee89f7839d2af6fd4d43b3d84f09"
+        }
+      ],
+      "external_refs": []
+    },
+    {
+      "id": "P05",
+      "pool": "main",
+      "group": "I",
+      "audience": "HS",
+      "body_sha256": "307e18c78276ce7c505eeed446ab64969bace414db90762851c9449c83aeda0c",
+      "caption_sha256": "f5c59d0efc081ee5e0d0209db9b42f8b01513a02e79fff71e9eaeef296cf78ac",
+      "image_sha256": "ae59d3d18f45db8d4ae6e509072f78811cd7575cc461d5de433c4b1e8ce34bd2",
+      "proof_sha256": "a17449e007d478292c7359514df1da612cc60e428ac5901c2146e9400abb61d4",
+      "caption_path": "content/batch/v1/P05.txt",
+      "image_path": "assets/batch/v1/P05.png",
+      "footer_version": "footer-v2",
+      "owner_approval": "approved",
+      "ready": false,
+      "source_refs": [
+        {
+          "id": "BM03",
+          "pages": [
+            8
+          ],
+          "section": "1.6.1–1.6.2",
+          "supports": "Nền tảng kinh tế, công nghệ/kinh doanh số, dữ liệu, sản phẩm/dịch vụ và giải quyết vấn đề chuyển đổi số.",
+          "adaptation": "Tình huống cửa hàng và bài tập do dự án biên soạn.",
+          "revision": "e192e5cbc52292f88f8748baab8ca1c30bde80b0c89e74aa1d930dd07f132922"
+        },
+        {
+          "id": "BM11",
+          "pages": [
+            1,
+            2
+          ],
+          "section": "Mục tiêu chung và PEO2",
+          "supports": "Mục tiêu chương trình; dùng dữ liệu và công cụ số để giải quyết vấn đề.",
+          "adaptation": "Không lấy dòng khóa 2025/04 năm ở thông tin chung; áp dụng đính chính chủ tài khoản cho khóa 2026.",
+          "revision": "c08b3536e1fe7df04075e3706761deebddbf1d8762cfc52d089e0639cfe67a61"
+        },
+        {
+          "id": "OWNER-2026",
+          "pages": [],
+          "section": "Xác nhận trong hội thoại ngày 04/10/2026",
+          "supports": "Áp dụng khóa 2026, thời gian đào tạo 3,5 năm.",
+          "adaptation": "Đính chính thông tin thời lượng/khóa trong PDF; không sửa file nguồn.",
+          "revision": "1ea8f4a26f02a154707ade8fffd7b2384a86ed573f45882254dff3bd942781a6"
+        }
+      ],
+      "external_refs": []
+    },
+    {
+      "id": "P06",
+      "pool": "main",
+      "group": "D",
+      "audience": "SV",
+      "body_sha256": "e7a2bba342675a2a0542878bbf637c3a54fdaca63e7e028de734884f19ee3bfa",
+      "caption_sha256": "d2b6c7f0005b55a9a24e1b5ab2f08ac3467e5ddfd4ca68c6d9d9fe71da234c2d",
+      "image_sha256": "e242cf62b86e0c750fed038c063b05cec0aa989b18c5cb2304ec2d060958e354",
+      "proof_sha256": "b13c7a55aa6ad206ae7797c2e0be8f6ac24f1db0d1f496b53cb74746ce619557",
+      "caption_path": "content/batch/v1/P06.txt",
+      "image_path": "assets/batch/v1/P06.png",
+      "footer_version": "footer-v2",
+      "owner_approval": "pending",
+      "ready": false,
+      "source_refs": [
+        {
+          "id": "CAREER-06",
+          "pages": [
+            11,
+            12
+          ],
+          "section": "5.2; 5.5",
+          "supports": "Hiểu bài toán kinh doanh, giao tiếp/kể chuyện bằng dữ liệu, dự án có bài toán và khuyến nghị rõ.",
+          "adaptation": "Khung ba câu hỏi và ví dụ cửa hàng do dự án phát triển; dữ liệu giả định, không suy luận nhân quả từ số đơn.",
+          "revision": "5d3bb50fd9d9a936746c0ac1809257984686949f8100204b361e9fb857b845ef"
+        }
+      ],
+      "external_refs": []
+    },
+    {
+      "id": "P07",
+      "pool": "main",
+      "group": "A",
+      "audience": "HS",
+      "body_sha256": "66a550b2b9fd227d31deeb25363f3f682bb4218151bc3baa23147c8a59fb6947",
+      "caption_sha256": "b425f66a0dcab32751ab85edc0411655730053082497528b8aa6f6897e8925fe",
+      "image_sha256": "83eb07be3f4228b27f41e371c320a5c75b76be380525d0ad91d699fe9ef5ae0d",
+      "proof_sha256": "d63edf74db240e372cbf5ff90c1d0bcdfa27209dd611c845ee9871d8a58be9e9",
+      "caption_path": "content/batch/v1/P07.txt",
+      "image_path": "assets/batch/v1/P07.png",
+      "footer_version": "footer-v2",
+      "owner_approval": "pending",
+      "ready": false,
+      "source_refs": [
+        {
+          "id": "CAREER-08",
+          "pages": [
+            4,
+            5,
+            13
+          ],
+          "section": "1.3; 5.1–5.2",
+          "supports": "Phổ nghề từ ứng dụng/vận hành tới dữ liệu và kỹ thuật AI; yêu cầu lập trình khác nhau.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "f756f29aeff7043da5d087d6b79beefefde5a0930de43e9f1ce91d704ade7785"
+        }
+      ],
+      "external_refs": []
+    },
+    {
+      "id": "P08",
+      "pool": "main",
+      "group": "B",
+      "audience": "SV",
+      "body_sha256": "f00f339ef9fd981f8a5226ea1cbd0d9270d24fa26522e99f4f1353e07436121f",
+      "caption_sha256": "c18fff20f2fd9c24ffcb29cd7f08274faabd465e5843db54742b9ce26a6fa550",
+      "image_sha256": "fbf8a3d7d17dbf87f3ccb2b87774b05ffdba7c9e022b9c10eded14c4beb23b1a",
+      "proof_sha256": "e1507acfc817374df3ee468495f7728e530db4048646ac142c158b52f62141f8",
+      "caption_path": "content/batch/v1/P08.txt",
+      "image_path": "assets/batch/v1/P08.png",
+      "footer_version": "footer-v2",
+      "owner_approval": "pending",
+      "ready": false,
+      "source_refs": [
+        {
+          "id": "CAREER-07",
+          "pages": [
+            5,
+            12
+          ],
+          "section": "Vận hành sàn TMĐT; 5.1–5.2",
+          "supports": "Thông tin sản phẩm, tồn kho, xử lý đơn, báo cáo và kỹ năng tỉ mỉ/phối hợp.",
+          "adaptation": "Tình huống thiếu hàng, luồng năm việc và bảng luyện tập do dự án biên soạn; không phải hướng dẫn thao tác hoặc quy định của sàn.",
+          "revision": "c57e73f44abe722f3bcea0079c9e1d0a796663994cabfeeac1964585920ce504"
+        }
+      ],
+      "external_refs": []
+    },
+    {
+      "id": "P09",
+      "pool": "main",
+      "group": "R",
+      "audience": "SV",
+      "body_sha256": "38d0a6035c0471bd56c0c8aaa1e14c5dd8460cc67c79e4903805610191fc5203",
+      "caption_sha256": "d7685b0c9abdc496f6ee3a87c0b03efe5dd0c1a37b0f06db048971edc19d2171",
+      "image_sha256": "99ae2747a382c6434c14fd5791995896030f6f1be0027ec7827cc6a09fd9fd9f",
+      "proof_sha256": "00fe4a61b5ea5dfbfdc6aab4fea72bbf4f0ede81f5626ab0492ba5a5f6037fd5",
+      "caption_path": "content/batch/v1/P09.txt",
+      "image_path": "assets/batch/v1/P09.png",
+      "footer_version": "footer-v2",
+      "owner_approval": "pending",
+      "ready": false,
+      "source_refs": [
+        {
+          "id": "CAREER-02",
+          "pages": [
+            8,
+            13
+          ],
+          "section": "Phát triển sản phẩm; 5.5",
+          "supports": "Nghiên cứu nhu cầu/thị trường, phát triển sản phẩm và dự án nghiên cứu khách hàng.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "2a3c0a1e03d36b3629a49aa1f71581bf8e3ad90f9c49f5d26bda6b58a7afd4c9"
+        }
+      ],
+      "external_refs": []
+    },
+    {
+      "id": "P10",
+      "pool": "main",
+      "group": "I",
+      "audience": "HS",
+      "body_sha256": "7815148842fb97ff249746e2857fdba6a22937bfe362759e8b7f26425ad78064",
+      "caption_sha256": "9f060bdf3862605b91ebb1cce98fdd178dc97ab31a4fb31381f51df9e256a836",
+      "image_sha256": "8c9844e1b44ffcad0a8db870ab0c211ab0405e2d720c24290d5a70cf0576b9dc",
+      "proof_sha256": "c5bae2efeda022cfcc218025692a6faff68a3138fdd30a5861605c6a5346af5a",
+      "caption_path": "content/batch/v1/P10.txt",
+      "image_path": "assets/batch/v1/P10.png",
+      "footer_version": "footer-v2",
+      "owner_approval": "pending",
+      "ready": false,
+      "source_refs": [
+        {
+          "id": "BM11",
+          "pages": [
+            3,
+            4,
+            5
+          ],
+          "section": "PLO2–PLO10",
+          "supports": "Kiến thức kinh doanh/công nghệ; giao tiếp, nhóm, công cụ số, đạo đức và tự học.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "c08b3536e1fe7df04075e3706761deebddbf1d8762cfc52d089e0639cfe67a61"
+        },
+        {
+          "id": "OWNER-2026",
+          "pages": [],
+          "section": "Đính chính của người quản lý ngày 04/10/2026",
+          "supports": "Áp dụng khóa 2026, thời gian đào tạo 3,5 năm.",
+          "adaptation": "Ưu tiên đính chính của người quản lý so với dòng khóa/thời lượng cũ trong PDF; không sửa tài liệu gốc.",
+          "revision": "1ea8f4a26f02a154707ade8fffd7b2384a86ed573f45882254dff3bd942781a6"
+        }
+      ],
+      "external_refs": []
+    },
+    {
+      "id": "P11",
+      "pool": "main",
+      "group": "D",
+      "audience": "SV",
+      "body_sha256": "311b7afb65bf5302b7699a028256424e3131b307f2e50f7615d111c3a3b5fdbe",
+      "caption_sha256": "3ce3ae600d17b51edccb1907cba72d6d0fb6782832670f504344aa57c2044e2c",
+      "image_sha256": "54c3bc449e0f7576f547634096acdf0a78befcd6f670b11a4f4777393025bfbb",
+      "proof_sha256": "67a914ad67d6982e5d0a5fc1fa4c57fad8a040027a6de72a310ff3ef6b6c0701",
+      "caption_path": "content/batch/v1/P11.txt",
+      "image_path": "assets/batch/v1/P11.png",
+      "footer_version": "footer-v2",
+      "owner_approval": "pending",
+      "ready": false,
+      "source_refs": [
+        {
+          "id": "CAREER-06",
+          "pages": [
+            11,
+            12
+          ],
+          "section": "5.1–5.2; 5.5",
+          "supports": "Làm sạch dữ liệu, tư duy bài toán kinh doanh, kiểm chứng và trình bày kết quả; cấu trúc dự án có quy trình rõ.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "5d3bb50fd9d9a936746c0ac1809257984686949f8100204b361e9fb857b845ef"
+        }
+      ],
+      "external_refs": []
+    },
+    {
+      "id": "P12",
+      "pool": "main",
+      "group": "S",
+      "audience": "SV",
+      "body_sha256": "72b6920bf7e9c5c26cc275974e19993c3b6a1c98ea97804bfe05c02060d9c66f",
+      "caption_sha256": "5919a38cd6b26100a17b80b7fc69b16db863cdb908bd1234b455e55270b9f4be",
+      "image_sha256": "a20a2910cf3816caecee67b42b9cc0e5c4975fdbd02889bd45682f4234a654ce",
+      "proof_sha256": "a4069c326c0f5eca72beeef11c356ec3cdc4e03956a02479a2c0bf245957d65d",
+      "caption_path": "content/batch/v1/P12.txt",
+      "image_path": "assets/batch/v1/P12.png",
+      "footer_version": "footer-v2",
+      "owner_approval": "pending",
+      "ready": false,
+      "source_refs": [
+        {
+          "id": "CAREER-09",
+          "pages": [
+            4,
+            12,
+            13
+          ],
+          "section": "Phần 1; phần 3; 4.2–4.3",
+          "supports": "Các hình thức tích lũy kinh nghiệm, nhóm vị trí thực tập và chuẩn bị hồ sơ theo công việc.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "4b1a991a8820a8ce8bd304b81fe3e2f0d883ee89f7839d2af6fd4d43b3d84f09"
+        }
+      ],
+      "external_refs": []
+    },
+    {
+      "id": "P13",
+      "pool": "main",
+      "group": "B",
+      "audience": "HS",
+      "body_sha256": "10ef8ea25b212f879ddfc6ca1e99ef2b26335e6ad071ba8f1ecd52fb3cfaaef7",
+      "caption_sha256": "7b1632d3784bfc2c834fdd5b6d849b967ac5e7f78b7c5b520b40aa2fc858626e",
+      "image_sha256": "2397c924227beb16ccb8620c2cceb29ec624dd75f836f02caf7c791686b0bc9b",
+      "proof_sha256": "4ac19ab6eb48ab2de08d1480881eabefb8c528245545e0fd44bb03f6e51098e2",
+      "caption_path": "content/batch/v1/P13.txt",
+      "image_path": "assets/batch/v1/P13.png",
+      "footer_version": "footer-v2",
+      "owner_approval": "pending",
+      "ready": false,
+      "source_refs": [
+        {
+          "id": "CAREER-03",
+          "pages": [
+            4,
+            5
+          ],
+          "section": "1.1; Chuyên viên nội dung",
+          "supports": "Nhóm marketing số và nội dung.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "65054d14581803e2691a64602f34d9477981f19807ca36e0df5458ec0c1f6b55"
+        },
+        {
+          "id": "CAREER-07",
+          "pages": [
+            4,
+            5
+          ],
+          "section": "1.1; Vận hành sàn",
+          "supports": "Gian hàng, sản phẩm, đơn hàng và chăm sóc.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "c57e73f44abe722f3bcea0079c9e1d0a796663994cabfeeac1964585920ce504"
+        },
+        {
+          "id": "CAREER-02",
+          "pages": [
+            4,
+            5
+          ],
+          "section": "1.1; Nhóm kinh doanh",
+          "supports": "Tìm cơ hội, tư vấn và phát triển khách hàng.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "2a3c0a1e03d36b3629a49aa1f71581bf8e3ad90f9c49f5d26bda6b58a7afd4c9"
+        }
+      ],
+      "external_refs": []
+    },
+    {
+      "id": "P14",
+      "pool": "main",
+      "group": "A",
+      "audience": "SV",
+      "body_sha256": "762509064013783b57338a8f2b83f70200d36816fd29ed4c9c0cc01a659462c0",
+      "caption_sha256": "bd12941d473a94d4ce2c5a85a7b1a4d93a6b2e029b8b0c089aeb83fb692193f3",
+      "image_sha256": "b0616cacbe2a34e2ca323403fa49b7108533c9cfdbab1b5c43a1b29fcf017f1c",
+      "proof_sha256": "a27e9271024101fc8c2f55d2e10bd3452d9e1734c6be8ff7a68d44db56b13440",
+      "caption_path": "content/batch/v1/P14.txt",
+      "image_path": "assets/batch/v1/P14.png",
+      "footer_version": "footer-v2",
+      "owner_approval": "pending",
+      "ready": false,
+      "source_refs": [
+        {
+          "id": "CAREER-01",
+          "pages": [
+            11,
+            12
+          ],
+          "section": "5.1–5.2; 5.5; 6.2",
+          "supports": "Mô hình hóa quy trình, tư duy hệ thống, dự án số hóa nhỏ và đo hiệu quả; vai trò con người.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "bd001e821b1c65eea96b29393ac6aaa3142e251eac963c4057d9a933d7fc868d"
+        }
+      ],
+      "external_refs": []
+    },
+    {
+      "id": "P15",
+      "pool": "main",
+      "group": "I",
+      "audience": "HS",
+      "body_sha256": "9697d7e7f3d7ed2271407442c3f2797808a4185941405a5e61870078b0802d43",
+      "caption_sha256": "d6d42bd66807fcb3692f90ce66334e9de54eb9d1410e5c7bf653284f6741d57e",
+      "image_sha256": "5f0a8bc9224e6bc617dc2a7786b602928daf35e5bc3ff0f6bcad30e4e69bf341",
+      "proof_sha256": "d90b66b6e50bad9d062a391218fc9e097c4c95481c88f1f31bb4a6d193714b6e",
+      "caption_path": "content/batch/v1/P15.txt",
+      "image_path": "assets/batch/v1/P15.png",
+      "footer_version": "footer-v2",
+      "owner_approval": "pending",
+      "ready": false,
+      "source_refs": [
+        {
+          "id": "BM12",
+          "pages": [
+            8,
+            61
+          ],
+          "section": "Học phần 60: Chuyển đổi số",
+          "supports": "Tên học phần và nội dung phân tích, thiết kế, cải tiến quy trình.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "e1ba10c22d96db4b12944217c7aa42184068d039bc47841d8b1d96b3d7f58289"
+        },
+        {
+          "id": "BM03",
+          "pages": [
+            85
+          ],
+          "section": "Học phần 60",
+          "supports": "Mô tả tương ứng về cải tiến quy trình bằng công nghệ.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "e192e5cbc52292f88f8748baab8ca1c30bde80b0c89e74aa1d930dd07f132922"
+        },
+        {
+          "id": "OWNER-2026",
+          "pages": [],
+          "section": "Đính chính của người quản lý ngày 04/10/2026",
+          "supports": "Áp dụng khóa 2026, thời gian đào tạo 3,5 năm.",
+          "adaptation": "Ưu tiên đính chính của người quản lý so với dòng khóa/thời lượng cũ trong PDF; không sửa tài liệu gốc.",
+          "revision": "1ea8f4a26f02a154707ade8fffd7b2384a86ed573f45882254dff3bd942781a6"
+        }
+      ],
+      "external_refs": []
+    },
+    {
+      "id": "P16",
+      "pool": "main",
+      "group": "D",
+      "audience": "SV",
+      "body_sha256": "ffe15eba79d92ffef8ae546dd3e806a1a0e3db6ecc88bdf812a02274ead6aa4d",
+      "caption_sha256": "4497434265438fc058d01d2b74d8c08d5295797d33ef7f96c6bd72871f836d05",
+      "image_sha256": "e09b58067a963d46edec81d841c076ace7e20e3cb65edccb91f42c16b77cf2cb",
+      "proof_sha256": "7f641545e70161e3f8937d814a579e1805af2c805b970dc8282cbe55f90f3024",
+      "caption_path": "content/batch/v1/P16.txt",
+      "image_path": "assets/batch/v1/P16.png",
+      "footer_version": "footer-v2",
+      "owner_approval": "pending",
+      "ready": false,
+      "source_refs": [
+        {
+          "id": "CAREER-06",
+          "pages": [
+            11,
+            12
+          ],
+          "section": "5.1–5.2; 5.5",
+          "supports": "Làm sạch dữ liệu, tư duy bài toán kinh doanh, kiểm chứng và trình bày kết quả; cấu trúc dự án có quy trình rõ.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "5d3bb50fd9d9a936746c0ac1809257984686949f8100204b361e9fb857b845ef"
+        }
+      ],
+      "external_refs": []
+    },
+    {
+      "id": "P17",
+      "pool": "main",
+      "group": "B",
+      "audience": "SV",
+      "body_sha256": "802dbf6ae13c1d866e6dbcb79814e90fc2e1b4a3195494d75b077a5e120f6d26",
+      "caption_sha256": "c39853d3b7eb65838449a34cfe6b51fccbebf44d0cf70ff8db7a4a548734e26a",
+      "image_sha256": "558f28e9ff2b9db46569f2bc4fcd033293e724b19c2301c0109335299a66cee9",
+      "proof_sha256": "71374642a04b7ff00503443fdc7767c8ae09b011c59ba88a33f95855384a3181",
+      "caption_path": "content/batch/v1/P17.txt",
+      "image_path": "assets/batch/v1/P17.png",
+      "footer_version": "footer-v2",
+      "owner_approval": "pending",
+      "ready": false,
+      "source_refs": [
+        {
+          "id": "CAREER-02",
+          "pages": [
+            12,
+            14
+          ],
+          "section": "5.1; 6.1",
+          "supports": "CRM, quản lý pipeline, hiểu nhu cầu và tư vấn trung thực.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "2a3c0a1e03d36b3629a49aa1f71581bf8e3ad90f9c49f5d26bda6b58a7afd4c9"
+        }
+      ],
+      "external_refs": []
+    },
+    {
+      "id": "P18",
+      "pool": "main",
+      "group": "S",
+      "audience": "SV",
+      "body_sha256": "f4763c330674659841f4b9235a3953d35fa85061ac3318d91d15cd78369d3b0a",
+      "caption_sha256": "669594e37b55ce3b4c6d7f362ec73612e8a0d519adcf6fd12912b7a302d29bfb",
+      "image_sha256": "f925f6f3f07bb3484a67f22788c9d3e8f99edf3b43a1bef26c2835173542ac1a",
+      "proof_sha256": "58ff1c8c30de2a30a56f37a83e6f1536960908347f9e1ef7d65b101d3c60cf6b",
+      "caption_path": "content/batch/v1/P18.txt",
+      "image_path": "assets/batch/v1/P18.png",
+      "footer_version": "footer-v2",
+      "owner_approval": "pending",
+      "ready": false,
+      "source_refs": [
+        {
+          "id": "CAREER-09",
+          "pages": [
+            13
+          ],
+          "section": "4.2–4.3",
+          "supports": "Hồ sơ có sản phẩm minh chứng, mô tả dự án và chuẩn bị phỏng vấn; góp ý từ nơi thực tập.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "4b1a991a8820a8ce8bd304b81fe3e2f0d883ee89f7839d2af6fd4d43b3d84f09"
+        }
+      ],
+      "external_refs": []
+    },
+    {
+      "id": "P19",
+      "pool": "main",
+      "group": "S",
+      "audience": "HS",
+      "body_sha256": "7fa1e8fbcb960b4e9e5006e16cafcb0bb0f7e06aff524f2a8903e7afda9682ac",
+      "caption_sha256": "df8653925f4a0bc6be299c7af8302cfa90cb1f18861f17d96d36e420e3182ed3",
+      "image_sha256": "b61dd3bbb5843b492c2550cc966bc7fbc5b545d00c13786698c5c05e84d9b3ca",
+      "proof_sha256": "604d6cb7c00d4fd0d341e7eb685e3c3296a8d9b99b76105ad4708f393d4eff32",
+      "caption_path": "content/batch/v1/P19.txt",
+      "image_path": "assets/batch/v1/P19.png",
+      "footer_version": "footer-v2",
+      "owner_approval": "pending",
+      "ready": false,
+      "source_refs": [
+        {
+          "id": "CAREER-09",
+          "pages": [
+            13
+          ],
+          "section": "4.2–4.3",
+          "supports": "Hồ sơ có sản phẩm minh chứng, mô tả dự án và chuẩn bị phỏng vấn; góp ý từ nơi thực tập.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "4b1a991a8820a8ce8bd304b81fe3e2f0d883ee89f7839d2af6fd4d43b3d84f09"
+        }
+      ],
+      "external_refs": []
+    },
+    {
+      "id": "P20",
+      "pool": "main",
+      "group": "I",
+      "audience": "HS",
+      "body_sha256": "f3347133cd865c241b7adee3154fbc8b29d5675671a161eadee7a66934548f8c",
+      "caption_sha256": "bcd820978736870eb14a3c73df454cb74a0f0f746dec9a2bc996c347361606ad",
+      "image_sha256": "df0d358a4fb6018ecd4b7e10570443108039c3ff7ab5b2a6c85ad61edf049b53",
+      "proof_sha256": "f5182c51b485233a65c9faf70ed406056e1e53fefb83ea2bf3440856cd33efdc",
+      "caption_path": "content/batch/v1/P20.txt",
+      "image_path": "assets/batch/v1/P20.png",
+      "footer_version": "footer-v2",
+      "owner_approval": "pending",
+      "ready": false,
+      "source_refs": [
+        {
+          "id": "BM03",
+          "pages": [
+            12
+          ],
+          "section": "1.8.1 Vị trí việc làm",
+          "supports": "Các hướng thương mại điện tử, chuyển đổi số, ứng dụng AI; quản lý cấp cao sau kinh nghiệm công tác.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "e192e5cbc52292f88f8748baab8ca1c30bde80b0c89e74aa1d930dd07f132922"
+        },
+        {
+          "id": "OWNER-2026",
+          "pages": [],
+          "section": "Đính chính của người quản lý ngày 04/10/2026",
+          "supports": "Áp dụng khóa 2026, thời gian đào tạo 3,5 năm.",
+          "adaptation": "Ưu tiên đính chính của người quản lý so với dòng khóa/thời lượng cũ trong PDF; không sửa tài liệu gốc.",
+          "revision": "1ea8f4a26f02a154707ade8fffd7b2384a86ed573f45882254dff3bd942781a6"
+        }
+      ],
+      "external_refs": []
+    },
+    {
+      "id": "P21",
+      "pool": "main",
+      "group": "D",
+      "audience": "SV",
+      "body_sha256": "139d2c994dfec815260e38a845ca519e756f629e61839f3079fb1c30073a167b",
+      "caption_sha256": "b6ed6415882a631eb231ef90bbb79543175fc915a63c3b178907c9feaccc8be7",
+      "image_sha256": "4f47d7c8a0571a1a9dc17c38d3d9110a331d8ea8554d9f523341dc52a0776243",
+      "proof_sha256": "f0fb7a81d36bebf0f960a09f8acd6ada7990f447d42a72f09a512e03f42be2cf",
+      "caption_path": "content/batch/v1/P21.txt",
+      "image_path": "assets/batch/v1/P21.png",
+      "footer_version": "footer-v2",
+      "owner_approval": "pending",
+      "ready": false,
+      "source_refs": [
+        {
+          "id": "CAREER-06",
+          "pages": [
+            11,
+            12
+          ],
+          "section": "5.1–5.2; 5.5",
+          "supports": "Làm sạch dữ liệu, tư duy bài toán kinh doanh, kiểm chứng và trình bày kết quả; cấu trúc dự án có quy trình rõ.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "5d3bb50fd9d9a936746c0ac1809257984686949f8100204b361e9fb857b845ef"
+        }
+      ],
+      "external_refs": []
+    },
+    {
+      "id": "P22",
+      "pool": "main",
+      "group": "A",
+      "audience": "SV",
+      "body_sha256": "cbb93b52c64682844a98d75eec896198fcedf8c55598a56056bc0699bf84a7c8",
+      "caption_sha256": "882ddeb7e6241bb51cc4d196b4d21b72481145b19bdaf91bab8e332e72c50218",
+      "image_sha256": "98a801be2580611887043567b483db74101b1ea023a8a922013695e97d851cc3",
+      "proof_sha256": "eb81707299ec67ecd3aa93d1cf7285539d5761677380ed0a945908322b5071c6",
+      "caption_path": "content/batch/v1/P22.txt",
+      "image_path": "assets/batch/v1/P22.png",
+      "footer_version": "footer-v2",
+      "owner_approval": "pending",
+      "ready": false,
+      "source_refs": [
+        {
+          "id": "CAREER-04",
+          "pages": [
+            4
+          ],
+          "section": "1.1 Blockchain",
+          "supports": "Khái niệm nền tảng về blockchain; không dùng số liệu thị trường hoặc nội dung pháp lý của cẩm nang.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "e6c0de6ca1f02577fb18b41045c099b78101c4e3a6b8e1830fdfb65e325d0ca2"
+        }
+      ],
+      "external_refs": [
+        {
+          "id": "NIST-8202",
+          "url": "https://doi.org/10.6028/NIST.IR.8202",
+          "pdf_url": "https://nvlpubs.nist.gov/nistpubs/ir/2018/NIST.IR.8202.pdf",
+          "title": "Blockchain Technology Overview",
+          "published": "2018-10",
+          "accessed": "2026-10-06",
+          "sections": [
+            "3.2 Transactions",
+            "8 Application Considerations",
+            "8.1 Additional Blockchain Considerations"
+          ],
+          "pdf_pages": [
+            20,
+            21,
+            52,
+            55
+          ],
+          "supports": "Sổ cái chia sẻ và bản ghi chống sửa đổi; minh họa sự kiện chuỗi cung ứng và yêu cầu đánh giá công nghệ phù hợp."
+        }
+      ]
+    },
+    {
+      "id": "P23",
+      "pool": "main",
+      "group": "B",
+      "audience": "SV",
+      "body_sha256": "637b9ba17cf7e9052c02e55fb4fc3559e9c1ee3a5c5343a3a5122ab8dbeaf49b",
+      "caption_sha256": "4e4658cb4df52602ac6964f2762d7043972370b93947e3f8413e789e9bbbf483",
+      "image_sha256": "49e9c95648125fc2715091bf985ef05e7e11c59e76c560ce4dec7af7e9ee6efb",
+      "proof_sha256": "8df7569afe9faffd67e81de30688e38e69ebb7307a74cab58caee2164441129f",
+      "caption_path": "content/batch/v1/P23.txt",
+      "image_path": "assets/batch/v1/P23.png",
+      "footer_version": "footer-v2",
+      "owner_approval": "pending",
+      "ready": false,
+      "source_refs": [
+        {
+          "id": "CAREER-03",
+          "pages": [
+            5,
+            12,
+            14
+          ],
+          "section": "Chuyên viên nội dung; 5.1–5.2; 6.2",
+          "supports": "Lên kế hoạch nội dung theo đối tượng, kết hợp sáng tạo và đo lường, bám mục tiêu/khách hàng.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "65054d14581803e2691a64602f34d9477981f19807ca36e0df5458ec0c1f6b55"
+        }
+      ],
+      "external_refs": []
+    },
+    {
+      "id": "P24",
+      "pool": "main",
+      "group": "I",
+      "audience": "SV",
+      "body_sha256": "f4bc80e2787191fb61915ab3f2f96c4cab414f0bbe5ad30a3fa238be3e49a975",
+      "caption_sha256": "8ee2292d15ff9c3d1e356f2d9b7306f3392bea1bbe22b7cc524f768925aee84f",
+      "image_sha256": "82b6cfb3c4c07cd3fcdfdf3378b01eff75e98fcee030dbc6672b2a3fea6180a5",
+      "proof_sha256": "7f87fdfb144ead542680a9a8e30748c2fa93376196f1f21853746f2c528207d5",
+      "caption_path": "content/batch/v1/P24.txt",
+      "image_path": "assets/batch/v1/P24.png",
+      "footer_version": "footer-v2",
+      "owner_approval": "pending",
+      "ready": false,
+      "source_refs": [
+        {
+          "id": "BM11",
+          "pages": [
+            4,
+            5
+          ],
+          "section": "PLO6–PLO10",
+          "supports": "Phối hợp nhóm, công cụ số, giải quyết vấn đề và chủ động bồi dưỡng năng lực.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "c08b3536e1fe7df04075e3706761deebddbf1d8762cfc52d089e0639cfe67a61"
+        },
+        {
+          "id": "OWNER-2026",
+          "pages": [],
+          "section": "Đính chính của người quản lý ngày 04/10/2026",
+          "supports": "Áp dụng khóa 2026, thời gian đào tạo 3,5 năm.",
+          "adaptation": "Ưu tiên đính chính của người quản lý so với dòng khóa/thời lượng cũ trong PDF; không sửa tài liệu gốc.",
+          "revision": "1ea8f4a26f02a154707ade8fffd7b2384a86ed573f45882254dff3bd942781a6"
+        }
+      ],
+      "external_refs": []
+    },
+    {
+      "id": "P25",
+      "pool": "main",
+      "group": "R",
+      "audience": "HS",
+      "body_sha256": "1167de0076b1c449d0f4a3d0713f21f3d5c77753026c052c5f65f064d217dd06",
+      "caption_sha256": "5fbde5be4d9feb89a9a1f36791dbeb973b2e2671db2d10beb91835f8ef942d44",
+      "image_sha256": "f424050944511e23dbc02e6e63769920c73020b013a4766e9681c9fe63e4a483",
+      "proof_sha256": "c09f966220e6ace78f282741fc0ad9025072a1457f4b85bb09e881e0275e1aa6",
+      "caption_path": "content/batch/v1/P25.txt",
+      "image_path": "assets/batch/v1/P25.png",
+      "footer_version": "footer-v2",
+      "owner_approval": "pending",
+      "ready": false,
+      "source_refs": [
+        {
+          "id": "CAREER-09",
+          "pages": [
+            13
+          ],
+          "section": "4.3 mục 5",
+          "supports": "Cảnh giác tin việc nhẹ lương cao và yêu cầu đặt cọc/nộp phí trước.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "4b1a991a8820a8ce8bd304b81fe3e2f0d883ee89f7839d2af6fd4d43b3d84f09"
+        }
+      ],
+      "external_refs": []
+    },
+    {
+      "id": "P26",
+      "pool": "main",
+      "group": "D",
+      "audience": "SV",
+      "body_sha256": "0364fb29f978db73e99e118d86fb72c03c08c18cd04689a3f67d550ca013440b",
+      "caption_sha256": "5f44527bb3567d28290acea6c8b1baea68ea9261e548735ae4636085bd2fc8e3",
+      "image_sha256": "5d243978bd47a8381f31a4e5566b07d4ff227207b655268375c3e8e222f2ed04",
+      "proof_sha256": "ddeaedcf3e58b38222a564253ce67432b8b98c49e3a36ec63cb5646a54c415c9",
+      "caption_path": "content/batch/v1/P26.txt",
+      "image_path": "assets/batch/v1/P26.png",
+      "footer_version": "footer-v2",
+      "owner_approval": "pending",
+      "ready": false,
+      "source_refs": [
+        {
+          "id": "CAREER-06",
+          "pages": [
+            11,
+            12
+          ],
+          "section": "5.1–5.2; 5.5",
+          "supports": "Làm sạch dữ liệu, tư duy bài toán kinh doanh, kiểm chứng và trình bày kết quả; cấu trúc dự án có quy trình rõ.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "5d3bb50fd9d9a936746c0ac1809257984686949f8100204b361e9fb857b845ef"
+        }
+      ],
+      "external_refs": []
+    },
+    {
+      "id": "P27",
+      "pool": "main",
+      "group": "B",
+      "audience": "SV",
+      "body_sha256": "2d50428bbfbac1797b492bc9085fd387066bb673718b5cfda3abbd8fcf3baa73",
+      "caption_sha256": "de830c2a38885ab9bd17a758c4ac545480ca7fa778f46ad38f489c9022063568",
+      "image_sha256": "15e6c59f16b0918643318639cbfafb8258dbfcd25b60865d7d78fcb9f88c27ae",
+      "proof_sha256": "9afd61730da72e4b0ae7cd561daded325fc71445c855d98851403e412df0d64b",
+      "caption_path": "content/batch/v1/P27.txt",
+      "image_path": "assets/batch/v1/P27.png",
+      "footer_version": "footer-v2",
+      "owner_approval": "pending",
+      "ready": false,
+      "source_refs": [
+        {
+          "id": "CAREER-07",
+          "pages": [
+            12
+          ],
+          "section": "5.2 Tư duy kinh doanh",
+          "supports": "Hiểu lợi nhuận, giá vốn và chiến lược sản phẩm; phép tính minh họa do dự án xây dựng.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "c57e73f44abe722f3bcea0079c9e1d0a796663994cabfeeac1964585920ce504"
+        }
+      ],
+      "external_refs": []
+    },
+    {
+      "id": "P28",
+      "pool": "main",
+      "group": "S",
+      "audience": "SV",
+      "body_sha256": "3f0d277aa8c8995b6e40b01d8c4f95988d3434e01cc71a4c5e064b2a04c84f1f",
+      "caption_sha256": "166513b12922676ca39bbba676998f005c5502095af89fe283d3471cfb1fe676",
+      "image_sha256": "f70a7856cda8c967960e361598de7bd2a74897babff353e09f0a3bc95fbc76b8",
+      "proof_sha256": "e84520c42ef69e0f3bad77c480fba9184d4b6887aebc37fdf32c3bafad096ac9",
+      "caption_path": "content/batch/v1/P28.txt",
+      "image_path": "assets/batch/v1/P28.png",
+      "footer_version": "footer-v2",
+      "owner_approval": "pending",
+      "ready": false,
+      "source_refs": [
+        {
+          "id": "CAREER-09",
+          "pages": [
+            13
+          ],
+          "section": "4.2–4.3",
+          "supports": "Hồ sơ có sản phẩm minh chứng, mô tả dự án và chuẩn bị phỏng vấn; góp ý từ nơi thực tập.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "4b1a991a8820a8ce8bd304b81fe3e2f0d883ee89f7839d2af6fd4d43b3d84f09"
+        },
+        {
+          "id": "BM11",
+          "pages": [
+            4
+          ],
+          "section": "PLO6",
+          "supports": "Phối hợp nhóm, lập kế hoạch và kiểm soát tiến độ.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "c08b3536e1fe7df04075e3706761deebddbf1d8762cfc52d089e0639cfe67a61"
+        }
+      ],
+      "external_refs": []
+    },
+    {
+      "id": "P29",
+      "pool": "main",
+      "group": "R",
+      "audience": "SV",
+      "body_sha256": "a11638286cdecb41f5880719ae5d0da7dca28289a205e4ca3eb87146f29fcc90",
+      "caption_sha256": "6c34d21273afb2f222671aeef05b41296a1a0161a6f026c8b5dd04f15a93f6f6",
+      "image_sha256": "3c597883ca0f0ac8f73173c175cb9968dead8fac8de47d8372d13528ed3a18ce",
+      "proof_sha256": "2928a29a6764290a1d2c1d279f44004e2c742f514b226289d8efd639a7a2ad9f",
+      "caption_path": "content/batch/v1/P29.txt",
+      "image_path": "assets/batch/v1/P29.png",
+      "footer_version": "footer-v2",
+      "owner_approval": "pending",
+      "ready": false,
+      "source_refs": [
+        {
+          "id": "CAREER-08",
+          "pages": [
+            15
+          ],
+          "section": "6.2 Đạo đức và bảo mật",
+          "supports": "Không đưa dữ liệu nhạy cảm doanh nghiệp lên công cụ AI công cộng.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "f756f29aeff7043da5d087d6b79beefefde5a0930de43e9f1ce91d704ade7785"
+        }
+      ],
+      "external_refs": []
+    },
+    {
+      "id": "P30",
+      "pool": "main",
+      "group": "I",
+      "audience": "SV",
+      "body_sha256": "40a5602b7954aa64993055f2a6ccf0e68cf63622e3d99f34f4ec656750b83fee",
+      "caption_sha256": "d4030cfcb1d8060a4d6925adb65fa5f3f34ec4c34b946a57e5832cc7775971f0",
+      "image_sha256": "db106af8f6cc9a8ed5fcfc61a19e6cae7c7ecbfe973e82591c63bc41bcffe331",
+      "proof_sha256": "d1fa39fff13dab8eb5e8a0d6aac756a1df544d716b77f1e3e89e024559ecd1a7",
+      "caption_path": "content/batch/v1/P30.txt",
+      "image_path": "assets/batch/v1/P30.png",
+      "footer_version": "footer-v2",
+      "owner_approval": "pending",
+      "ready": false,
+      "source_refs": [
+        {
+          "id": "BM12",
+          "pages": [
+            8,
+            61
+          ],
+          "section": "Học phần 61: Digital Marketing",
+          "supports": "Tên học phần, các kênh số, lập kế hoạch và đọc số liệu đo hiệu quả.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "e1ba10c22d96db4b12944217c7aa42184068d039bc47841d8b1d96b3d7f58289"
+        },
+        {
+          "id": "BM03",
+          "pages": [
+            85
+          ],
+          "section": "Học phần 61",
+          "supports": "Mô tả tương ứng về Digital Marketing.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "e192e5cbc52292f88f8748baab8ca1c30bde80b0c89e74aa1d930dd07f132922"
+        },
+        {
+          "id": "OWNER-2026",
+          "pages": [],
+          "section": "Đính chính của người quản lý ngày 04/10/2026",
+          "supports": "Áp dụng khóa 2026, thời gian đào tạo 3,5 năm.",
+          "adaptation": "Ưu tiên đính chính của người quản lý so với dòng khóa/thời lượng cũ trong PDF; không sửa tài liệu gốc.",
+          "revision": "1ea8f4a26f02a154707ade8fffd7b2384a86ed573f45882254dff3bd942781a6"
+        }
+      ],
+      "external_refs": []
+    },
+    {
+      "id": "R01",
+      "pool": "reserve",
+      "group": "D",
+      "audience": "HS",
+      "body_sha256": "81dc623f6a9ff92997368f1aed02ad7998b719b56c70eb4e8c30e6cea00c048d",
+      "caption_sha256": "d0f8ceed0b5468b59630fd55d94eccd96f4964f03dda04184c7717c4426549f2",
+      "image_sha256": "bdfc0bc28dbb6da7a18297cd417aeec8724b4120fe66980a05ac4f2fc0f3254c",
+      "proof_sha256": "a31d4dd263984b09e963e4bae0a017034b7f44f99b150e59c7b04bbcdabb6899",
+      "caption_path": "content/batch/v1/R01.txt",
+      "image_path": "assets/batch/v1/R01.png",
+      "footer_version": "footer-v2",
+      "owner_approval": "pending",
+      "ready": false,
+      "source_refs": [
+        {
+          "id": "CAREER-06",
+          "pages": [
+            11,
+            12
+          ],
+          "section": "5.1–5.2; 5.5",
+          "supports": "Làm sạch dữ liệu, tư duy bài toán kinh doanh, kiểm chứng và trình bày kết quả; cấu trúc dự án có quy trình rõ.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "5d3bb50fd9d9a936746c0ac1809257984686949f8100204b361e9fb857b845ef"
+        }
+      ],
+      "external_refs": []
+    },
+    {
+      "id": "R02",
+      "pool": "reserve",
+      "group": "D",
+      "audience": "SV",
+      "body_sha256": "28b0ddeabf58b8e082584b39b6bc6db975990736426c551952c44ecce1a6c842",
+      "caption_sha256": "5e9c12f332dfcfef8fcf45209d6c20cc3a4edce5ec41236125b930bca203c05e",
+      "image_sha256": "dc690a0122c02fa5bc7115948f8d3e85d1df3a1989fb9ce3bd9b190751dd74be",
+      "proof_sha256": "9edcf7cf4536b13038d9c15aa05fb7855a12b86655c9c66efa2f7e55945209a9",
+      "caption_path": "content/batch/v1/R02.txt",
+      "image_path": "assets/batch/v1/R02.png",
+      "footer_version": "footer-v2",
+      "owner_approval": "pending",
+      "ready": false,
+      "source_refs": [
+        {
+          "id": "CAREER-06",
+          "pages": [
+            11,
+            12
+          ],
+          "section": "5.1–5.2; 5.5",
+          "supports": "Làm sạch dữ liệu, tư duy bài toán kinh doanh, kiểm chứng và trình bày kết quả; cấu trúc dự án có quy trình rõ.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "5d3bb50fd9d9a936746c0ac1809257984686949f8100204b361e9fb857b845ef"
+        }
+      ],
+      "external_refs": []
+    },
+    {
+      "id": "R03",
+      "pool": "reserve",
+      "group": "A",
+      "audience": "SV",
+      "body_sha256": "7b68a8993730115250f5b29e217aec3910a973cc5f1069adc1011647badc1412",
+      "caption_sha256": "191cf110fdbd36cc6ccadb22447b9f0c3560f02d9f0b5f721f9ba2d9fb451abe",
+      "image_sha256": "13a58224198e45d816f5a84185fa2ebd27d1fab84e4b129b5909080975095484",
+      "proof_sha256": "12875094d0bd721f64afcc39c376e46807e342eb51063ce0a4d9d027ef4b8deb",
+      "caption_path": "content/batch/v1/R03.txt",
+      "image_path": "assets/batch/v1/R03.png",
+      "footer_version": "footer-v2",
+      "owner_approval": "pending",
+      "ready": false,
+      "source_refs": [
+        {
+          "id": "CAREER-08",
+          "pages": [
+            13,
+            15
+          ],
+          "section": "5.1–5.2; 6.1–6.2",
+          "supports": "Prompt, tư duy quy trình, kiểm chứng kết quả AI và bảo mật dữ liệu.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "f756f29aeff7043da5d087d6b79beefefde5a0930de43e9f1ce91d704ade7785"
+        }
+      ],
+      "external_refs": []
+    },
+    {
+      "id": "R04",
+      "pool": "reserve",
+      "group": "A",
+      "audience": "SV",
+      "body_sha256": "284a5c4e6fef19fa1a0d06d23d3b628ac780b91a1b0c53cbfa01dcc6ddb9d3e6",
+      "caption_sha256": "2cefb1461bbbf6a863de8d78701d5ed7af76dd079b73919ef0f31cb34cb5d626",
+      "image_sha256": "02241c0ca6fde4e29cd3559fb113f0a40522298e961a9ad7a0340d8c5adf3d7b",
+      "proof_sha256": "fb16309d913f77848cdb9f8d7463fe1a4070303431586d58bd9f6c966b6d66a7",
+      "caption_path": "content/batch/v1/R04.txt",
+      "image_path": "assets/batch/v1/R04.png",
+      "footer_version": "footer-v2",
+      "owner_approval": "pending",
+      "ready": false,
+      "source_refs": [
+        {
+          "id": "CAREER-01",
+          "pages": [
+            11,
+            12
+          ],
+          "section": "5.1–5.2; 5.5; 6.2",
+          "supports": "Mô hình hóa quy trình, tư duy hệ thống, dự án số hóa nhỏ và đo hiệu quả; vai trò con người.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "bd001e821b1c65eea96b29393ac6aaa3142e251eac963c4057d9a933d7fc868d"
+        }
+      ],
+      "external_refs": []
+    },
+    {
+      "id": "R05",
+      "pool": "reserve",
+      "group": "B",
+      "audience": "HS",
+      "body_sha256": "585647f63041f7b45182931ec40b5e40ad9821bf1ef8007e18067041265863c1",
+      "caption_sha256": "54ab3a9a99d32eb835a07891bd68eefd89e467e6a4095db96f980c5e299eee86",
+      "image_sha256": "083eafe99ff362c9e25ede6b21afee149f3278060b8e525bf3264422ab823b70",
+      "proof_sha256": "066af97fa82e7f7d4f8906073e946aba2187134481fcfbcb933d63a8230932d4",
+      "caption_path": "content/batch/v1/R05.txt",
+      "image_path": "assets/batch/v1/R05.png",
+      "footer_version": "footer-v2",
+      "owner_approval": "pending",
+      "ready": false,
+      "source_refs": [
+        {
+          "id": "CAREER-07",
+          "pages": [
+            4,
+            5
+          ],
+          "section": "1.1; Vận hành sàn",
+          "supports": "Nội dung, vận hành, chăm sóc và dữ liệu trong thương mại số.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "c57e73f44abe722f3bcea0079c9e1d0a796663994cabfeeac1964585920ce504"
+        }
+      ],
+      "external_refs": []
+    },
+    {
+      "id": "R06",
+      "pool": "reserve",
+      "group": "B",
+      "audience": "SV",
+      "body_sha256": "cd6841dcc7a464c9dd655e6c86b9cf71df18b7d7887bc29f1fc6cb8f048a088b",
+      "caption_sha256": "e9830ff4f7d55ba0f75f0b22dcd687b4ef01fe14f845149d1197a0c2ce812f63",
+      "image_sha256": "d8809d4854da622a82cf9682db45ab67a7d5a3020e7176f4f512e2710a2e1756",
+      "proof_sha256": "1603d652148e2705c367604f0d07f8b77692f4fa4576b34e17abac1205c164c5",
+      "caption_path": "content/batch/v1/R06.txt",
+      "image_path": "assets/batch/v1/R06.png",
+      "footer_version": "footer-v2",
+      "owner_approval": "pending",
+      "ready": false,
+      "source_refs": [
+        {
+          "id": "CAREER-02",
+          "pages": [
+            7
+          ],
+          "section": "Chuyên viên Thành công khách hàng",
+          "supports": "Hướng dẫn sử dụng, giải quyết vấn đề, theo dõi hài lòng và giá trị sản phẩm.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "2a3c0a1e03d36b3629a49aa1f71581bf8e3ad90f9c49f5d26bda6b58a7afd4c9"
+        }
+      ],
+      "external_refs": []
+    },
+    {
+      "id": "R07",
+      "pool": "reserve",
+      "group": "S",
+      "audience": "SV",
+      "body_sha256": "9d712989246dfe3e3535fd60ddb731221bab92801d98357941a0f40e372ab360",
+      "caption_sha256": "5b20a1f3b2f303dc74ac9e4dea348b0b28ef25b7364223c5d5cd4e6efc04d0fc",
+      "image_sha256": "6f0cf28ba56237498eb79c83a43028a9fb5a9721338653b667de6360d94876f1",
+      "proof_sha256": "5d48f4ae6bb6e14d523307a2940f8f44fe9fcbc38857f34b8c2230331710d83c",
+      "caption_path": "content/batch/v1/R07.txt",
+      "image_path": "assets/batch/v1/R07.png",
+      "footer_version": "footer-v2",
+      "owner_approval": "pending",
+      "ready": false,
+      "source_refs": [
+        {
+          "id": "CAREER-09",
+          "pages": [
+            13
+          ],
+          "section": "4.2–4.3",
+          "supports": "Hồ sơ có sản phẩm minh chứng, mô tả dự án và chuẩn bị phỏng vấn; góp ý từ nơi thực tập.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "4b1a991a8820a8ce8bd304b81fe3e2f0d883ee89f7839d2af6fd4d43b3d84f09"
+        },
+        {
+          "id": "BM11",
+          "pages": [
+            4
+          ],
+          "section": "PLO5–PLO6",
+          "supports": "Giao tiếp đa bối cảnh, phối hợp nhóm và cải tiến công việc.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "c08b3536e1fe7df04075e3706761deebddbf1d8762cfc52d089e0639cfe67a61"
+        }
+      ],
+      "external_refs": []
+    },
+    {
+      "id": "R08",
+      "pool": "reserve",
+      "group": "R",
+      "audience": "SV",
+      "body_sha256": "c2cbe6096a23a1f6300a57c44479efa6905dadc2ebf9c1d1a9232d0ab8a87964",
+      "caption_sha256": "c587b222b55d30c929bcd6b898b299e7d5a56a2aa936a7718921db02688a35eb",
+      "image_sha256": "ba591dec568efad70803f4e2ab387622cc66ddf3d47996ab879280dfeecd54bf",
+      "proof_sha256": "acadaf306f581fb407b2123bbe7be47b69be0478c4251776e6836aaad62abd8b",
+      "caption_path": "content/batch/v1/R08.txt",
+      "image_path": "assets/batch/v1/R08.png",
+      "footer_version": "footer-v2",
+      "owner_approval": "pending",
+      "ready": false,
+      "source_refs": [
+        {
+          "id": "CAREER-04",
+          "pages": [
+            5,
+            15
+          ],
+          "section": "1.4; 6.1–6.2",
+          "supports": "Tách làm việc trong ngành và đầu tư; tìm hiểu dự án, cảnh giác lời hứa và yêu cầu nộp tiền.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "e6c0de6ca1f02577fb18b41045c099b78101c4e3a6b8e1830fdfb65e325d0ca2"
+        }
+      ],
+      "external_refs": []
+    },
+    {
+      "id": "R09",
+      "pool": "reserve",
+      "group": "I",
+      "audience": "HS",
+      "body_sha256": "336c19ffaf75b7ad797a304cd0b90642f8398fdc752068cd212eda4f6f7ca322",
+      "caption_sha256": "cf8b14e34fc5e5a752c47ae2d013f3113083e8070c7efbfe74251bc228dff48a",
+      "image_sha256": "f1ab2f9a6956492365c1efac7e994654dcb43bcd51d0caac4daa8ddc5b0e7bb6",
+      "proof_sha256": "3191c0555facbfff7112757809da84f43669ee8bec62810b31d70f3407bb720b",
+      "caption_path": "content/batch/v1/R09.txt",
+      "image_path": "assets/batch/v1/R09.png",
+      "footer_version": "footer-v2",
+      "owner_approval": "pending",
+      "ready": false,
+      "source_refs": [
+        {
+          "id": "BM03",
+          "pages": [
+            8
+          ],
+          "section": "1.6 Mục tiêu",
+          "supports": "Nền tảng kinh tế, công nghệ/kinh doanh số và giải quyết vấn đề.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "e192e5cbc52292f88f8748baab8ca1c30bde80b0c89e74aa1d930dd07f132922"
+        },
+        {
+          "id": "BM11",
+          "pages": [
+            4
+          ],
+          "section": "PLO5–PLO9",
+          "supports": "Giao tiếp, nhóm, công cụ số và trách nhiệm nghề nghiệp.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "c08b3536e1fe7df04075e3706761deebddbf1d8762cfc52d089e0639cfe67a61"
+        },
+        {
+          "id": "OWNER-2026",
+          "pages": [],
+          "section": "Đính chính của người quản lý ngày 04/10/2026",
+          "supports": "Áp dụng khóa 2026, thời gian đào tạo 3,5 năm.",
+          "adaptation": "Ưu tiên đính chính của người quản lý so với dòng khóa/thời lượng cũ trong PDF; không sửa tài liệu gốc.",
+          "revision": "1ea8f4a26f02a154707ade8fffd7b2384a86ed573f45882254dff3bd942781a6"
+        }
+      ],
+      "external_refs": []
+    },
+    {
+      "id": "R10",
+      "pool": "reserve",
+      "group": "I",
+      "audience": "SV",
+      "body_sha256": "06a1be26180aed3356cd23670a6e1925f093d21ddedf5a0bb44faa1bed0232ca",
+      "caption_sha256": "ee456a038de166dcddbd590c0b0dceefc18f6d5b4323fc4102c420f056d3d113",
+      "image_sha256": "cb9b06ca3f3df9aa28738fc561d9b9ae04abfaf68ba7e5c4f5ccc9e6b161f9bf",
+      "proof_sha256": "af986cd505970c3e69f081167f54c5b0a85d13dc8cb823e871896f6a5c02612a",
+      "caption_path": "content/batch/v1/R10.txt",
+      "image_path": "assets/batch/v1/R10.png",
+      "footer_version": "footer-v2",
+      "owner_approval": "pending",
+      "ready": false,
+      "source_refs": [
+        {
+          "id": "BM11",
+          "pages": [
+            4,
+            5
+          ],
+          "section": "PLO5–PLO10",
+          "supports": "Giao tiếp, nhóm, công cụ số và xác định/bồi dưỡng năng lực cá nhân.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU.",
+          "revision": "c08b3536e1fe7df04075e3706761deebddbf1d8762cfc52d089e0639cfe67a61"
+        },
+        {
+          "id": "OWNER-2026",
+          "pages": [],
+          "section": "Đính chính của người quản lý ngày 04/10/2026",
+          "supports": "Áp dụng khóa 2026, thời gian đào tạo 3,5 năm.",
+          "adaptation": "Ưu tiên đính chính của người quản lý so với dòng khóa/thời lượng cũ trong PDF; không sửa tài liệu gốc.",
+          "revision": "1ea8f4a26f02a154707ade8fffd7b2384a86ed573f45882254dff3bd942781a6"
+        }
+      ],
+      "external_refs": []
+    }
+  ]
+}

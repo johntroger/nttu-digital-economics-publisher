@@ -2,7 +2,7 @@ import {spawnSync} from 'node:child_process';
 import {pathToFileURL} from 'node:url';
 export function pathViolation(path){
  const p=path.toLowerCase();
- return /(^|\/)(node_modules|tmp|__pycache__|\.codex|\.agents|\.aws|\.gcm)(\/|$)/.test(p)||/^assets\/(sources|brand\/originals|samples)\//.test(p)||(/(^|\/)\.env(?:\.|$)/.test(p)&&p!=='.env.example')||/(^|\/)\.dev\.vars(?:\.|$)/.test(p)||/\.(pdf|sqlite(?:-wal|-shm)?|db|pyc|pem|key|log)$/.test(p);
+ return /(^|\/)(node_modules|tmp|__pycache__|\.codex|\.agents|\.aws|\.gcm)(\/|$)/.test(p)||/^assets\/(sources|brand\/originals|samples|batch)\//.test(p)||(/(^|\/)\.env(?:\.|$)/.test(p)&&p!=='.env.example')||/(^|\/)\.dev\.vars(?:\.|$)/.test(p)||/\.(pdf|sqlite(?:-wal|-shm)?|db|pyc|pem|key|log)$/.test(p);
 }
 export function secretViolation(text){return /(?:gh[pousr]_[A-Za-z0-9]{36,}|github_pat_[A-Za-z0-9_]{60,}|AIza[0-9A-Za-z_-]{35}|AKIA[A-Z0-9]{16}|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|\b[0-9]{8,12}:[A-Za-z0-9_-]{35}\b)/.test(text);}
 export function checkRepository(){

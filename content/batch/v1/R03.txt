@@ -1,0 +1,27 @@
+PROMPT RÕ HƠN KHI CÓ MỤC TIÊU VÀ TIÊU CHÍ ĐÁNH GIÁ
+
+“Viết giúp một bài thật hay” để lại nhiều điều cho AI tự đoán. Một yêu cầu rõ hơn giúp bạn có cơ sở đánh giá bản nháp.
+
+Thử ghi bốn phần trước khi gửi:
+• Mục tiêu: người đọc cần hiểu hoặc làm điều gì?
+• Bối cảnh: đối tượng, tài liệu được phép dùng, phạm vi bài.
+• Đầu ra: dạng nội dung, độ dài mong muốn, điểm cần có.
+• Kiểm tra: điều nào phải đúng, phần chưa có căn cứ cần đánh dấu ra sao?
+
+Ví dụ giả định: “Soạn hướng dẫn đăng ký hoạt động cho người mới từ thông tin được cung cấp. Chỉ dùng các bước đã có, không tự thêm thời hạn. Nêu chỗ thiếu thông tin để tôi bổ sung.”
+
+Sau khi nhận kết quả, đối chiếu lại với nguồn và yêu cầu. Prompt rõ không loại bỏ mọi sai sót; bạn vẫn cần kiểm tra nội dung, phép tính và bối cảnh trước khi dùng.
+
+Lượt luyện tập: viết một yêu cầu cho cùng nhiệm vụ theo hai cách, rồi so bản nháp bằng tiêu chí đã đặt. Ghi điều cải thiện được và điều còn phải sửa bằng tay. Đó là cách học từ kết quả thay vì chỉ sưu tầm câu lệnh.
+
+============
+
+Ngành Kinh tế số (Chuyên ngành Kinh doanh số) giúp người học làm chủ công nghệ AI, blockchain, big data để phân tích dữ liệu và đưa ra quyết định thông minh. Kết hợp kiến thức kinh tế - công nghệ hiện đại, bạn sẽ phát triển tư duy kinh doanh sáng tạo, làm chủ xu hướng chuyển đổi số và tự tin chinh phục thị trường toàn cầu!
+NGÀNH KINH TẾ SỐ, KHOA QTKD, TRƯỜNG ĐẠI HỌC NGUYỄN TẤT THÀNH
+📞 Hotline: 1900 2039 – Ext: 429
+✉️ Email: tran.tung@nttu.edu.vn
+🚩 Địa chỉ: Tầng 1, 331 Đỗ Mười, Phường An Phú Đông, TP. Hồ Chí Minh, Việt Nam
+🌐 Website: https://fba.ntt.edu.vn/kinh-te-so/
+🌟 Fanpage: https://www.facebook.com/NganhKinhTeSoNTTU
+🌟 Tiktok: https://www.tiktok.com/@nganhkinhteso_nttu
+#NTTU #NguyenTatThanhUniversity #nganhkinhteso #kinhteso

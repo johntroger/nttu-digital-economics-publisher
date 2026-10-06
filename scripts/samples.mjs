@@ -10,3 +10,7 @@ const result=spawnSync(python,[script],{cwd,stdio:'inherit',shell:false});
 if(result.error){process.stderr.write('Python/Pillow runtime unavailable. Set SAMPLE_PYTHON to an existing compatible Python.\n');process.exit(1);}
 if(result.status!==0)process.exit(result.status??1);
 if(mode==='build')await import('./build-samples.mjs');
+if(mode==='test'){
+  const batch=spawnSync(python,['tests/render_batch_test.py'],{cwd,stdio:'inherit',shell:false});
+  if(batch.error||batch.status!==0)process.exit(batch.status??1);
+}

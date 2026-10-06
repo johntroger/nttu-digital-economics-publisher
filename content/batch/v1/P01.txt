@@ -1,0 +1,27 @@
+MỘT BẢNG DOANH THU CÓ THỂ KỂ ĐIỀU GÌ?
+
+Cửa hàng A có doanh thu cao hơn cửa hàng B. Có thể kết luận A bán hàng hiệu quả hơn ngay không? Hãy nhìn thêm số đơn và bối cảnh.
+
+Ví dụ giả định trong cùng một tuần, trước khi xét hoàn trả:
+• A: doanh thu 12 triệu đồng, 60 đơn → trung bình 200.000 đồng/đơn.
+• B: doanh thu 10 triệu đồng, 100 đơn → trung bình 100.000 đồng/đơn.
+
+A có doanh thu và giá trị trung bình mỗi đơn cao hơn; B có nhiều đơn hơn. Ba nhận xét này trả lời ba câu hỏi khác nhau. Chưa có dữ liệu chi phí thì chưa biết bên nào có lợi nhuận tốt hơn.
+
+Trước khi so sánh, kiểm tra cùng thời kỳ, cùng cách tính doanh thu và cách xử lý đơn hủy/hoàn. Nếu một bên tính đơn đặt, bên kia tính đơn đã hoàn tất, phép so sánh có thể gây hiểu nhầm.
+
+Thử làm: lập bảng ba cột doanh thu, số đơn, doanh thu/số đơn cho một tình huống giả định. Viết một điều bảng cho biết và một điều bạn còn cần hỏi.
+
+Đọc dữ liệu bắt đầu từ câu hỏi đúng, rồi mới đến kết luận.
+
+============
+
+Ngành Kinh tế số (Chuyên ngành Kinh doanh số) giúp người học làm chủ công nghệ AI, blockchain, big data để phân tích dữ liệu và đưa ra quyết định thông minh. Kết hợp kiến thức kinh tế - công nghệ hiện đại, bạn sẽ phát triển tư duy kinh doanh sáng tạo, làm chủ xu hướng chuyển đổi số và tự tin chinh phục thị trường toàn cầu!
+NGÀNH KINH TẾ SỐ, KHOA QTKD, TRƯỜNG ĐẠI HỌC NGUYỄN TẤT THÀNH
+📞 Hotline: 1900 2039 – Ext: 429
+✉️ Email: tran.tung@nttu.edu.vn
+🚩 Địa chỉ: Tầng 1, 331 Đỗ Mười, Phường An Phú Đông, TP. Hồ Chí Minh, Việt Nam
+🌐 Website: https://fba.ntt.edu.vn/kinh-te-so/
+🌟 Fanpage: https://www.facebook.com/NganhKinhTeSoNTTU
+🌟 Tiktok: https://www.tiktok.com/@nganhkinhteso_nttu
+#NTTU #NguyenTatThanhUniversity #nganhkinhteso #kinhteso

@@ -1,0 +1,2077 @@
+{
+  "version": "batch-2026-v1",
+  "cohort": 2026,
+  "duration_years": 3.5,
+  "status": "awaiting_owner_batch_review",
+  "created": "2026-10-06",
+  "schedule_enabled": false,
+  "publish_time": "10:00",
+  "timezone": "Asia/Ho_Chi_Minh",
+  "start_date": null,
+  "posts": [
+    {
+      "id": "P01",
+      "slot": 1,
+      "pool": "main",
+      "group": "D",
+      "audience": "HS",
+      "title": "Một bảng doanh thu có thể kể điều gì?",
+      "level": "Hiểu",
+      "brief": "Ví dụ cửa hàng giả định; phân biệt doanh thu, số đơn và giá trị đơn; tập đặt câu hỏi trước kết luận",
+      "image_brief": "Infographic so sánh",
+      "source_start": "CAREER-06 tr. 11–12",
+      "status": "brief",
+      "prerequisites": [],
+      "body": "MỘT BẢNG DOANH THU CÓ THỂ KỂ ĐIỀU GÌ?\n\nCửa hàng A có doanh thu cao hơn cửa hàng B. Có thể kết luận A bán hàng hiệu quả hơn ngay không? Hãy nhìn thêm số đơn và bối cảnh.\n\nVí dụ giả định trong cùng một tuần, trước khi xét hoàn trả:\n• A: doanh thu 12 triệu đồng, 60 đơn → trung bình 200.000 đồng/đơn.\n• B: doanh thu 10 triệu đồng, 100 đơn → trung bình 100.000 đồng/đơn.\n\nA có doanh thu và giá trị trung bình mỗi đơn cao hơn; B có nhiều đơn hơn. Ba nhận xét này trả lời ba câu hỏi khác nhau. Chưa có dữ liệu chi phí thì chưa biết bên nào có lợi nhuận tốt hơn.\n\nTrước khi so sánh, kiểm tra cùng thời kỳ, cùng cách tính doanh thu và cách xử lý đơn hủy/hoàn. Nếu một bên tính đơn đặt, bên kia tính đơn đã hoàn tất, phép so sánh có thể gây hiểu nhầm.\n\nThử làm: lập bảng ba cột doanh thu, số đơn, doanh thu/số đơn cho một tình huống giả định. Viết một điều bảng cho biết và một điều bạn còn cần hỏi.\n\nĐọc dữ liệu bắt đầu từ câu hỏi đúng, rồi mới đến kết luận.",
+      "reader_outcome": "Phân biệt doanh thu, số đơn và giá trị trung bình mỗi đơn qua phép tính giả định.",
+      "source_refs": [
+        {
+          "id": "CAREER-06",
+          "pages": [
+            11,
+            12
+          ],
+          "section": "5.1–5.2; 5.5",
+          "supports": "Làm sạch dữ liệu, tư duy bài toán kinh doanh, kiểm chứng và trình bày kết quả; cấu trúc dự án có quy trình rõ.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        }
+      ],
+      "editorial_status": "awaiting_owner_review",
+      "image": {
+        "template": "scene",
+        "scene": "portfolio",
+        "mode": "illustration",
+        "headline": "Doanh thu cao.\nCần hỏi thêm.",
+        "subline": "Ba chỉ số, ba câu hỏi khác nhau.",
+        "accent": "#5B4BA7",
+        "ink": "#332B5F",
+        "paper": "#F3F0FA",
+        "cards": [],
+        "takeaway": "Chưa có chi phí? Chưa kết luận lợi nhuận."
+      }
+    },
+    {
+      "id": "P02",
+      "slot": 2,
+      "pool": "main",
+      "group": "A",
+      "audience": "SV",
+      "title": "Dùng AI xong, bạn kiểm tra kết quả thế nào?",
+      "level": "Áp dụng",
+      "brief": "Checklist đối chiếu thông tin, phép tính, nguồn và ngữ cảnh; ví dụ lỗi giả định",
+      "image_brief": "Minh họa ít chữ",
+      "source_start": "CAREER-08 tr. 13–15",
+      "status": "brief",
+      "prerequisites": [],
+      "body": "DÙNG AI XONG, BẠN KIỂM TRA KẾT QUẢ THẾ NÀO?\n\nMột câu trả lời mạch lạc vẫn có thể sai. Khi dùng AI cho bài tập hoặc dự án, hãy dành một lượt kiểm tra trước khi đưa kết quả vào sản phẩm của mình.\n\nThử checklist 4 bước:\n1. Thông tin: tách tên, mốc thời gian và nhận định cần xác minh.\n2. Nguồn: mở tài liệu gốc, xem tài liệu có thực sự hỗ trợ kết luận không. Đừng chỉ nhìn tên nguồn AI đưa ra.\n3. Phép tính: tính lại từ dữ liệu đầu vào, kiểm tra đơn vị và cách so sánh.\n4. Bối cảnh: kết quả có trả lời đúng câu hỏi, đúng đối tượng và đúng phạm vi dữ liệu không?\n\nVí dụ giả định: một cửa hàng tăng từ 100 lên 120 đơn. Nếu AI viết “tăng 120%”, hãy tính lại: (120 − 100) / 100 × 100% = 20%. Bạn cũng cần phân biệt số đơn với doanh thu trước khi diễn giải.\n\nBài tập nhỏ: chọn một đoạn AI vừa hỗ trợ bạn viết; đánh dấu một thông tin cần đối chiếu, một phép tính và một điểm còn thiếu bối cảnh. Ghi lại điều đã sửa và lý do sửa.\n\nVới thông tin quan trọng chưa xác minh được, hãy giữ trạng thái “cần kiểm tra”. Chỉ dùng dữ liệu công khai hoặc được phép sử dụng trong bài tập.\n\nLưu checklist này cho lần dùng AI tiếp theo.",
+      "reader_outcome": "Kiểm tra một kết quả AI bằng thông tin, nguồn, phép tính và bối cảnh.",
+      "source_refs": [
+        {
+          "id": "CAREER-08",
+          "pages": [
+            13,
+            15
+          ],
+          "section": "5.1; 6.1–6.2",
+          "supports": "Giới hạn AI, kiểm chứng kết quả, tư duy phản biện và bảo mật.",
+          "adaptation": "Checklist bốn bước và bài toán 100 → 120 do dự án biên soạn, không phải số liệu khảo sát."
+        }
+      ],
+      "image": {
+        "template": "checklist",
+        "scene": null,
+        "mode": "infographic",
+        "headline": "AI trả lời.\nBạn kiểm chứng.",
+        "subline": "4 bước trước khi dùng kết quả",
+        "accent": "#087D72",
+        "ink": "#123E3B",
+        "paper": "#EDF7F4",
+        "cards": [
+          [
+            "Thông tin",
+            "Tách điều cần xác minh"
+          ],
+          [
+            "Nguồn",
+            "Mở tài liệu gốc"
+          ],
+          [
+            "Phép tính",
+            "Tính lại, kiểm tra đơn vị"
+          ],
+          [
+            "Bối cảnh",
+            "Đúng câu hỏi, đúng phạm vi"
+          ]
+        ],
+        "takeaway": "Chưa xác minh? Giữ lại để kiểm tra."
+      },
+      "editorial_status": "owner_approved"
+    },
+    {
+      "id": "P03",
+      "slot": 3,
+      "pool": "main",
+      "group": "B",
+      "audience": "SV",
+      "title": "Trước khi giới thiệu giải pháp, hãy hỏi khách hàng",
+      "level": "Áp dụng",
+      "brief": "Bốn câu hỏi về vấn đề, quy trình, mục tiêu và tiêu chí thành công; ví dụ hội thoại giả định",
+      "image_brief": "Infographic câu hỏi",
+      "source_start": "CAREER-02 tr. 12–14",
+      "status": "brief",
+      "prerequisites": [],
+      "body": "TRƯỚC KHI GIỚI THIỆU GIẢI PHÁP, HÃY HỎI KHÁCH HÀNG\n\n“Bên em có công cụ rất hay” chưa cho khách hàng thấy công cụ ấy giải quyết việc gì. Trước khi giới thiệu giải pháp, thử dành thời gian nghe câu chuyện của họ.\n\nBốn câu hỏi để luyện tư vấn:\n1. Hiện tại, việc nào khiến anh/chị mất nhiều thời gian nhất?\n2. Nhóm đang làm việc đó theo những bước nào?\n3. Anh/chị muốn cải thiện điều gì trước?\n4. Dấu hiệu nào giúp biết thay đổi có hiệu quả?\n\nTình huống giả định: chủ cửa hàng nói “hay bỏ sót tin nhắn”. Đừng vội kết luận cần chatbot. Hỏi thêm tin bị bỏ sót lúc nào, ai xử lý, thông tin được bàn giao ra sao. Có thể vấn đề nằm ở phân công, ở công cụ hoặc ở cả hai.\n\nCuối cuộc trao đổi, tóm tắt nhu cầu bằng ngôn ngữ của khách hàng và nhờ họ xác nhận. Chỉ giới thiệu tính năng liên quan; phần chưa biết cần được ghi lại để kiểm tra.\n\nBạn có thể luyện theo cặp: một người đóng vai khách, một người chỉ hỏi và tóm tắt trong lượt đầu. Sau đó đổi vai và xem mình đã hiểu vấn đề hay mới nghe được tên một công cụ.",
+      "reader_outcome": "Luyện bốn câu hỏi khám phá nhu cầu trước khi tư vấn.",
+      "source_refs": [
+        {
+          "id": "CAREER-02",
+          "pages": [
+            12,
+            14
+          ],
+          "section": "5.1–5.2; 6.1–6.2",
+          "supports": "Lắng nghe, đồng cảm, hiểu nhu cầu, tư vấn giải pháp và tư vấn trung thực.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        }
+      ],
+      "editorial_status": "awaiting_owner_review",
+      "image": {
+        "template": "checklist",
+        "scene": null,
+        "mode": "infographic",
+        "headline": "Hỏi trước.\nTư vấn sau.",
+        "subline": "Bắt đầu từ vấn đề của khách hàng.",
+        "accent": "#A74725",
+        "ink": "#63311E",
+        "paper": "#FCF2EA",
+        "cards": [
+          [
+            "Vấn đề",
+            "Điều gì đang gây khó khăn?"
+          ],
+          [
+            "Quy trình",
+            "Hiện tại đang làm thế nào?"
+          ],
+          [
+            "Mục tiêu",
+            "Thay đổi nào cần ưu tiên?"
+          ],
+          [
+            "Tiêu chí",
+            "Biết hiệu quả bằng cách nào?"
+          ]
+        ],
+        "takeaway": "Tóm tắt nhu cầu, nhờ khách xác nhận."
+      }
+    },
+    {
+      "id": "P04",
+      "slot": 4,
+      "pool": "main",
+      "group": "S",
+      "audience": "SV",
+      "title": "CV có công cụ rồi, đã có bằng chứng chưa?",
+      "level": "Áp dụng",
+      "brief": "Chuyển một dòng liệt kê kỹ năng thành mô tả dự án có đóng góp; không bịa số liệu",
+      "image_brief": "Minh họa ít chữ",
+      "source_start": "CAREER-09 tr. 13",
+      "status": "brief",
+      "prerequisites": [],
+      "body": "CV CÓ CÔNG CỤ RỒI, ĐÃ CÓ BẰNG CHỨNG CHƯA?\n\n“Biết Excel” cho biết tên công cụ. Một mô tả dự án rõ ràng còn giúp người đọc hiểu bạn đã dùng công cụ để làm việc gì.\n\nNếu bạn đang chuẩn bị ứng tuyển thực tập, thử viết một dòng CV theo khung: việc đã làm → đóng góp của bạn → sản phẩm có thể xem.\n\nVí dụ giả định:\n• Dòng ban đầu: “Có kỹ năng Excel.”\n• Dòng cụ thể hơn: “Trong dự án môn học về bán hàng, tôi chuẩn hóa bảng đơn hàng và tạo báo cáo doanh thu theo nhóm sản phẩm bằng Excel; phụ trách làm sạch dữ liệu và trình bày báo cáo.”\n\nSau đó, gắn một sản phẩm minh chứng nếu được phép chia sẻ: bảng đã ẩn thông tin riêng, ảnh báo cáo hoặc phần trình bày của bạn. Nếu là dự án nhóm, nêu rõ phần việc mình làm.\n\nChưa đo được hiệu quả thì mô tả đúng sản phẩm đã hoàn thành. Đừng thêm tỷ lệ tăng doanh thu hoặc số giờ tiết kiệm chỉ để CV có vẻ ấn tượng. Nếu có số liệu thật, giữ căn cứ để giải thích cách đo.\n\nBài tập nhỏ: chọn một dự án đã làm, viết lại một dòng CV và tự hỏi: “Nếu được hỏi trong phỏng vấn, mình có thể mở sản phẩm và giải thích đóng góp này không?”\n\nBắt đầu từ một bằng chứng rõ, rồi bổ sung khi bạn có trải nghiệm mới.",
+      "reader_outcome": "Viết một dòng CV gắn đóng góp cá nhân với sản phẩm minh chứng, không bịa kết quả.",
+      "source_refs": [
+        {
+          "id": "CAREER-09",
+          "pages": [
+            13
+          ],
+          "section": "4.2–4.3",
+          "supports": "CV nêu dự án/kết quả nếu có; portfolio; kể lại bối cảnh, hành động, kết quả.",
+          "adaptation": "Ví dụ dự án bán hàng là giả định. Khung một dòng CV do dự án phát triển; không khẳng định mọi nhà tuyển dụng dùng cùng tiêu chuẩn."
+        }
+      ],
+      "image": {
+        "template": "scene",
+        "scene": "portfolio",
+        "mode": "illustration",
+        "headline": "CV cần\nbằng chứng.",
+        "subline": "Cho thấy việc bạn đã làm.",
+        "accent": "#245CBC",
+        "ink": "#183761",
+        "paper": "#EFF4FC",
+        "cards": [],
+        "takeaway": "Một dự án. Một đóng góp rõ."
+      },
+      "editorial_status": "owner_approved"
+    },
+    {
+      "id": "P05",
+      "slot": 5,
+      "pool": "main",
+      "group": "I",
+      "audience": "HS",
+      "title": "Học Kinh tế số: kết nối kinh doanh với công nghệ",
+      "level": "Hiểu",
+      "brief": "Tình huống kinh doanh → dữ liệu/công nghệ hỗ trợ → năng lực cần học; giới thiệu đúng ngành/chuyên ngành",
+      "image_brief": "Infographic quan hệ",
+      "source_start": "BM03 mục giới thiệu/mục tiêu; BM11 mục tiêu; CAREER-05 tr. 8–10",
+      "status": "brief",
+      "prerequisites": [],
+      "body": "HỌC KINH TẾ SỐ: KẾT NỐI KINH DOANH VỚI CÔNG NGHỆ\n\nMột cửa hàng có nhiều người xem nhưng ít đơn hàng. Nên đổi nội dung, xem lại giá hay cải thiện cách đặt hàng? Công nghệ có thể hỗ trợ tìm câu trả lời, còn tư duy kinh doanh giúp xác định điều cần hỏi.\n\nTrong tình huống giả định này, bạn có thể bắt đầu từ ba việc: hiểu hành trình mua hàng; xem dữ liệu ở từng bước; đề xuất một thay đổi nhỏ và theo dõi kết quả. Đây là cách hình dung sự kết nối giữa bài toán kinh doanh, dữ liệu và công cụ số.\n\nTheo mục tiêu chương trình ngành Kinh tế số (Chuyên ngành Kinh doanh số) của NTTU, người học được trang bị nền tảng kinh tế cùng kiến thức về công nghệ và kinh doanh số, hướng tới khai thác dữ liệu, phát triển sản phẩm/dịch vụ số và giải quyết vấn đề chuyển đổi số trong tổ chức.\n\nVới khóa 2026, thời gian đào tạo là 3,5 năm. Bên cạnh học công cụ, bạn cần rèn khả năng đặt câu hỏi, phân tích thông tin, giao tiếp và phối hợp để biến ý tưởng thành phương án có thể thực hiện.\n\nNếu đang tìm hiểu ngành, hãy thử chọn một hoạt động kinh doanh quen thuộc và viết: vấn đề gì đang xảy ra, cần dữ liệu nào, công cụ số có thể hỗ trợ ra sao?\n\nBạn muốn tìm hiểu sự kết nối này qua tình huống bán hàng hay chăm sóc khách hàng?",
+      "reader_outcome": "Hiểu ngành qua mối liên hệ bài toán kinh doanh, dữ liệu và công cụ số.",
+      "source_refs": [
+        {
+          "id": "BM03",
+          "pages": [
+            8
+          ],
+          "section": "1.6.1–1.6.2",
+          "supports": "Nền tảng kinh tế, công nghệ/kinh doanh số, dữ liệu, sản phẩm/dịch vụ và giải quyết vấn đề chuyển đổi số.",
+          "adaptation": "Tình huống cửa hàng và bài tập do dự án biên soạn."
+        },
+        {
+          "id": "BM11",
+          "pages": [
+            1,
+            2
+          ],
+          "section": "Mục tiêu chung và PEO2",
+          "supports": "Mục tiêu chương trình; dùng dữ liệu và công cụ số để giải quyết vấn đề.",
+          "adaptation": "Không lấy dòng khóa 2025/04 năm ở thông tin chung; áp dụng đính chính chủ tài khoản cho khóa 2026."
+        },
+        {
+          "id": "OWNER-2026",
+          "pages": [],
+          "section": "Xác nhận trong hội thoại ngày 04/10/2026",
+          "supports": "Áp dụng khóa 2026, thời gian đào tạo 3,5 năm.",
+          "adaptation": "Đính chính thông tin thời lượng/khóa trong PDF; không sửa file nguồn."
+        }
+      ],
+      "image": {
+        "template": "scene",
+        "scene": "bridge",
+        "mode": "illustration",
+        "headline": "Kinh doanh\nkết nối công nghệ.",
+        "subline": "Khởi đầu từ một vấn đề cần giải quyết.",
+        "accent": "#0056A6",
+        "ink": "#123453",
+        "paper": "#EEF5FB",
+        "cards": [],
+        "takeaway": "Hiểu bài toán. Dùng dữ liệu. Chọn giải pháp."
+      },
+      "editorial_status": "owner_approved"
+    },
+    {
+      "id": "P06",
+      "slot": 6,
+      "pool": "main",
+      "group": "D",
+      "audience": "SV",
+      "title": "Ba câu hỏi trước khi làm dashboard",
+      "level": "Áp dụng",
+      "brief": "Ai xem, quyết định gì, chỉ số nào; tạo brief dashboard ba dòng",
+      "image_brief": "Minh họa ít chữ",
+      "source_start": "CAREER-06 tr. 11–12",
+      "status": "brief",
+      "prerequisites": [],
+      "body": "BA CÂU HỎI TRƯỚC KHI LÀM DASHBOARD\n\nBạn có thể tạo nhiều biểu đồ mà vẫn chưa giúp người xem ra quyết định. Trước khi chọn màu hay bố cục, hãy viết một brief ngắn bằng ba câu hỏi.\n\n1. Ai sẽ xem?\nNgười vận hành, người phụ trách bán hàng hay quản lý? Họ hiểu dữ liệu tới đâu và cần xem vào lúc nào?\n\n2. Họ cần quyết định gì?\nVí dụ: nên kiểm tra nhóm sản phẩm nào khi số đơn giảm? Một dashboard nên phục vụ một mục đích rõ, thay vì gom mọi chỉ số có sẵn.\n\n3. Chỉ số nào hỗ trợ quyết định đó?\nChọn chỉ số gắn với câu hỏi, rồi xác định cách tính, đơn vị, kỳ so sánh và nguồn dữ liệu. Nhiều chỉ số hơn chưa chắc dễ hiểu hơn.\n\nVí dụ giả định cho một cửa hàng:\n• Người xem: người phụ trách bán hàng, theo dõi hằng tuần.\n• Quyết định: chọn nhóm sản phẩm cần tìm hiểu nguyên nhân số đơn giảm.\n• Chỉ số: số đơn theo nhóm sản phẩm, so với tuần trước từ bảng đơn hàng.\n\nDashboard này giúp khoanh vùng để tìm hiểu thêm; số đơn giảm chưa đủ chứng minh nguyên nhân hay chỉ ra ngay giải pháp. Bạn vẫn cần xem chất lượng dữ liệu và bối cảnh kinh doanh.\n\nBài tập nhỏ: viết brief ba dòng cho báo cáo bạn đang làm. Sau đó hỏi một người khác: “Nhìn vào báo cáo, bạn biết cần kiểm tra hoặc làm gì tiếp theo không?”\n\nLưu ba câu hỏi này trước lần dựng dashboard tiếp theo.",
+      "reader_outcome": "Tạo brief dashboard ba dòng về người xem, quyết định và chỉ số.",
+      "source_refs": [
+        {
+          "id": "CAREER-06",
+          "pages": [
+            11,
+            12
+          ],
+          "section": "5.2; 5.5",
+          "supports": "Hiểu bài toán kinh doanh, giao tiếp/kể chuyện bằng dữ liệu, dự án có bài toán và khuyến nghị rõ.",
+          "adaptation": "Khung ba câu hỏi và ví dụ cửa hàng do dự án phát triển; dữ liệu giả định, không suy luận nhân quả từ số đơn."
+        }
+      ],
+      "image": {
+        "template": "flow",
+        "scene": null,
+        "mode": "infographic",
+        "headline": "Dashboard bắt đầu\ntừ một quyết định.",
+        "subline": "Viết brief bằng 3 câu hỏi",
+        "accent": "#5B4BA7",
+        "ink": "#332B5F",
+        "paper": "#F3F0FA",
+        "cards": [
+          [
+            "Ai xem?",
+            "Người dùng và thời điểm"
+          ],
+          [
+            "Quyết định gì?",
+            "Việc cần kiểm tra hoặc làm"
+          ],
+          [
+            "Chỉ số nào?",
+            "Cách tính, đơn vị, nguồn"
+          ]
+        ],
+        "takeaway": "Đặt câu hỏi trước. Chọn biểu đồ sau."
+      },
+      "editorial_status": "awaiting_owner_review"
+    },
+    {
+      "id": "P07",
+      "slot": 7,
+      "pool": "main",
+      "group": "A",
+      "audience": "HS",
+      "title": "Ứng dụng AI và xây AI khác nhau ở đâu?",
+      "level": "Hiểu",
+      "brief": "Phân biệt dùng công cụ giải bài toán và xây hệ thống; không hứa mọi nghề AI đều không cần lập trình",
+      "image_brief": "Infographic so sánh",
+      "source_start": "CAREER-08 tr. 4–5",
+      "status": "brief",
+      "prerequisites": [],
+      "body": "ỨNG DỤNG AI VÀ XÂY AI KHÁC NHAU Ở ĐÂU?\n\nCùng làm việc với AI, nhưng nhiệm vụ có thể rất khác nhau. Một người dùng công cụ có sẵn để hỗ trợ viết; người khác xây và đánh giá hệ thống AI.\n\nHãy hình dung hai tình huống:\n• Ứng dụng AI: nhóm nội dung chuẩn bị dữ liệu được phép dùng, viết yêu cầu, kiểm tra bản nháp và biên tập trước khi đăng.\n• Xây hệ thống AI: nhóm kỹ thuật phát triển phần mềm hoặc mô hình, tổ chức dữ liệu, đánh giá và vận hành hệ thống.\n\nGiữa hai hướng còn có các công việc kết nối: xác định bài toán, thiết kế trải nghiệm, chuẩn bị dữ liệu và đánh giá đầu ra. Mức độ cần lập trình phụ thuộc nhiệm vụ thực tế, không chỉ tên chức danh.\n\nNếu đang tìm hiểu ngành, đừng bắt đầu bằng câu hỏi “nghề AI nào dễ nhất?”. Thử hỏi: mình thích hiểu nhu cầu kinh doanh, xử lý dữ liệu, tạo nội dung hay xây phần mềm?\n\nBài tập khám phá: chọn một nhiệm vụ có thể dùng AI hỗ trợ và viết rõ đầu vào, kết quả cần có, cách kiểm tra. Sau đó đánh dấu phần mình muốn tìm hiểu sâu hơn. Dùng tốt công cụ vẫn cần hiểu giới hạn và chịu trách nhiệm với kết quả.",
+      "reader_outcome": "Phân biệt ứng dụng công cụ với xây hệ thống, không đồng nhất mọi nghề AI.",
+      "source_refs": [
+        {
+          "id": "CAREER-08",
+          "pages": [
+            4,
+            5,
+            13
+          ],
+          "section": "1.3; 5.1–5.2",
+          "supports": "Phổ nghề từ ứng dụng/vận hành tới dữ liệu và kỹ thuật AI; yêu cầu lập trình khác nhau.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        }
+      ],
+      "editorial_status": "awaiting_owner_review",
+      "image": {
+        "template": "flow",
+        "scene": null,
+        "mode": "infographic",
+        "headline": "Dùng AI.\nHay xây AI?",
+        "subline": "Chọn hướng từ nhiệm vụ bạn thích.",
+        "accent": "#087D72",
+        "ink": "#123E3B",
+        "paper": "#EDF7F4",
+        "cards": [
+          [
+            "Ứng dụng",
+            "Giải bài toán bằng công cụ"
+          ],
+          [
+            "Kết nối",
+            "Hiểu nhu cầu, đánh giá đầu ra"
+          ],
+          [
+            "Xây hệ thống",
+            "Phát triển và vận hành kỹ thuật"
+          ]
+        ],
+        "takeaway": "Tên nghề chưa nói hết công việc."
+      }
+    },
+    {
+      "id": "P08",
+      "slot": 8,
+      "pool": "main",
+      "group": "B",
+      "audience": "SV",
+      "title": "Gian hàng online: công việc phía sau một đơn hàng",
+      "level": "Hiểu",
+      "brief": "Theo dõi mô tả sản phẩm, tồn kho, đơn hàng, chăm sóc và báo cáo; không hướng dẫn giao diện sàn",
+      "image_brief": "Minh họa ít chữ",
+      "source_start": "CAREER-07 tr. 5–8, 12",
+      "status": "brief",
+      "prerequisites": [],
+      "body": "GIAN HÀNG ONLINE: CÔNG VIỆC PHÍA SAU MỘT ĐƠN HÀNG\n\nKhách bấm “Mua” chỉ là một điểm trong hành trình. Để đơn hàng được xử lý tốt, người vận hành cần phối hợp thông tin sản phẩm, tồn kho, xử lý đơn và phản hồi khách hàng.\n\nThử hình dung tình huống giả định: một khách đặt sản phẩm màu xanh, nhưng bảng tồn kho chưa cập nhật sau lần bán trước. Nếu phát hiện muộn, nhóm vận hành phải liên hệ để thống nhất cách xử lý thay vì tự đổi sản phẩm.\n\nMột vòng công việc để luyện tập:\n• Trước đơn: mô tả và hình sản phẩm có khớp hàng thực tế không?\n• Khi nhận đơn: kiểm tra sản phẩm, số lượng và khả năng đáp ứng.\n• Khi xử lý: ghi rõ trạng thái và người phụ trách để tránh bỏ sót việc.\n• Sau đơn: tiếp nhận phản hồi, cập nhật tồn kho và ghi lại vấn đề phát sinh.\n• Khi báo cáo: tổng hợp thông tin để nhận biết chỗ cần cải thiện.\n\nĐây là một luồng minh họa; quy trình thực tế còn phụ thuộc mô hình bán hàng và cách tổ chức của từng đơn vị.\n\nBài tập nhỏ: tạo một bảng theo dõi đơn giả định với các cột mã đơn, sản phẩm, số lượng, trạng thái, người phụ trách và ghi chú. Thử đặt một đơn “thiếu hàng” rồi xem ai cần nhận thông tin tiếp theo.\n\nLàm vận hành thương mại số cần sự tỉ mỉ và phối hợp, cùng khả năng đọc dữ liệu. Bạn muốn thử vai trò quản lý sản phẩm hay theo dõi đơn hàng trước?",
+      "reader_outcome": "Nhận biết và mô phỏng các việc vận hành quanh một đơn hàng.",
+      "source_refs": [
+        {
+          "id": "CAREER-07",
+          "pages": [
+            5,
+            12
+          ],
+          "section": "Vận hành sàn TMĐT; 5.1–5.2",
+          "supports": "Thông tin sản phẩm, tồn kho, xử lý đơn, báo cáo và kỹ năng tỉ mỉ/phối hợp.",
+          "adaptation": "Tình huống thiếu hàng, luồng năm việc và bảng luyện tập do dự án biên soạn; không phải hướng dẫn thao tác hoặc quy định của sàn."
+        }
+      ],
+      "image": {
+        "template": "scene",
+        "scene": "operations",
+        "mode": "illustration",
+        "headline": "Sau nút “Mua”\nlà cả một quy trình.",
+        "subline": "Đơn hàng cần nhiều việc phối hợp.",
+        "accent": "#B85129",
+        "ink": "#63311E",
+        "paper": "#FCF2EA",
+        "cards": [],
+        "takeaway": "Sản phẩm · Tồn kho · Xử lý đơn · Phản hồi"
+      },
+      "editorial_status": "awaiting_owner_review"
+    },
+    {
+      "id": "P09",
+      "slot": 9,
+      "pool": "main",
+      "group": "R",
+      "audience": "SV",
+      "title": "Ý tưởng kinh doanh tốt cần được kiểm chứng",
+      "level": "Áp dụng",
+      "brief": "Chọn giả định quan trọng, hỏi người dùng, ghi phản hồi và điều chỉnh; ví dụ nhỏ của sinh viên",
+      "image_brief": "Infographic quy trình",
+      "source_start": "CAREER-02 tr. 12–14; CAREER-05 phần kỹ năng/khởi nghiệp, cần tra mục khi viết",
+      "status": "brief",
+      "prerequisites": [],
+      "body": "Ý TƯỞNG KINH DOANH TỐT CẦN ĐƯỢC KIỂM CHỨNG\n\nBạn nghĩ sinh viên cần một dịch vụ nhắc lịch học. Ý tưởng nghe hợp lý, nhưng giả định “mọi người hay quên lịch” đã được kiểm tra chưa?\n\nThử kiểm chứng một giả định nhỏ trước khi làm sản phẩm:\n• Viết điều bạn đang tin: “người học gặp khó khăn khi theo dõi lịch thay đổi”.\n• Hỏi về trải nghiệm đã xảy ra: lần gần nhất lịch đổi, bạn biết qua đâu và gặp vướng mắc gì?\n• Ghi điều nghe được, gồm cả phản hồi không ủng hộ ý tưởng.\n\nTình huống giả định: người được hỏi không quên lịch, nhưng khó tìm thông báo chính thức giữa nhiều nhóm chat. Lúc này, một nơi tổng hợp nguồn rõ ràng có thể đáng thử hơn một công cụ nhắc giờ.\n\nĐừng dùng câu hỏi dẫn dắt như “Bạn có thích ứng dụng tiện lợi này không?”. Sự đồng ý trong cuộc trò chuyện chưa chứng minh người dùng sẽ sử dụng sản phẩm.\n\nLượt thực hành: phỏng vấn một vài người tự nguyện, không thu thông tin riêng không cần thiết. Tổng hợp vấn đề, bằng chứng và điều còn chưa biết; viết một thay đổi cho ý tưởng ban đầu. Mục tiêu của lượt đầu là học được điều gì, không phải thắng tranh luận.",
+      "reader_outcome": "Chuyển ý tưởng thành giả định có thể kiểm tra bằng trải nghiệm người dùng.",
+      "source_refs": [
+        {
+          "id": "CAREER-02",
+          "pages": [
+            8,
+            13
+          ],
+          "section": "Phát triển sản phẩm; 5.5",
+          "supports": "Nghiên cứu nhu cầu/thị trường, phát triển sản phẩm và dự án nghiên cứu khách hàng.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        }
+      ],
+      "editorial_status": "awaiting_owner_review",
+      "image": {
+        "template": "flow",
+        "scene": null,
+        "mode": "infographic",
+        "headline": "Ý tưởng hay.\nCần kiểm chứng.",
+        "subline": "Tìm hiểu việc đã xảy ra.",
+        "accent": "#8B3A68",
+        "ink": "#51233E",
+        "paper": "#F9EFF5",
+        "cards": [
+          [
+            "Giả định",
+            "Bạn đang tin điều gì?"
+          ],
+          [
+            "Bằng chứng",
+            "Người dùng từng gặp gì?"
+          ],
+          [
+            "Điều chỉnh",
+            "Ý tưởng cần đổi chỗ nào?"
+          ]
+        ],
+        "takeaway": "Ghi cả phản hồi không ủng hộ."
+      }
+    },
+    {
+      "id": "P10",
+      "slot": 10,
+      "pool": "main",
+      "group": "I",
+      "audience": "HS",
+      "title": "Bạn sẽ rèn năng lực gì khi học Kinh tế số?",
+      "level": "Hiểu",
+      "brief": "Chuyển nhóm chuẩn đầu ra thành ví dụ dễ hiểu về kiến thức, kỹ năng và trách nhiệm; không xem mục tiêu là thành tích đã đạt",
+      "image_brief": "Minh họa ít chữ",
+      "source_start": "BM11 phần chuẩn đầu ra; BM03 mục mục tiêu",
+      "status": "brief",
+      "prerequisites": [],
+      "body": "BẠN SẼ RÈN NĂNG LỰC GÌ KHI HỌC KINH TẾ SỐ?\n\nHọc Kinh tế số không chỉ là ghi nhớ tên công nghệ. Chuẩn đầu ra mô tả những năng lực chương trình hướng tới, từ hiểu hoạt động kinh doanh đến phối hợp và giải quyết vấn đề trong môi trường số.\n\nCó thể hình dung qua ba lớp:\n• Kiến thức: phân tích công nghệ, hành vi khách hàng và những yếu tố ảnh hưởng đến kinh doanh số.\n• Kỹ năng: giao tiếp, làm việc nhóm, ứng dụng công cụ số và sáng tạo nội dung kỹ thuật số.\n• Trách nhiệm: thực hành nghề nghiệp có đạo đức, thích ứng và tiếp tục học.\n\nVí dụ thực hành tự biên soạn: nhóm muốn cải thiện thông tin cho một hoạt động sinh viên. Nhóm cần hiểu người đọc, chọn cách trình bày, phối hợp nhiệm vụ và kiểm tra nội dung trước khi chia sẻ. Một việc nhỏ có thể kết nối nhiều năng lực.\n\nCác năng lực này là mục tiêu để rèn luyện và đánh giá, không phải lời khẳng định mọi sinh viên đã đạt ngay khi nhập học.\n\nVới chương trình áp dụng khóa 2026, thời gian đào tạo là 3,5 năm theo xác nhận của ngành. Bạn muốn bắt đầu khám phá từ phân tích dữ liệu, nội dung số hay phối hợp dự án?",
+      "reader_outcome": "Hiểu ba lớp năng lực hướng tới của chương trình, không nhầm mục tiêu với kết quả đạt được.",
+      "source_refs": [
+        {
+          "id": "BM11",
+          "pages": [
+            3,
+            4,
+            5
+          ],
+          "section": "PLO2–PLO10",
+          "supports": "Kiến thức kinh doanh/công nghệ; giao tiếp, nhóm, công cụ số, đạo đức và tự học.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        },
+        {
+          "id": "OWNER-2026",
+          "pages": [],
+          "section": "Đính chính của người quản lý ngày 04/10/2026",
+          "supports": "Áp dụng khóa 2026, thời gian đào tạo 3,5 năm.",
+          "adaptation": "Ưu tiên đính chính của người quản lý so với dòng khóa/thời lượng cũ trong PDF; không sửa tài liệu gốc."
+        }
+      ],
+      "editorial_status": "awaiting_owner_review",
+      "image": {
+        "template": "scene",
+        "scene": "bridge",
+        "mode": "illustration",
+        "headline": "Hiểu kinh doanh.\nRèn năng lực số.",
+        "subline": "Kiến thức, kỹ năng và trách nhiệm.",
+        "accent": "#0056A6",
+        "ink": "#123453",
+        "paper": "#EEF5FB",
+        "cards": [],
+        "takeaway": "Năng lực cần được rèn qua thực hành."
+      }
+    },
+    {
+      "id": "P11",
+      "slot": 11,
+      "pool": "main",
+      "group": "D",
+      "audience": "SV",
+      "title": "Trước phân tích: kiểm tra dữ liệu trống, trùng và sai kiểu",
+      "level": "Áp dụng",
+      "brief": "Bảng giả định ngắn; checklist kiểm tra và ghi quyết định xử lý, không xóa máy móc",
+      "image_brief": "Infographic checklist",
+      "source_start": "CAREER-06 tr. 11–12",
+      "status": "brief",
+      "prerequisites": [],
+      "body": "TRƯỚC PHÂN TÍCH: KIỂM TRA DỮ LIỆU TRỐNG, TRÙNG VÀ SAI KIỂU\n\nTrước khi dựng biểu đồ, hãy dành một lượt kiểm tra bảng dữ liệu. Một ô trống, hai bản ghi giống nhau hoặc một ngày bị nhập sai có thể làm kết quả khác đi.\n\nTình huống giả định: bảng đơn hàng có mã DH01 hai lần, một ô doanh thu trống và một cột ngày chứa cả “05/06” lẫn “chưa giao”. Chưa nên xóa hoặc đổi toàn bộ ngay.\n\nHãy kiểm tra theo thứ tự:\n1. Trống: thông tin bị thiếu hay không áp dụng? Có nguồn để bổ sung không?\n2. Trùng: cùng một đơn bị nhập lại, hay hai dòng của hai sản phẩm trong một đơn?\n3. Sai kiểu: cột đó phải chứa ngày, số hay trạng thái? Các giá trị hiện tại có cùng ý nghĩa không?\n\nGiữ một bản gốc trước khi xử lý. Ghi lại quy tắc đã chọn và những dòng còn chưa xác minh. Một quyết định làm sạch cần có lý do; không phải cứ ô trống là điền 0, cứ giống nhau là xóa.\n\nThử tạo bảng sáu dòng với ba lỗi trên, rồi viết nhật ký sửa. Nhờ một người khác đọc và giải thích xem bạn đã giữ lại dữ liệu nào, sửa gì và vì sao.",
+      "reader_outcome": "Phân biệt ba lỗi dữ liệu và ghi lý do xử lý thay vì xóa máy móc.",
+      "source_refs": [
+        {
+          "id": "CAREER-06",
+          "pages": [
+            11,
+            12
+          ],
+          "section": "5.1–5.2; 5.5",
+          "supports": "Làm sạch dữ liệu, tư duy bài toán kinh doanh, kiểm chứng và trình bày kết quả; cấu trúc dự án có quy trình rõ.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        }
+      ],
+      "editorial_status": "awaiting_owner_review",
+      "image": {
+        "template": "flow",
+        "scene": null,
+        "mode": "infographic",
+        "headline": "Kiểm dữ liệu.\nRồi phân tích.",
+        "subline": "Ba lỗi cần hỏi trước khi sửa.",
+        "accent": "#5B4BA7",
+        "ink": "#332B5F",
+        "paper": "#F3F0FA",
+        "cards": [
+          [
+            "Ô trống",
+            "Thiếu hay không áp dụng?"
+          ],
+          [
+            "Bản ghi trùng",
+            "Nhập lại hay khác nghiệp vụ?"
+          ],
+          [
+            "Sai kiểu",
+            "Ngày, số hay trạng thái?"
+          ]
+        ],
+        "takeaway": "Giữ bản gốc và ghi quyết định xử lý."
+      }
+    },
+    {
+      "id": "P12",
+      "slot": 12,
+      "pool": "main",
+      "group": "S",
+      "audience": "SV",
+      "title": "Chọn thực tập theo điều bạn muốn học",
+      "level": "Áp dụng",
+      "brief": "So nhiệm vụ, hướng dẫn, thời gian, bằng chứng năng lực và độ phù hợp; không đăng tin tuyển cụ thể",
+      "image_brief": "Minh họa ít chữ",
+      "source_start": "CAREER-09 tr. 4–12",
+      "status": "brief",
+      "prerequisites": [],
+      "body": "CHỌN THỰC TẬP THEO ĐIỀU BẠN MUỐN HỌC\n\nHai vị trí cùng mang tên “thực tập sinh”, nhưng trải nghiệm học được có thể khác nhau. Khi đọc mô tả công việc, hãy đối chiếu với điều bạn muốn rèn.\n\nTự viết một mục tiêu cụ thể trước khi chọn: “muốn làm quen báo cáo dữ liệu”, “muốn luyện viết nội dung có mục tiêu” hoặc “muốn hiểu quy trình xử lý đơn”.\n\nSau đó hỏi về:\n• Nhiệm vụ thực tế trong một tuần điển hình.\n• Người hướng dẫn và cách nhận phản hồi.\n• Lịch làm việc, khả năng phối hợp với việc học.\n• Sản phẩm có thể hoàn thành và cách đánh giá.\n\nVí dụ giả định: bạn muốn học dữ liệu nhưng công việc chủ yếu nhập liệu. Nhập liệu vẫn giúp hiểu quy trình, song nên hỏi thêm có cơ hội kiểm tra, tổng hợp hay trình bày dữ liệu không, thay vì tự suy đoán từ tên vị trí.\n\nKhi chưa rõ, ghi câu hỏi để trao đổi với đơn vị. Không coi một mô tả hấp dẫn là bằng chứng đầy đủ về chất lượng chương trình thực tập.\n\nLàm thử bảng so sánh hai mô tả công việc theo mục tiêu học, nhiệm vụ và điều cần hỏi thêm. Ưu tiên lựa chọn bạn có thể giải thích bằng căn cứ.",
+      "reader_outcome": "So sánh cơ hội thực tập theo mục tiêu học và nhiệm vụ thực tế.",
+      "source_refs": [
+        {
+          "id": "CAREER-09",
+          "pages": [
+            4,
+            12,
+            13
+          ],
+          "section": "Phần 1; phần 3; 4.2–4.3",
+          "supports": "Các hình thức tích lũy kinh nghiệm, nhóm vị trí thực tập và chuẩn bị hồ sơ theo công việc.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        }
+      ],
+      "editorial_status": "awaiting_owner_review",
+      "image": {
+        "template": "scene",
+        "scene": "portfolio",
+        "mode": "illustration",
+        "headline": "Chọn thực tập.\nChọn điều học.",
+        "subline": "Đọc nhiệm vụ, hỏi cách hướng dẫn.",
+        "accent": "#245CBC",
+        "ink": "#183761",
+        "paper": "#EFF4FC",
+        "cards": [],
+        "takeaway": "Tên vị trí chưa đủ để quyết định."
+      }
+    },
+    {
+      "id": "P13",
+      "slot": 13,
+      "pool": "main",
+      "group": "B",
+      "audience": "HS",
+      "title": "Marketing số, thương mại số, kinh doanh số: bắt đầu phân biệt",
+      "level": "Hiểu",
+      "brief": "Ba tình huống thu hút khách, vận hành đơn và phát triển quan hệ; nêu vai trò có thể giao nhau",
+      "image_brief": "Infographic so sánh",
+      "source_start": "CAREER-03 tr. 4–5; CAREER-07 tr. 4–5; CAREER-02 tr. 4–5",
+      "status": "brief",
+      "prerequisites": [],
+      "body": "MARKETING SỐ, THƯƠNG MẠI SỐ, KINH DOANH SỐ: BẮT ĐẦU PHÂN BIỆT\n\nCùng là hoạt động trên môi trường số, nhưng mỗi nhóm công việc có điểm tập trung khác nhau. Thử nhìn một cửa hàng giả định để dễ phân biệt.\n\n• Marketing số: làm nội dung giúp người xem hiểu sản phẩm, lựa chọn kênh và theo dõi phản hồi.\n• Thương mại số: tổ chức gian hàng, cập nhật thông tin sản phẩm, xử lý đơn và phối hợp giao hàng.\n• Kinh doanh số: tìm cơ hội, hiểu nhu cầu, tư vấn giải pháp và phát triển quan hệ khách hàng trên kênh số.\n\nBa nhóm có thể giao nhau. Một cửa hàng nhỏ có thể để cùng một người viết nội dung, trả lời khách và theo dõi đơn; một đơn vị khác chia thành nhiều vị trí. Đừng coi đây là ba chiếc hộp hoàn toàn tách biệt.\n\nNếu bạn đang tìm hiểu hướng học, hãy chọn hoạt động mình tò mò nhất: làm thông điệp, vận hành một đơn hàng hay tìm hiểu nhu cầu của khách? Sau đó tìm một nhiệm vụ nhỏ để trải nghiệm.\n\nBạn có thể vẽ hành trình “biết sản phẩm → hỏi thông tin → đặt hàng → nhận hàng” và đánh dấu việc thuộc từng nhóm. Cách này giúp hiểu công việc cụ thể hơn việc chỉ nhớ tên ngành nghề.",
+      "reader_outcome": "Phân biệt trọng tâm ba nhóm công việc và nhận biết vùng giao nhau.",
+      "source_refs": [
+        {
+          "id": "CAREER-03",
+          "pages": [
+            4,
+            5
+          ],
+          "section": "1.1; Chuyên viên nội dung",
+          "supports": "Nhóm marketing số và nội dung.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        },
+        {
+          "id": "CAREER-07",
+          "pages": [
+            4,
+            5
+          ],
+          "section": "1.1; Vận hành sàn",
+          "supports": "Gian hàng, sản phẩm, đơn hàng và chăm sóc.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        },
+        {
+          "id": "CAREER-02",
+          "pages": [
+            4,
+            5
+          ],
+          "section": "1.1; Nhóm kinh doanh",
+          "supports": "Tìm cơ hội, tư vấn và phát triển khách hàng.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        }
+      ],
+      "editorial_status": "awaiting_owner_review",
+      "image": {
+        "template": "flow",
+        "scene": null,
+        "mode": "infographic",
+        "headline": "Cùng môi trường số.\nKhác trọng tâm.",
+        "subline": "Hiểu việc làm, rồi chọn hướng.",
+        "accent": "#A74725",
+        "ink": "#63311E",
+        "paper": "#FCF2EA",
+        "cards": [
+          [
+            "Marketing",
+            "Thu hút và nuôi dưỡng khách"
+          ],
+          [
+            "Thương mại",
+            "Vận hành hoạt động mua bán"
+          ],
+          [
+            "Kinh doanh",
+            "Hiểu nhu cầu, tư vấn giải pháp"
+          ]
+        ],
+        "takeaway": "Vai trò có thể giao nhau."
+      }
+    },
+    {
+      "id": "P14",
+      "slot": 14,
+      "pool": "main",
+      "group": "A",
+      "audience": "SV",
+      "title": "Một quy trình tự động hóa nhỏ có tạo ra giá trị?",
+      "level": "Tạo sản phẩm",
+      "brief": "Chọn tác vụ lặp; vẽ đầu vào–xử lý–đầu ra; đo thời gian/chất lượng bằng thử nghiệm nhỏ",
+      "image_brief": "Minh họa ít chữ",
+      "source_start": "CAREER-01 tr. 11–12; CAREER-08 tr. 13–14",
+      "status": "brief",
+      "prerequisites": [],
+      "body": "MỘT QUY TRÌNH TỰ ĐỘNG HÓA NHỎ CÓ TẠO RA GIÁ TRỊ?\n\nTự động hóa một tác vụ không đồng nghĩa tác vụ ấy đã tạo ra giá trị. Trước khi chọn công cụ, hãy xác định việc lặp lại và cách biết bản thử có tốt hơn không.\n\nTình huống giả định: mỗi lần có đăng ký hoạt động, bạn chép thông tin từ biểu mẫu sang bảng theo dõi. Có thể thử chuyển dữ liệu tự động, nhưng vẫn cần xử lý người đăng ký trùng hoặc thiếu thông tin.\n\nBắt đầu từ một luồng nhỏ: nhận biểu mẫu → kiểm tra thông tin → ghi vào bảng → báo người phụ trách khi có ngoại lệ. Chỉ dùng dữ liệu thử hoặc được phép sử dụng.\n\nĐo trước và sau trên cùng một nhóm tình huống: thời gian xử lý, số lỗi và thời gian sửa. Nếu thao tác nhanh hơn nhưng mất thêm nhiều thời gian kiểm tra, hãy ghi cả hai phần.\n\nGiữ bước kiểm tra của con người ở nơi cần quyết định. Khi chưa chắc, luồng nên đưa trường hợp đó về xử lý thay vì tự đoán.\n\nBạn muốn thử? Vẽ luồng trên giấy trước, chọn vài trường hợp bình thường và bất thường, rồi ghi kết quả từng lần chạy. Một thử nghiệm nhỏ có thể cho bạn bằng chứng rõ hơn một danh sách công cụ dài.",
+      "reader_outcome": "Thiết kế thử nghiệm tự động hóa nhỏ có đo thời gian, lỗi và ngoại lệ.",
+      "source_refs": [
+        {
+          "id": "CAREER-01",
+          "pages": [
+            11,
+            12
+          ],
+          "section": "5.1–5.2; 5.5; 6.2",
+          "supports": "Mô hình hóa quy trình, tư duy hệ thống, dự án số hóa nhỏ và đo hiệu quả; vai trò con người.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        }
+      ],
+      "editorial_status": "awaiting_owner_review",
+      "image": {
+        "template": "scene",
+        "scene": "bridge",
+        "mode": "illustration",
+        "headline": "Tự động hóa nhỏ.\nĐo giá trị thật.",
+        "subline": "Nhanh hơn cần đi cùng đúng hơn.",
+        "accent": "#087D72",
+        "ink": "#123E3B",
+        "paper": "#EDF7F4",
+        "cards": [],
+        "takeaway": "Đo cả thời gian kiểm tra và sửa lỗi."
+      }
+    },
+    {
+      "id": "P15",
+      "slot": 15,
+      "pool": "main",
+      "group": "I",
+      "audience": "HS",
+      "title": "Một môn học có thể mở ra nhiều hướng thực hành",
+      "level": "Hiểu",
+      "brief": "Chọn một học phần đã đối chiếu BM12, liên hệ ví dụ dữ liệu/kinh doanh; sản phẩm là gợi ý, không hoạt động đã diễn ra",
+      "image_brief": "Infographic quan hệ",
+      "source_start": "BM12 danh mục học phần và BM03 mô tả tương ứng; CAREER-05 tr. 8–10",
+      "status": "brief",
+      "prerequisites": [],
+      "body": "MỘT MÔN HỌC CÓ THỂ MỞ RA NHIỀU HƯỚNG THỰC HÀNH\n\nMột học phần không chỉ cho bạn thuật ngữ để ghi nhớ. Bạn có thể dùng kiến thức ấy để đặt câu hỏi và thiết kế một sản phẩm thực hành nhỏ.\n\nVí dụ với học phần “Chuyển đổi số” trong tài liệu chương trình ngành Kinh tế số: nội dung đề cập vai trò công nghệ trong cải tiến quy trình, phân tích và thiết kế lại quy trình kinh doanh.\n\nBa hướng thực hành tự đề xuất:\n• Vẽ quy trình hiện tại: ai nhận thông tin, làm việc gì và chuyển cho ai?\n• Tìm điểm vướng: thông tin thiếu ở đâu, bước nào chờ quá lâu?\n• Thiết kế bản thử: thay đổi một bước và ghi cách kiểm tra hiệu quả.\n\nTình huống giả định có thể là quản lý đăng ký hoạt động CLB. Bạn chưa cần xây một hệ thống lớn; một sơ đồ rõ và bảng thử nghiệm đã giúp thể hiện cách nghĩ.\n\nĐây là gợi ý học tập của bài viết, không phải thông báo về bài tập bắt buộc hoặc hoạt động đã diễn ra tại Trường. Khóa 2026 có thời gian đào tạo 3,5 năm theo xác nhận của ngành.\n\nNếu được chọn, bạn muốn bắt đầu từ sơ đồ quy trình, bảng theo dõi hay bản đề xuất cải tiến?",
+      "reader_outcome": "Liên hệ nội dung học phần Chuyển đổi số với ba sản phẩm học tập gợi ý.",
+      "source_refs": [
+        {
+          "id": "BM12",
+          "pages": [
+            8,
+            61
+          ],
+          "section": "Học phần 60: Chuyển đổi số",
+          "supports": "Tên học phần và nội dung phân tích, thiết kế, cải tiến quy trình.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        },
+        {
+          "id": "BM03",
+          "pages": [
+            85
+          ],
+          "section": "Học phần 60",
+          "supports": "Mô tả tương ứng về cải tiến quy trình bằng công nghệ.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        },
+        {
+          "id": "OWNER-2026",
+          "pages": [],
+          "section": "Đính chính của người quản lý ngày 04/10/2026",
+          "supports": "Áp dụng khóa 2026, thời gian đào tạo 3,5 năm.",
+          "adaptation": "Ưu tiên đính chính của người quản lý so với dòng khóa/thời lượng cũ trong PDF; không sửa tài liệu gốc."
+        }
+      ],
+      "editorial_status": "awaiting_owner_review",
+      "image": {
+        "template": "flow",
+        "scene": null,
+        "mode": "infographic",
+        "headline": "Một học phần.\nNhiều cách thực hành.",
+        "subline": "Chuyển đổi số bắt đầu từ quy trình.",
+        "accent": "#0056A6",
+        "ink": "#123453",
+        "paper": "#EEF5FB",
+        "cards": [
+          [
+            "Vẽ lại",
+            "Hiểu việc đang diễn ra"
+          ],
+          [
+            "Tìm điểm vướng",
+            "Thông tin, thời gian, bàn giao"
+          ],
+          [
+            "Thử cải tiến",
+            "Đổi một bước và đo kết quả"
+          ]
+        ],
+        "takeaway": "Gợi ý học tập, không phải bài bắt buộc."
+      }
+    },
+    {
+      "id": "P16",
+      "slot": 16,
+      "pool": "main",
+      "group": "D",
+      "audience": "SV",
+      "title": "Đọc biểu đồ: đừng bỏ qua trục và đơn vị",
+      "level": "Áp dụng",
+      "brief": "Hai biểu đồ giả định cùng dữ liệu; xem trục, thời kỳ và đơn vị trước diễn giải",
+      "image_brief": "Minh họa ít chữ",
+      "source_start": "CAREER-06 tr. 11: tư duy phản biện/kể chuyện dữ liệu; ví dụ biên soạn riêng",
+      "status": "brief",
+      "prerequisites": [],
+      "body": "ĐỌC BIỂU ĐỒ: ĐỪNG BỎ QUA TRỤC VÀ ĐƠN VỊ\n\nHai biểu đồ trông khác hẳn nhau có thể dùng cùng một bộ số. Vì vậy, trước khi đọc lời kết luận, hãy nhìn trục và đơn vị.\n\nVí dụ giả định: doanh thu tăng từ 100 lên 110 triệu đồng. Một biểu đồ bắt đầu trục dọc từ 0, một biểu đồ bắt đầu từ 95. Khoảng chênh nhìn thấy sẽ khác, dù mức tăng vẫn là 10 triệu, tương đương 10% so với 100 triệu.\n\nKiểm tra ba điều:\n• Trục bắt đầu và kết thúc ở đâu? Có ghi rõ phần bị rút ngắn không?\n• Đơn vị là đồng, triệu đồng, số đơn hay tỷ lệ phần trăm?\n• Hai thời kỳ có cùng độ dài và cùng cách thu thập dữ liệu không?\n\nTrục không bắt đầu từ 0 chưa tự động có nghĩa biểu đồ sai; hãy xem kiểu biểu đồ, nhãn trục và mục đích so sánh. Điều cần tránh là để cách vẽ thay thế cho việc đọc số.\n\nLượt luyện tập: vẽ hai biểu đồ từ bộ số trên, ghi đơn vị và mốc trục. Viết một câu nhận xét giữ nguyên ở cả hai hình. Bạn đang rèn cách giải thích dữ liệu, chứ không chỉ cách chọn màu.",
+      "reader_outcome": "Đọc trục, đơn vị và kỳ so sánh trước khi diễn giải biểu đồ.",
+      "source_refs": [
+        {
+          "id": "CAREER-06",
+          "pages": [
+            11,
+            12
+          ],
+          "section": "5.1–5.2; 5.5",
+          "supports": "Làm sạch dữ liệu, tư duy bài toán kinh doanh, kiểm chứng và trình bày kết quả; cấu trúc dự án có quy trình rõ.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        }
+      ],
+      "editorial_status": "awaiting_owner_review",
+      "image": {
+        "template": "scene",
+        "scene": "portfolio",
+        "mode": "illustration",
+        "headline": "Đọc biểu đồ.\nNhìn cả trục.",
+        "subline": "Cùng dữ liệu, cách nhìn có thể khác.",
+        "accent": "#5B4BA7",
+        "ink": "#332B5F",
+        "paper": "#F3F0FA",
+        "cards": [],
+        "takeaway": "Đơn vị và kỳ so sánh cần rõ ràng."
+      }
+    },
+    {
+      "id": "P17",
+      "slot": 17,
+      "pool": "main",
+      "group": "B",
+      "audience": "SV",
+      "title": "CRM: theo dõi cơ hội, không chỉ lưu số điện thoại",
+      "level": "Áp dụng",
+      "brief": "Một pipeline giả định gồm nhu cầu, bước tiếp theo và trạng thái; dữ liệu khách hàng được ẩn danh",
+      "image_brief": "Infographic quy trình",
+      "source_start": "CAREER-02 tr. 12–13; CAREER-01 tr. 6",
+      "status": "brief",
+      "prerequisites": [],
+      "body": "CRM: THEO DÕI CƠ HỘI, KHÔNG CHỈ LƯU SỐ ĐIỆN THOẠI\n\nMột danh sách số điện thoại chưa cho nhóm kinh doanh biết cần làm gì tiếp theo. Để luyện tư duy CRM, thử mô tả một cơ hội theo nhu cầu và bước xử lý.\n\nBảng giả định có thể gồm: mã khách, nhu cầu, trạng thái trao đổi, việc tiếp theo, người phụ trách và ngày cần xem lại. Dùng mã thay tên thật khi luyện tập.\n\nVí dụ: KH01 đang tìm cách tổng hợp đơn hàng. Nhóm đã trao đổi nhu cầu, nhưng còn thiếu thông tin về quy trình hiện tại. Việc tiếp theo là hỏi thêm trước khi đề xuất bản thử, không phải tự chuyển trạng thái thành “sắp mua”.\n\nBa thói quen hữu ích:\n• Ghi điều khách thực sự nói, tách khỏi suy đoán.\n• Mỗi bước tiếp theo có người phụ trách.\n• Cập nhật sau trao đổi để người khác hiểu bối cảnh.\n\nCRM có thể hỗ trợ quản lý quy trình và thông tin; chất lượng vẫn phụ thuộc cách nhập, cập nhật và phối hợp. Không phải mọi dữ liệu đều nên được lưu chỉ vì có một ô trống.\n\nThử tạo ba khách giả định, rồi nhờ một bạn đọc bảng và xác định việc phải làm. Nếu họ phải hỏi lại từ đầu, hãy sửa cách ghi trước khi tìm thêm tính năng.",
+      "reader_outcome": "Thiết kế bảng cơ hội có nhu cầu, trạng thái và bước tiếp theo.",
+      "source_refs": [
+        {
+          "id": "CAREER-02",
+          "pages": [
+            12,
+            14
+          ],
+          "section": "5.1; 6.1",
+          "supports": "CRM, quản lý pipeline, hiểu nhu cầu và tư vấn trung thực.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        }
+      ],
+      "editorial_status": "awaiting_owner_review",
+      "image": {
+        "template": "flow",
+        "scene": null,
+        "mode": "infographic",
+        "headline": "CRM cần\nbước tiếp theo.",
+        "subline": "Lưu thông tin để phối hợp hành động.",
+        "accent": "#A74725",
+        "ink": "#63311E",
+        "paper": "#FCF2EA",
+        "cards": [
+          [
+            "Nhu cầu",
+            "Điều khách thực sự cần"
+          ],
+          [
+            "Trạng thái",
+            "Đã trao đổi đến đâu?"
+          ],
+          [
+            "Việc tiếp theo",
+            "Ai làm, khi nào xem lại?"
+          ]
+        ],
+        "takeaway": "Tách điều đã biết khỏi suy đoán."
+      }
+    },
+    {
+      "id": "P18",
+      "slot": 18,
+      "pool": "main",
+      "group": "S",
+      "audience": "SV",
+      "title": "Kể lại dự án trong phỏng vấn bằng bốn phần",
+      "level": "Áp dụng",
+      "brief": "Bối cảnh–hành động–kết quả–bài học; tách đóng góp cá nhân và nhóm",
+      "image_brief": "Minh họa ít chữ",
+      "source_start": "CAREER-09 tr. 13",
+      "status": "brief",
+      "prerequisites": [],
+      "body": "KỂ LẠI DỰ ÁN TRONG PHỎNG VẤN BẰNG BỐN PHẦN\n\n“Em có tham gia dự án nhóm” là một điểm bắt đầu. Trong phỏng vấn, bạn còn cần giúp người nghe hiểu mình đã làm gì và học được gì.\n\nThử kể theo bốn phần:\n• Bối cảnh: dự án cần giải quyết vấn đề nào?\n• Hành động: bạn phụ trách việc gì, đã thực hiện ra sao?\n• Kết quả: sản phẩm nào hoàn thành, có căn cứ nào để kiểm tra?\n• Bài học: điều gì sẽ được làm khác nếu có lượt tiếp theo?\n\nVí dụ giả định: nhóm làm báo cáo về đơn hàng. Bạn có thể nói mình chuẩn hóa cột ngày, ghi các dòng thiếu dữ liệu và dựng bảng tổng hợp. Nếu chưa đo được tác động đến kinh doanh, hãy mô tả sản phẩm, không thêm “tăng doanh thu” cho ấn tượng.\n\nMột kết quả chưa như mong muốn vẫn có điều để kể, nếu bạn chỉ ra cách nhận biết vấn đề và điều đã điều chỉnh. Tách rõ phần đóng góp của bạn với thành quả chung.\n\nLuyện một câu chuyện ngắn rồi nhờ bạn học hỏi tiếp: “Vì sao chọn cách đó?” và “Có thể xem sản phẩm không?”. Những câu hỏi này giúp bạn kiểm tra độ rõ và tính trung thực của câu chuyện.",
+      "reader_outcome": "Kể dự án bằng bối cảnh, hành động, kết quả, bài học với đóng góp cá nhân rõ.",
+      "source_refs": [
+        {
+          "id": "CAREER-09",
+          "pages": [
+            13
+          ],
+          "section": "4.2–4.3",
+          "supports": "Hồ sơ có sản phẩm minh chứng, mô tả dự án và chuẩn bị phỏng vấn; góp ý từ nơi thực tập.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        }
+      ],
+      "editorial_status": "awaiting_owner_review",
+      "image": {
+        "template": "scene",
+        "scene": "portfolio",
+        "mode": "illustration",
+        "headline": "Kể dự án.\nRõ phần của bạn.",
+        "subline": "Bối cảnh, hành động, kết quả, bài học.",
+        "accent": "#245CBC",
+        "ink": "#183761",
+        "paper": "#EFF4FC",
+        "cards": [],
+        "takeaway": "Kết quả nào cũng cần căn cứ."
+      }
+    },
+    {
+      "id": "P19",
+      "slot": 19,
+      "pool": "main",
+      "group": "S",
+      "audience": "HS",
+      "title": "Chưa học đại học, có thể bắt đầu rèn kỹ năng số thế nào?",
+      "level": "Áp dụng",
+      "brief": "Dự án học tập nhỏ: bảng quản lý việc học hoặc nội dung CLB; ghi việc đã làm và bài học, không áp lực chứng chỉ",
+      "image_brief": "Infographic checklist",
+      "source_start": "CAREER-05 tr. 21–22; CAREER-09 tr. 13, điều chỉnh cho HS",
+      "status": "brief",
+      "prerequisites": [],
+      "body": "CHƯA HỌC ĐẠI HỌC, CÓ THỂ BẮT ĐẦU RÈN KỸ NĂNG SỐ THẾ NÀO?\n\nBạn chưa cần đợi một dự án lớn mới bắt đầu rèn kỹ năng số. Một việc quen thuộc ở lớp hoặc CLB cũng có thể là cơ hội học cách tổ chức thông tin.\n\nVí dụ tự thực hành: làm bảng theo dõi việc học của chính mình. Chọn một mục tiêu nhỏ, như biết nhiệm vụ nào cần hoàn thành trong tuần. Đừng thu thông tin riêng của bạn bè chỉ để bảng có nhiều dòng.\n\nThử bốn bước:\n1. Chọn câu hỏi: mình đang cần quản lý điều gì?\n2. Tạo bảng đơn giản: việc, thời hạn, trạng thái, ghi chú.\n3. Dùng thử: chỗ nào khiến mình khó cập nhật hoặc hiểu nhầm?\n4. Sửa và ghi bài học: điều gì làm bảng dễ dùng hơn?\n\nBạn có thể trình bày kết quả bằng ảnh bảng đã ẩn thông tin riêng và một đoạn giải thích. Giá trị nằm ở việc bạn hiểu vấn đề và biết sửa sản phẩm, không nằm ở số công cụ được dùng.\n\nĐây là gợi ý luyện tập phù hợp người mới bắt đầu, không phải điều kiện tuyển sinh hay yêu cầu có chứng chỉ trước đại học.\n\nTuần này, bạn muốn thử làm bảng việc học hay một nội dung hướng dẫn cho CLB?",
+      "reader_outcome": "Bắt đầu một dự án số nhỏ từ công việc quen thuộc và ghi bài học.",
+      "source_refs": [
+        {
+          "id": "CAREER-09",
+          "pages": [
+            13
+          ],
+          "section": "4.2–4.3",
+          "supports": "Hồ sơ có sản phẩm minh chứng, mô tả dự án và chuẩn bị phỏng vấn; góp ý từ nơi thực tập.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        }
+      ],
+      "editorial_status": "awaiting_owner_review",
+      "image": {
+        "template": "flow",
+        "scene": null,
+        "mode": "infographic",
+        "headline": "Kỹ năng số.\nBắt đầu việc nhỏ.",
+        "subline": "Một bảng đơn giản cũng là thực hành.",
+        "accent": "#245CBC",
+        "ink": "#183761",
+        "paper": "#EFF4FC",
+        "cards": [
+          [
+            "Chọn câu hỏi",
+            "Bạn cần quản lý việc gì?"
+          ],
+          [
+            "Tạo bản thử",
+            "Giữ ít cột, rõ ý nghĩa"
+          ],
+          [
+            "Dùng và sửa",
+            "Ghi vướng mắc, rút bài học"
+          ]
+        ],
+        "takeaway": "Không cần đợi một dự án lớn."
+      }
+    },
+    {
+      "id": "P20",
+      "slot": 20,
+      "pool": "main",
+      "group": "I",
+      "audience": "HS",
+      "title": "Tìm hiểu hướng nghề từ năng lực, thay vì chỉ tên chức danh",
+      "level": "Hiểu",
+      "brief": "Liên hệ năng lực với nhóm công việc trong CTĐT; phân biệt điểm khởi đầu và vị trí có kinh nghiệm",
+      "image_brief": "Minh họa ít chữ",
+      "source_start": "BM03 phần vị trí việc làm; CAREER-10 tr. 5–15, 17",
+      "status": "brief",
+      "prerequisites": [],
+      "body": "TÌM HIỂU HƯỚNG NGHỀ TỪ NĂNG LỰC, THAY VÌ CHỈ TÊN CHỨC DANH\n\nKhi tìm hiểu nghề, tên chức danh có thể hấp dẫn nhưng chưa nói đủ về công việc hằng ngày. Hãy đọc nhiệm vụ và năng lực cần dùng.\n\nTài liệu mô tả ngành Kinh tế số của NTTU đề cập các hướng như thương mại điện tử, chuyển đổi số, ứng dụng AI và quản lý hệ thống chăm sóc khách hàng qua nền tảng số. Có thể khám phá bằng những việc cụ thể:\n• Thương mại điện tử: kiểm tra thông tin sản phẩm và phối hợp xử lý đơn.\n• Chuyển đổi số: hiểu quy trình, nhận diện điểm vướng và đề xuất cải tiến.\n• Ứng dụng AI: chọn bài toán, chuẩn bị đầu vào và đánh giá kết quả.\n\nĐây là ví dụ để hình dung, không phải danh sách nhiệm vụ giống nhau ở mọi doanh nghiệp. Vị trí quản lý còn gắn với kinh nghiệm và yêu cầu của tổ chức; tên hướng nghề không bảo đảm một vị trí sau tốt nghiệp.\n\nChương trình áp dụng khóa 2026 có thời gian đào tạo 3,5 năm theo xác nhận của ngành.\n\nBạn thử chọn một hướng, ghi hai nhiệm vụ mình muốn trải nghiệm và một năng lực cần rèn. Cách tìm hiểu ấy giúp biến sự tò mò thành việc học cụ thể.",
+      "reader_outcome": "Khám phá hướng nghề từ nhiệm vụ và năng lực, phân biệt hướng nghề với vị trí quản lý.",
+      "source_refs": [
+        {
+          "id": "BM03",
+          "pages": [
+            12
+          ],
+          "section": "1.8.1 Vị trí việc làm",
+          "supports": "Các hướng thương mại điện tử, chuyển đổi số, ứng dụng AI; quản lý cấp cao sau kinh nghiệm công tác.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        },
+        {
+          "id": "OWNER-2026",
+          "pages": [],
+          "section": "Đính chính của người quản lý ngày 04/10/2026",
+          "supports": "Áp dụng khóa 2026, thời gian đào tạo 3,5 năm.",
+          "adaptation": "Ưu tiên đính chính của người quản lý so với dòng khóa/thời lượng cũ trong PDF; không sửa tài liệu gốc."
+        }
+      ],
+      "editorial_status": "awaiting_owner_review",
+      "image": {
+        "template": "scene",
+        "scene": "bridge",
+        "mode": "illustration",
+        "headline": "Tìm hiểu nghề.\nNhìn vào nhiệm vụ.",
+        "subline": "Tên chức danh là điểm bắt đầu.",
+        "accent": "#0056A6",
+        "ink": "#123453",
+        "paper": "#EEF5FB",
+        "cards": [],
+        "takeaway": "Hướng nghề gắn với năng lực cần rèn."
+      }
+    },
+    {
+      "id": "P21",
+      "slot": 21,
+      "pool": "main",
+      "group": "D",
+      "audience": "SV",
+      "title": "Từ con số đến khuyến nghị: trình bày sao cho dễ hiểu?",
+      "level": "Áp dụng",
+      "brief": "Kết quả–ý nghĩa–hành động–giới hạn; ví dụ phân tích giả định cho người không chuyên",
+      "image_brief": "Infographic quy trình",
+      "source_start": "CAREER-06 tr. 11–12",
+      "status": "brief",
+      "prerequisites": [],
+      "body": "TỪ CON SỐ ĐẾN KHUYẾN NGHỊ: TRÌNH BÀY SAO CHO DỄ HIỂU?\n\nBạn tìm thấy một con số đáng chú ý, nhưng người xem vẫn hỏi: “Vậy chúng ta cần làm gì?”. Một khuyến nghị cần đi qua ý nghĩa và giới hạn của kết quả.\n\nTình huống giả định: tỷ lệ giao đúng hẹn của một nhóm đơn giảm từ 90% xuống 80%. Trước tiên cần kiểm tra cách tính và hai kỳ có so sánh được không. Nếu đúng, mức giảm là 10 điểm phần trăm; chưa biết nguyên nhân chỉ từ hai tỷ lệ.\n\nThử trình bày theo bốn phần:\n• Kết quả: con số nào thay đổi, trong thời kỳ nào?\n• Ý nghĩa: thay đổi liên quan câu hỏi kinh doanh ra sao?\n• Hành động: nên kiểm tra hoặc thử điều gì tiếp?\n• Giới hạn: dữ liệu chưa cho phép kết luận điều gì?\n\nTrong ví dụ này, có thể đề xuất xem nhóm đơn trễ theo khu vực và thời điểm. Chưa nên kết luận “đơn vị giao hàng kém” khi chưa phân tích thêm bối cảnh.\n\nLuyện bằng một slide có một kết quả, một việc cần kiểm tra và một giới hạn. Nhờ người chưa xem dữ liệu nói lại điều họ hiểu. Nếu họ chỉ nhớ con số mà không biết bước tiếp theo, hãy sửa cách giải thích.",
+      "reader_outcome": "Chuyển kết quả thành khuyến nghị có hành động và giới hạn; phân biệt điểm phần trăm.",
+      "source_refs": [
+        {
+          "id": "CAREER-06",
+          "pages": [
+            11,
+            12
+          ],
+          "section": "5.1–5.2; 5.5",
+          "supports": "Làm sạch dữ liệu, tư duy bài toán kinh doanh, kiểm chứng và trình bày kết quả; cấu trúc dự án có quy trình rõ.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        }
+      ],
+      "editorial_status": "awaiting_owner_review",
+      "image": {
+        "template": "flow",
+        "scene": null,
+        "mode": "infographic",
+        "headline": "Có con số.\nCần bước tiếp.",
+        "subline": "Trình bày để người xem hành động.",
+        "accent": "#5B4BA7",
+        "ink": "#332B5F",
+        "paper": "#F3F0FA",
+        "cards": [
+          [
+            "Kết quả",
+            "Điều gì thay đổi?"
+          ],
+          [
+            "Ý nghĩa",
+            "Liên quan bài toán ra sao?"
+          ],
+          [
+            "Bước tiếp theo",
+            "Kiểm tra gì, còn giới hạn nào?"
+          ]
+        ],
+        "takeaway": "Tỷ lệ thay đổi chưa nói rõ nguyên nhân."
+      }
+    },
+    {
+      "id": "P22",
+      "slot": 22,
+      "pool": "main",
+      "group": "A",
+      "audience": "SV",
+      "title": "Blockchain giúp giải quyết bài toán nào ngoài tiền mã hóa?",
+      "level": "Hiểu",
+      "brief": "Tình huống giả định truy xuất/lưu vết; phân biệt công nghệ, ứng dụng và điều kiện phù hợp; tra nguồn kỹ thuật trước khi viết chi tiết",
+      "image_brief": "Minh họa ít chữ",
+      "source_start": "CAREER-04 tr. 4; BM03 mô tả học phần blockchain; cần nguồn kỹ thuật gốc cho ví dụ cụ thể",
+      "status": "brief",
+      "prerequisites": [],
+      "body": "BLOCKCHAIN GIÚP GIẢI QUYẾT BÀI TOÁN NÀO NGOÀI TIỀN MÃ HÓA?\n\nBlockchain không chỉ xuất hiện trong câu chuyện tiền mã hóa. Ở mức khái quát, đây là cách ghi giao dịch trên một sổ cái được chia sẻ, với cơ chế giúp phát hiện và hạn chế việc sửa đổi bản ghi.\n\nTình huống giả định: nhiều đơn vị cùng theo dõi việc bàn giao một lô hàng. Một hệ thống dùng blockchain có thể ghi các sự kiện bàn giao để các bên đối chiếu lịch sử. Tuy nhiên, việc ghi nhận cần được thiết kế cùng cách xác nhận dữ liệu từ thực tế.\n\nTrước khi chọn công nghệ, thử hỏi:\n• Những bên nào cần cùng đối chiếu thông tin?\n• Cần ghi sự kiện gì và ai được phép ghi?\n• Một cơ sở dữ liệu thông thường đã đáp ứng được chưa?\n\nGiữ được lịch sử ghi nhận không tự chứng minh mọi thông tin đầu vào đều đúng. Đừng thay câu hỏi về quy trình và người chịu trách nhiệm bằng một tên công nghệ.\n\nThực hành: vẽ ba lần bàn giao giả định, ghi người xác nhận và điều cần kiểm tra ở mỗi lần. Sau đó so sánh yêu cầu của bài toán với hai lựa chọn công nghệ, thay vì mặc định blockchain tốt hơn.\n\nNguồn đọc thêm: NIST, Blockchain Technology Overview, mục 3.2 và 8: https://doi.org/10.6028/NIST.IR.8202",
+      "reader_outcome": "Nhận biết một ứng dụng ghi nhận ngoài tiền mã hóa và đặt câu hỏi về sự phù hợp.",
+      "source_refs": [
+        {
+          "id": "CAREER-04",
+          "pages": [
+            4
+          ],
+          "section": "1.1 Blockchain",
+          "supports": "Khái niệm nền tảng về blockchain; không dùng số liệu thị trường hoặc nội dung pháp lý của cẩm nang.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        }
+      ],
+      "editorial_status": "awaiting_owner_review",
+      "image": {
+        "template": "scene",
+        "scene": "bridge",
+        "mode": "illustration",
+        "headline": "Blockchain.\nBắt đầu từ bài toán.",
+        "subline": "Công nghệ cần phù hợp yêu cầu.",
+        "accent": "#087D72",
+        "ink": "#123E3B",
+        "paper": "#EDF7F4",
+        "cards": [],
+        "takeaway": "Lịch sử ghi nhận cần dữ liệu đáng tin."
+      },
+      "external_refs": [
+        {
+          "id": "NIST-8202",
+          "url": "https://doi.org/10.6028/NIST.IR.8202",
+          "pdf_url": "https://nvlpubs.nist.gov/nistpubs/ir/2018/NIST.IR.8202.pdf",
+          "title": "Blockchain Technology Overview",
+          "published": "2018-10",
+          "accessed": "2026-10-06",
+          "sections": [
+            "3.2 Transactions",
+            "8 Application Considerations",
+            "8.1 Additional Blockchain Considerations"
+          ],
+          "pdf_pages": [
+            20,
+            21,
+            52,
+            55
+          ],
+          "supports": "Sổ cái chia sẻ và bản ghi chống sửa đổi; minh họa sự kiện chuỗi cung ứng và yêu cầu đánh giá công nghệ phù hợp."
+        }
+      ]
+    },
+    {
+      "id": "P23",
+      "slot": 23,
+      "pool": "main",
+      "group": "B",
+      "audience": "SV",
+      "title": "Content marketing cần mục tiêu trước ý tưởng",
+      "level": "Áp dụng",
+      "brief": "Brief gồm đối tượng, vấn đề, thông điệp và hành động; đo kết quả theo mục tiêu, không chỉ lượt thích",
+      "image_brief": "Infographic brief",
+      "source_start": "CAREER-03 tr. 12–14",
+      "status": "brief",
+      "prerequisites": [],
+      "body": "CONTENT MARKETING CẦN MỤC TIÊU TRƯỚC Ý TƯỞNG\n\nBạn có một ý tưởng bài viết thú vị. Trước khi viết, hãy xác định bài đó giúp ai và muốn người đọc làm gì.\n\nBrief ngắn có thể trả lời:\n1. Đối tượng: người đọc đang ở tình huống nào?\n2. Vấn đề: họ cần hiểu hoặc tháo gỡ điều gì?\n3. Thông điệp: một điều cần nhớ sau khi đọc là gì?\n4. Hành động: lưu hướng dẫn, thử một việc hay tìm hiểu thêm?\n\nVí dụ giả định: CLB muốn người mới biết cách đăng ký hoạt động. Một bài hướng dẫn rõ thời điểm và từng bước có thể phù hợp hơn một câu chuyện dài không chỉ ra cách tham gia.\n\nChọn cách theo dõi theo mục tiêu. Nếu muốn người đọc hiểu quy trình, hãy xem phản hồi có còn hỏi lại các bước không; lượt thích chỉ là một phần tín hiệu. Dữ liệu cần được thu hợp lý, không lấy thông tin riêng không cần thiết.\n\nThử viết hai dòng brief trước bản nháp tiếp theo. Khi biên tập, đối chiếu từng đoạn với thông điệp chính: đoạn nào giúp người đọc, đoạn nào chỉ làm bài dài hơn? Nội dung sáng tạo có thể bắt đầu từ một mục tiêu rõ.",
+      "reader_outcome": "Viết brief nội dung gắn đối tượng, vấn đề, thông điệp và hành động.",
+      "source_refs": [
+        {
+          "id": "CAREER-03",
+          "pages": [
+            5,
+            12,
+            14
+          ],
+          "section": "Chuyên viên nội dung; 5.1–5.2; 6.2",
+          "supports": "Lên kế hoạch nội dung theo đối tượng, kết hợp sáng tạo và đo lường, bám mục tiêu/khách hàng.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        }
+      ],
+      "editorial_status": "awaiting_owner_review",
+      "image": {
+        "template": "flow",
+        "scene": null,
+        "mode": "infographic",
+        "headline": "Content có đích.\nÝ tưởng có hướng.",
+        "subline": "Viết brief trước khi viết bài.",
+        "accent": "#A74725",
+        "ink": "#63311E",
+        "paper": "#FCF2EA",
+        "cards": [
+          [
+            "Đối tượng",
+            "Người đọc đang cần gì?"
+          ],
+          [
+            "Thông điệp",
+            "Một điều cần nhớ"
+          ],
+          [
+            "Hành động",
+            "Đọc xong, làm gì tiếp?"
+          ]
+        ],
+        "takeaway": "Chọn cách đo theo mục tiêu."
+      }
+    },
+    {
+      "id": "P24",
+      "slot": 24,
+      "pool": "main",
+      "group": "I",
+      "audience": "SV",
+      "title": "Từ chuẩn đầu ra đến kế hoạch rèn năng lực cá nhân",
+      "level": "Áp dụng",
+      "brief": "Chọn năng lực từ BM11 → bằng chứng hiện có → việc thực hành tiếp; không tự thêm chuẩn bắt buộc",
+      "image_brief": "Minh họa ít chữ",
+      "source_start": "BM11 phần chuẩn đầu ra",
+      "status": "brief",
+      "prerequisites": [],
+      "body": "TỪ CHUẨN ĐẦU RA ĐẾN KẾ HOẠCH RÈN NĂNG LỰC CÁ NHÂN\n\nChuẩn đầu ra có thể giúp bạn chọn việc cần rèn, nhưng một danh sách dài dễ làm bạn không biết bắt đầu ở đâu. Thử chuyển một năng lực thành kế hoạch nhỏ.\n\nTheo BM11, chương trình ngành Kinh tế số hướng tới năng lực phối hợp nhóm, ứng dụng công cụ số và giải quyết vấn đề trong môi trường số. Đây là các mục tiêu để rèn luyện, không phải một bảng thành tích sẵn có.\n\nVí dụ kế hoạch tự đề xuất cho năng lực làm việc nhóm:\n• Điểm cần rèn: bàn giao công việc rõ hơn.\n• Việc thực hành: dùng bảng có nhiệm vụ, người phụ trách, hạn và sản phẩm cần bàn giao.\n• Bằng chứng: bản theo dõi đã ẩn thông tin riêng và một ghi chú về lần điều chỉnh.\n• Lượt xem lại: hỏi nhóm điều gì còn khó hiểu khi nhận việc.\n\nChọn một năng lực mỗi lượt và một sản phẩm có thể kiểm tra. Không cần biến gợi ý này thành tiêu chuẩn bắt buộc hoặc tự chấm mình đạt toàn bộ chương trình.\n\nVới khóa 2026, thời gian đào tạo là 3,5 năm theo xác nhận của ngành. Hãy bắt đầu kế hoạch từ điều bạn đang cần cải thiện trong dự án hiện tại, rồi xem lại bằng bằng chứng thực hành.",
+      "reader_outcome": "Tạo kế hoạch luyện một năng lực với việc làm, bằng chứng và lượt xem lại.",
+      "source_refs": [
+        {
+          "id": "BM11",
+          "pages": [
+            4,
+            5
+          ],
+          "section": "PLO6–PLO10",
+          "supports": "Phối hợp nhóm, công cụ số, giải quyết vấn đề và chủ động bồi dưỡng năng lực.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        },
+        {
+          "id": "OWNER-2026",
+          "pages": [],
+          "section": "Đính chính của người quản lý ngày 04/10/2026",
+          "supports": "Áp dụng khóa 2026, thời gian đào tạo 3,5 năm.",
+          "adaptation": "Ưu tiên đính chính của người quản lý so với dòng khóa/thời lượng cũ trong PDF; không sửa tài liệu gốc."
+        }
+      ],
+      "editorial_status": "awaiting_owner_review",
+      "image": {
+        "template": "scene",
+        "scene": "portfolio",
+        "mode": "illustration",
+        "headline": "Chọn năng lực.\nLập việc thực hành.",
+        "subline": "Một mục tiêu, một bằng chứng.",
+        "accent": "#0056A6",
+        "ink": "#123453",
+        "paper": "#EEF5FB",
+        "cards": [],
+        "takeaway": "Kế hoạch nhỏ cần có lượt xem lại."
+      }
+    },
+    {
+      "id": "P25",
+      "slot": 25,
+      "pool": "main",
+      "group": "R",
+      "audience": "HS",
+      "title": "Gặp tin việc nhẹ lương cao: kiểm tra trước khi tin",
+      "level": "Áp dụng",
+      "brief": "Nhận diện yêu cầu nộp tiền, thông tin không rõ và lời hứa quá mức; hướng kiểm tra đơn vị, không cáo buộc doanh nghiệp cụ thể",
+      "image_brief": "Infographic checklist",
+      "source_start": "CAREER-09 tr. 13; CAREER-04 tr. 15",
+      "status": "brief",
+      "prerequisites": [],
+      "body": "GẶP TIN VIỆC NHẸ LƯƠNG CAO: KIỂM TRA TRƯỚC KHI TIN\n\nMột tin tuyển dụng hứa thu nhập cao cho việc rất ít, nhưng không mô tả rõ nhiệm vụ. Bạn nên kiểm tra trước khi cung cấp thông tin hoặc chuyển tiền.\n\nBa điểm cần làm rõ:\n• Công việc: làm gì, sản phẩm cần bàn giao là gì, ai trao đổi trực tiếp?\n• Đơn vị: có thể đối chiếu tên và kênh liên hệ chính thức không?\n• Yêu cầu ban đầu: vì sao cần nộp tiền, mua gói hoặc cung cấp dữ liệu riêng?\n\nCẩm nang thực tập lưu ý cảnh giác với lời hứa “việc nhẹ lương cao” và yêu cầu nộp phí trước. Một dấu hiệu bất thường là lý do để dừng kiểm tra thêm, chưa đủ để cáo buộc một doanh nghiệp cụ thể.\n\nTình huống giả định: người tuyển chỉ nhắn qua tài khoản cá nhân và yêu cầu đặt cọc để nhận việc. Bạn có thể lưu nội dung trao đổi, tìm kênh chính thức để xác minh và nhờ người có kinh nghiệm hỗ trợ, thay vì làm theo vì sợ mất cơ hội.\n\nLuyện tập: lấy một mô tả việc giả định, đánh dấu điều đã rõ và điều cần hỏi. Cơ hội phù hợp cần được hiểu bằng nhiệm vụ và thông tin kiểm tra được, không chỉ bằng con số hấp dẫn.",
+      "reader_outcome": "Nhận biết thông tin cần xác minh trong tin việc làm, không cáo buộc đơn vị cụ thể.",
+      "source_refs": [
+        {
+          "id": "CAREER-09",
+          "pages": [
+            13
+          ],
+          "section": "4.3 mục 5",
+          "supports": "Cảnh giác tin việc nhẹ lương cao và yêu cầu đặt cọc/nộp phí trước.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        }
+      ],
+      "editorial_status": "awaiting_owner_review",
+      "image": {
+        "template": "flow",
+        "scene": null,
+        "mode": "infographic",
+        "headline": "Tin việc hấp dẫn.\nKiểm tra trước.",
+        "subline": "Đừng quyết định chỉ vì lời hứa.",
+        "accent": "#8B3A68",
+        "ink": "#51233E",
+        "paper": "#F9EFF5",
+        "cards": [
+          [
+            "Nhiệm vụ",
+            "Làm gì, bàn giao sản phẩm gì?"
+          ],
+          [
+            "Đơn vị",
+            "Đối chiếu kênh chính thức"
+          ],
+          [
+            "Yêu cầu",
+            "Làm rõ tiền và dữ liệu riêng"
+          ]
+        ],
+        "takeaway": "Thông tin chưa rõ? Dừng để xác minh."
+      }
+    },
+    {
+      "id": "P26",
+      "slot": 26,
+      "pool": "main",
+      "group": "D",
+      "audience": "SV",
+      "title": "Portfolio dữ liệu cần kể cả quá trình, không chỉ ảnh dashboard",
+      "level": "Tạo sản phẩm",
+      "brief": "Khung dự án: bài toán, nguồn dữ liệu, xử lý, kết quả, giới hạn và vai trò; chỉ dùng dữ liệu được phép",
+      "image_brief": "Minh họa ít chữ",
+      "source_start": "CAREER-06 tr. 12",
+      "status": "brief",
+      "prerequisites": [],
+      "body": "PORTFOLIO DỮ LIỆU CẦN KỂ CẢ QUÁ TRÌNH, KHÔNG CHỈ ẢNH DASHBOARD\n\nẢnh dashboard cho thấy phần trình bày cuối cùng. Người xem portfolio còn cần hiểu bạn đã đặt câu hỏi và xử lý dữ liệu thế nào.\n\nThử viết một trang dự án với các phần:\n• Bài toán: ai cần biết điều gì để quyết định?\n• Nguồn: dữ liệu từ đâu, được phép dùng và chia sẻ đến mức nào?\n• Quy trình: kiểm tra, xử lý, tổng hợp và lựa chọn cách trình bày.\n• Kết quả: phát hiện gì, đề xuất kiểm tra hoặc làm gì tiếp?\n• Giới hạn và vai trò: dữ liệu còn thiếu gì, phần nào do bạn thực hiện?\n\nTình huống giả định: bạn phân tích dữ liệu bán hàng của môn học. Một biểu đồ giảm đơn hàng chưa chứng minh nguyên nhân; ghi việc cần tìm hiểu thêm giúp người đọc thấy cách suy nghĩ có căn cứ.\n\nGiữ bản minh chứng phù hợp: câu hỏi phân tích, quy tắc làm sạch, biểu đồ và phần giải thích. Không công khai dữ liệu doanh nghiệp hoặc khách hàng khi chưa được phép.\n\nNếu chỉ còn một ảnh dashboard trong portfolio, hãy bổ sung ba câu: “Tôi hỏi gì?”, “Tôi đã xử lý ra sao?” và “Kết quả chưa cho biết điều gì?”. Đó là cách kể được cả quá trình.",
+      "reader_outcome": "Viết trang dự án dữ liệu có quy trình, nguồn, kết quả và giới hạn.",
+      "source_refs": [
+        {
+          "id": "CAREER-06",
+          "pages": [
+            11,
+            12
+          ],
+          "section": "5.1–5.2; 5.5",
+          "supports": "Làm sạch dữ liệu, tư duy bài toán kinh doanh, kiểm chứng và trình bày kết quả; cấu trúc dự án có quy trình rõ.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        }
+      ],
+      "editorial_status": "awaiting_owner_review",
+      "image": {
+        "template": "scene",
+        "scene": "portfolio",
+        "mode": "illustration",
+        "headline": "Portfolio dữ liệu.\nKể cả quá trình.",
+        "subline": "Đừng chỉ để lại một ảnh dashboard.",
+        "accent": "#5B4BA7",
+        "ink": "#332B5F",
+        "paper": "#F3F0FA",
+        "cards": [],
+        "takeaway": "Câu hỏi, cách làm, kết quả, giới hạn."
+      }
+    },
+    {
+      "id": "P27",
+      "slot": 27,
+      "pool": "main",
+      "group": "B",
+      "audience": "SV",
+      "title": "Doanh thu tăng chưa chắc lợi nhuận tăng",
+      "level": "Áp dụng",
+      "brief": "Tình huống bán hàng giả định xét giá vốn, giảm giá và chi phí; không dùng doanh thu thay lợi nhuận",
+      "image_brief": "Infographic so sánh",
+      "source_start": "CAREER-07 tr. 12: tư duy lợi nhuận/giá vốn; phép tính minh họa biên soạn riêng",
+      "status": "brief",
+      "prerequisites": [],
+      "body": "DOANH THU TĂNG CHƯA CHẮC LỢI NHUẬN TĂNG\n\nDoanh thu tăng là một tín hiệu cần đọc, chưa đủ để nói lợi nhuận tăng. Hãy xem phần chi phí cùng thay đổi.\n\nVí dụ giả định, cùng đơn vị triệu đồng:\n• Tuần A: doanh thu 10; giá vốn 6; chi phí khác 2 → phần còn lại 2.\n• Tuần B: doanh thu 12; giá vốn 8; chi phí khác 3 → phần còn lại 1.\n\nTrong phép tính giản lược này, doanh thu tăng nhưng phần còn lại giảm. Đây là ví dụ học tập, chưa phải báo cáo lợi nhuận đầy đủ; thực tế còn cần cách ghi nhận và các khoản chi phí liên quan.\n\nKhi xem một chương trình giảm giá, thử hỏi: số đơn thay đổi thế nào, doanh thu thực nhận bao nhiêu, giá vốn và chi phí phục vụ tăng đến đâu? Đừng bỏ qua phí hoặc hoàn trả chỉ vì chúng nằm ở bảng khác.\n\nThực hành: giữ nguyên doanh thu tuần B, thay một khoản chi phí và tính lại. Viết rõ khoản nào đã tính, khoản nào chưa có dữ liệu. Bạn đang luyện tư duy kinh doanh gắn với con số, không tìm một tỷ lệ “đẹp” để báo cáo.\n\nMột câu hỏi đáng giữ: bán nhiều hơn đã tạo thêm giá trị sau chi phí chưa?",
+      "reader_outcome": "Phân biệt doanh thu với phần còn lại sau chi phí bằng ví dụ tính giản lược.",
+      "source_refs": [
+        {
+          "id": "CAREER-07",
+          "pages": [
+            12
+          ],
+          "section": "5.2 Tư duy kinh doanh",
+          "supports": "Hiểu lợi nhuận, giá vốn và chiến lược sản phẩm; phép tính minh họa do dự án xây dựng.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        }
+      ],
+      "editorial_status": "awaiting_owner_review",
+      "image": {
+        "template": "flow",
+        "scene": null,
+        "mode": "infographic",
+        "headline": "Doanh thu tăng.\nLợi nhuận thì sao?",
+        "subline": "Đọc cả phần chi phí.",
+        "accent": "#A74725",
+        "ink": "#63311E",
+        "paper": "#FCF2EA",
+        "cards": [
+          [
+            "Doanh thu",
+            "Tiền bán hàng đã ghi nhận"
+          ],
+          [
+            "Chi phí",
+            "Giá vốn và khoản liên quan"
+          ],
+          [
+            "Phần còn lại",
+            "Nêu rõ giả định của phép tính"
+          ]
+        ],
+        "takeaway": "Ví dụ giản lược, cần đủ khoản chi phí."
+      }
+    },
+    {
+      "id": "P28",
+      "slot": 28,
+      "pool": "main",
+      "group": "S",
+      "audience": "SV",
+      "title": "Portfolio nhóm: ghi rõ phần bạn thực hiện",
+      "level": "Tạo sản phẩm",
+      "brief": "Trang dự án thể hiện nhiệm vụ, đóng góp, sản phẩm và bài học; giữ quyền riêng tư và ghi công cộng tác",
+      "image_brief": "Minh họa ít chữ",
+      "source_start": "CAREER-09 tr. 13; CAREER-05 phần kỹ năng/hồ sơ; BM11 năng lực làm việc nhóm",
+      "status": "brief",
+      "prerequisites": [],
+      "body": "PORTFOLIO NHÓM: GHI RÕ PHẦN BẠN THỰC HIỆN\n\nSản phẩm nhóm là thành quả chung. Một trang portfolio tốt cần giúp người xem phân biệt phần bạn thực hiện với phần do các bạn khác đóng góp.\n\nThử ghi cho mỗi dự án:\n• Mục tiêu chung và sản phẩm của nhóm.\n• Nhiệm vụ bạn phụ trách, cùng cách phối hợp.\n• Minh chứng gắn với phần việc đó.\n• Điều bạn học từ phản hồi hoặc một lần bàn giao.\n\nVí dụ giả định: nhóm tạo nội dung giới thiệu một sự kiện. Bạn phụ trách kiểm tra thông tin và viết bản nháp; một bạn thiết kế, một bạn quản lý đăng bài. Hãy ghi đúng vai trò thay vì nhận toàn bộ sản phẩm là thiết kế của mình.\n\nTrước khi chia sẻ, thống nhất với nhóm về tài sản được dùng, ghi công và thông tin cần ẩn. Việc từng tham gia dự án chưa đồng nghĩa bạn có quyền công khai mọi tệp.\n\nLượt sửa portfolio: chọn một dự án nhóm, tô rõ câu nào nói về cả nhóm và câu nào nói về bạn. Nhờ người khác đọc xem họ có thể xác định đóng góp cá nhân mà không cần đoán không. Một vai trò nhỏ nhưng rõ vẫn là một bằng chứng có giá trị.",
+      "reader_outcome": "Mô tả đóng góp nhóm minh bạch, có minh chứng và phạm vi được chia sẻ.",
+      "source_refs": [
+        {
+          "id": "CAREER-09",
+          "pages": [
+            13
+          ],
+          "section": "4.2–4.3",
+          "supports": "Hồ sơ có sản phẩm minh chứng, mô tả dự án và chuẩn bị phỏng vấn; góp ý từ nơi thực tập.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        },
+        {
+          "id": "BM11",
+          "pages": [
+            4
+          ],
+          "section": "PLO6",
+          "supports": "Phối hợp nhóm, lập kế hoạch và kiểm soát tiến độ.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        }
+      ],
+      "editorial_status": "awaiting_owner_review",
+      "image": {
+        "template": "scene",
+        "scene": "portfolio",
+        "mode": "illustration",
+        "headline": "Dự án của nhóm.\nĐóng góp của bạn.",
+        "subline": "Ghi rõ vai trò và phần việc.",
+        "accent": "#245CBC",
+        "ink": "#183761",
+        "paper": "#EFF4FC",
+        "cards": [],
+        "takeaway": "Ghi công, xin phép, giữ thông tin riêng."
+      }
+    },
+    {
+      "id": "P29",
+      "slot": 29,
+      "pool": "main",
+      "group": "R",
+      "audience": "SV",
+      "title": "Trước khi đưa dữ liệu doanh nghiệp vào AI",
+      "level": "Áp dụng",
+      "brief": "Phân loại dữ liệu, quyền được sử dụng, ẩn thông tin nhạy cảm và kiểm tra chính sách của đơn vị; không coi ẩn danh là bảo đảm tuyệt đối",
+      "image_brief": "Infographic checklist",
+      "source_start": "CAREER-08 tr. 15",
+      "status": "brief",
+      "prerequisites": [],
+      "body": "TRƯỚC KHI ĐƯA DỮ LIỆU DOANH NGHIỆP VÀO AI\n\nBạn muốn nhờ AI tóm tắt một bảng của doanh nghiệp. Trước khi tải lên, hãy hỏi mình có được phép dùng dữ liệu ấy trên công cụ này không.\n\nBốn câu hỏi trước thao tác:\n1. Dữ liệu là công khai, nội bộ hay có thông tin nhạy cảm?\n2. Đơn vị cho phép sử dụng công cụ nào với loại dữ liệu này?\n3. Bài toán có thể thực hành bằng dữ liệu giả định hoặc đã được cho phép không?\n4. Kết quả sẽ được lưu và chia sẻ với ai?\n\nTình huống giả định: bảng có tên khách, số điện thoại và ghi chú trao đổi. Xóa tên chưa chắc đã loại bỏ mọi khả năng nhận diện; các cột còn lại cũng cần được xem xét. Khi chưa rõ, đừng tự coi dữ liệu đã an toàn để đưa lên công cụ công cộng.\n\nCẩm nang ứng dụng AI nhấn mạnh bảo mật và tránh đưa dữ liệu nhạy cảm của doanh nghiệp lên công cụ AI công cộng.\n\nĐể luyện kỹ năng, tạo một bảng hoàn toàn giả định với vài dòng. Viết rõ mục tiêu xử lý và kiểm tra đầu ra như một bài tập bình thường. Bạn vẫn học được cách dùng AI mà không phải quyết định thay đơn vị về quyền sử dụng dữ liệu.",
+      "reader_outcome": "Kiểm tra quyền sử dụng và loại dữ liệu trước khi đưa vào công cụ AI.",
+      "source_refs": [
+        {
+          "id": "CAREER-08",
+          "pages": [
+            15
+          ],
+          "section": "6.2 Đạo đức và bảo mật",
+          "supports": "Không đưa dữ liệu nhạy cảm doanh nghiệp lên công cụ AI công cộng.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        }
+      ],
+      "editorial_status": "awaiting_owner_review",
+      "image": {
+        "template": "checklist",
+        "scene": null,
+        "mode": "infographic",
+        "headline": "Dữ liệu vào AI.\nQuyền dùng đã rõ?",
+        "subline": "Kiểm tra trước khi tải lên.",
+        "accent": "#8B3A68",
+        "ink": "#51233E",
+        "paper": "#F9EFF5",
+        "cards": [
+          [
+            "Loại dữ liệu",
+            "Công khai, nội bộ, nhạy cảm?"
+          ],
+          [
+            "Quyền sử dụng",
+            "Đơn vị cho phép điều gì?"
+          ],
+          [
+            "Cách thực hành",
+            "Dùng dữ liệu giả định nếu cần"
+          ],
+          [
+            "Đầu ra",
+            "Ai được lưu và chia sẻ?"
+          ]
+        ],
+        "takeaway": "Ẩn tên chưa chắc đã đủ."
+      }
+    },
+    {
+      "id": "P30",
+      "slot": 30,
+      "pool": "main",
+      "group": "I",
+      "audience": "SV",
+      "title": "Học phần hôm nay, bằng chứng năng lực ngày mai",
+      "level": "Tạo sản phẩm",
+      "brief": "Chọn học phần đã đối chiếu, thiết kế một sản phẩm nhỏ và tiêu chí tự đánh giá; gợi ý thực hành, không cam kết kết quả tuyển dụng",
+      "image_brief": "Minh họa ít chữ",
+      "source_start": "BM12/BM03 học phần phù hợp; BM11; CAREER-05 tr. 21–22",
+      "status": "brief",
+      "prerequisites": [],
+      "body": "HỌC PHẦN HÔM NAY, BẰNG CHỨNG NĂNG LỰC NGÀY MAI\n\nSau một học phần, bạn có thể giữ lại điều gì ngoài ghi chép? Thử tạo một sản phẩm nhỏ cho thấy cách mình vận dụng kiến thức.\n\nTài liệu chương trình ngành Kinh tế số mô tả học phần Digital Marketing với các kênh số, lập kế hoạch và đọc số liệu để đo hiệu quả. Bạn có thể dùng nội dung đó làm điểm xuất phát cho một bản kế hoạch thử.\n\nGợi ý tự thực hành cho hoạt động CLB giả định: chọn đối tượng, viết thông điệp, đề xuất một nội dung và cách theo dõi phản hồi. Ghi rõ đây là bản đề xuất nếu chưa triển khai; không thêm kết quả tăng trưởng chưa đo được.\n\nTự xem lại theo ba tiêu chí:\n• Mục tiêu và đối tượng có rõ không?\n• Nội dung có giúp người đọc làm việc cần làm không?\n• Cách theo dõi có liên quan mục tiêu không?\n\nSản phẩm và tiêu chí trên là gợi ý của bài viết, không thay yêu cầu môn học hoặc thang đánh giá của giảng viên. Với khóa 2026, thời gian đào tạo là 3,5 năm theo xác nhận của ngành.\n\nBạn có thể giữ bản đầu, bản sửa và lý do sửa. Chính quá trình ấy giúp sản phẩm kể được câu chuyện học tập của bạn.",
+      "reader_outcome": "Đề xuất sản phẩm thực hành Digital Marketing với tiêu chí tự xem lại, không bịa kết quả.",
+      "source_refs": [
+        {
+          "id": "BM12",
+          "pages": [
+            8,
+            61
+          ],
+          "section": "Học phần 61: Digital Marketing",
+          "supports": "Tên học phần, các kênh số, lập kế hoạch và đọc số liệu đo hiệu quả.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        },
+        {
+          "id": "BM03",
+          "pages": [
+            85
+          ],
+          "section": "Học phần 61",
+          "supports": "Mô tả tương ứng về Digital Marketing.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        },
+        {
+          "id": "OWNER-2026",
+          "pages": [],
+          "section": "Đính chính của người quản lý ngày 04/10/2026",
+          "supports": "Áp dụng khóa 2026, thời gian đào tạo 3,5 năm.",
+          "adaptation": "Ưu tiên đính chính của người quản lý so với dòng khóa/thời lượng cũ trong PDF; không sửa tài liệu gốc."
+        }
+      ],
+      "editorial_status": "awaiting_owner_review",
+      "image": {
+        "template": "scene",
+        "scene": "portfolio",
+        "mode": "illustration",
+        "headline": "Học phần hôm nay.\nBằng chứng ngày mai.",
+        "subline": "Giữ cả bản đầu và bản sửa.",
+        "accent": "#0056A6",
+        "ink": "#123453",
+        "paper": "#EEF5FB",
+        "cards": [],
+        "takeaway": "Bản đề xuất chưa phải kết quả thực tế."
+      }
+    },
+    {
+      "id": "R01",
+      "slot": null,
+      "pool": "reserve",
+      "group": "D",
+      "audience": "HS",
+      "title": "Học dữ liệu bắt đầu từ câu hỏi, không chỉ công cụ",
+      "level": "Hiểu",
+      "brief": "Một tình huống CLB giả định; xác định câu hỏi và thông tin cần thu thập, không cần kiến thức từ bài trước",
+      "image_brief": "Minh họa ít chữ",
+      "source_start": "CAREER-06 tr. 11–13",
+      "status": "brief",
+      "prerequisites": [],
+      "body": "HỌC DỮ LIỆU BẮT ĐẦU TỪ CÂU HỎI, KHÔNG CHỈ CÔNG CỤ\n\nCLB muốn biết vì sao một hoạt động ít người tham gia. Chọn công cụ làm khảo sát ngay có thể quá sớm: trước hết cần xác định câu hỏi.\n\nTình huống giả định có ít nhất ba hướng tìm hiểu: mọi người chưa biết hoạt động, không phù hợp thời gian, hoặc nội dung chưa đúng nhu cầu. Mỗi hướng cần thông tin khác nhau.\n\nHãy viết một câu hỏi rõ, rồi đối chiếu:\n• Cần thông tin nào để trả lời?\n• Thông tin đang có nói được đến đâu?\n• Điều gì cần hỏi thêm từ người tự nguyện phản hồi?\n\nVí dụ, số người xem bài thông báo không cho biết chắc lý do họ không tham gia. Một vài phản hồi cũng chưa đại diện cho toàn bộ thành viên. Ghi rõ giới hạn sẽ giúp nhóm tránh kết luận vội.\n\nThử làm bản ghi một trang gồm câu hỏi, dữ liệu cần, cách thu hợp lý và điều chưa biết. Không cần thu tên hoặc số điện thoại nếu mục tiêu không cần đến chúng.\n\nKhi đã biết mình muốn hiểu gì, việc chọn bảng tính, biểu mẫu hay biểu đồ sẽ có hướng rõ hơn. Công cụ hỗ trợ câu hỏi, không quyết định câu hỏi thay bạn.",
+      "reader_outcome": "Thiết kế câu hỏi dữ liệu cho tình huống CLB và nêu giới hạn thu thập.",
+      "source_refs": [
+        {
+          "id": "CAREER-06",
+          "pages": [
+            11,
+            12
+          ],
+          "section": "5.1–5.2; 5.5",
+          "supports": "Làm sạch dữ liệu, tư duy bài toán kinh doanh, kiểm chứng và trình bày kết quả; cấu trúc dự án có quy trình rõ.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        }
+      ],
+      "editorial_status": "awaiting_owner_review",
+      "image": {
+        "template": "scene",
+        "scene": "bridge",
+        "mode": "illustration",
+        "headline": "Học dữ liệu.\nBắt đầu câu hỏi.",
+        "subline": "Công cụ đi sau điều cần hiểu.",
+        "accent": "#5B4BA7",
+        "ink": "#332B5F",
+        "paper": "#F3F0FA",
+        "cards": [],
+        "takeaway": "Một con số chưa kể hết bối cảnh."
+      }
+    },
+    {
+      "id": "R02",
+      "slot": null,
+      "pool": "reserve",
+      "group": "D",
+      "audience": "SV",
+      "title": "Nhật ký phân tích: ghi giả định để người khác hiểu kết quả",
+      "level": "Tạo sản phẩm",
+      "brief": "Mẫu ghi nguồn, thời điểm, cách xử lý, giả định và giới hạn; bổ sung tính tái kiểm tra cho dự án",
+      "image_brief": "Infographic checklist",
+      "source_start": "CAREER-06 tr. 11–12; mẫu biên soạn riêng",
+      "status": "brief",
+      "prerequisites": [],
+      "body": "NHẬT KÝ PHÂN TÍCH: GHI GIẢ ĐỊNH ĐỂ NGƯỜI KHÁC HIỂU KẾT QUẢ\n\nBạn quay lại báo cáo sau một tuần và không nhớ vì sao đã bỏ một nhóm dòng. Một nhật ký phân tích ngắn giúp người khác, và chính bạn, hiểu lại kết quả.\n\nVới mỗi lượt xử lý, ghi bốn phần:\n1. Nguồn và thời điểm: lấy bảng nào, phiên bản nào?\n2. Quy tắc: đổi kiểu ngày, gộp nhóm hay loại dòng theo điều kiện gì?\n3. Giả định: đang tạm coi điều gì là đúng?\n4. Giới hạn: phần nào chưa xác minh hoặc chưa được tính?\n\nVí dụ giả định: bảng đơn có vài dòng chưa có trạng thái hoàn tất. Nếu tạm loại khỏi báo cáo doanh thu, ghi rõ lý do và số dòng; đừng để lựa chọn ấy biến thành quy tắc vô hình.\n\nGiữ dữ liệu gốc và sản phẩm đầu ra theo cách tổ chức phù hợp dự án. Nhật ký không cần dài, nhưng phải đủ để người đọc hỏi đúng chỗ và kiểm tra lại cách làm.\n\nThực hành: đưa cho một bạn bảng đã ẩn thông tin riêng cùng nhật ký của bạn. Hỏi họ có thể giải thích cách hình thành kết quả không. Nếu phải đoán, bổ sung phần còn thiếu.",
+      "reader_outcome": "Viết nhật ký có nguồn, quy tắc, giả định và giới hạn để tái kiểm tra phân tích.",
+      "source_refs": [
+        {
+          "id": "CAREER-06",
+          "pages": [
+            11,
+            12
+          ],
+          "section": "5.1–5.2; 5.5",
+          "supports": "Làm sạch dữ liệu, tư duy bài toán kinh doanh, kiểm chứng và trình bày kết quả; cấu trúc dự án có quy trình rõ.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        }
+      ],
+      "editorial_status": "awaiting_owner_review",
+      "image": {
+        "template": "checklist",
+        "scene": null,
+        "mode": "infographic",
+        "headline": "Nhật ký phân tích.\nĐể hiểu lại kết quả.",
+        "subline": "Ghi những quyết định dễ bị quên.",
+        "accent": "#5B4BA7",
+        "ink": "#332B5F",
+        "paper": "#F3F0FA",
+        "cards": [
+          [
+            "Nguồn",
+            "Phiên bản và thời điểm"
+          ],
+          [
+            "Quy tắc",
+            "Đã xử lý dữ liệu thế nào?"
+          ],
+          [
+            "Giả định",
+            "Điều đang tạm coi là đúng"
+          ],
+          [
+            "Giới hạn",
+            "Phần chưa xác minh được"
+          ]
+        ],
+        "takeaway": "Giữ bản gốc, giải thích bản đã xử lý."
+      }
+    },
+    {
+      "id": "R03",
+      "slot": null,
+      "pool": "reserve",
+      "group": "A",
+      "audience": "SV",
+      "title": "Prompt rõ hơn khi có mục tiêu và tiêu chí đánh giá",
+      "level": "Áp dụng",
+      "brief": "Tình huống giả định; viết mục tiêu, bối cảnh, yêu cầu đầu ra và cách kiểm tra; không coi prompt tốt loại bỏ sai sót",
+      "image_brief": "Infographic cấu trúc",
+      "source_start": "CAREER-08 tr. 13–15; khung thực hành biên soạn riêng",
+      "status": "brief",
+      "prerequisites": [],
+      "body": "PROMPT RÕ HƠN KHI CÓ MỤC TIÊU VÀ TIÊU CHÍ ĐÁNH GIÁ\n\n“Viết giúp một bài thật hay” để lại nhiều điều cho AI tự đoán. Một yêu cầu rõ hơn giúp bạn có cơ sở đánh giá bản nháp.\n\nThử ghi bốn phần trước khi gửi:\n• Mục tiêu: người đọc cần hiểu hoặc làm điều gì?\n• Bối cảnh: đối tượng, tài liệu được phép dùng, phạm vi bài.\n• Đầu ra: dạng nội dung, độ dài mong muốn, điểm cần có.\n• Kiểm tra: điều nào phải đúng, phần chưa có căn cứ cần đánh dấu ra sao?\n\nVí dụ giả định: “Soạn hướng dẫn đăng ký hoạt động cho người mới từ thông tin được cung cấp. Chỉ dùng các bước đã có, không tự thêm thời hạn. Nêu chỗ thiếu thông tin để tôi bổ sung.”\n\nSau khi nhận kết quả, đối chiếu lại với nguồn và yêu cầu. Prompt rõ không loại bỏ mọi sai sót; bạn vẫn cần kiểm tra nội dung, phép tính và bối cảnh trước khi dùng.\n\nLượt luyện tập: viết một yêu cầu cho cùng nhiệm vụ theo hai cách, rồi so bản nháp bằng tiêu chí đã đặt. Ghi điều cải thiện được và điều còn phải sửa bằng tay. Đó là cách học từ kết quả thay vì chỉ sưu tầm câu lệnh.",
+      "reader_outcome": "Viết yêu cầu AI có mục tiêu, bối cảnh, đầu ra và tiêu chí kiểm tra.",
+      "source_refs": [
+        {
+          "id": "CAREER-08",
+          "pages": [
+            13,
+            15
+          ],
+          "section": "5.1–5.2; 6.1–6.2",
+          "supports": "Prompt, tư duy quy trình, kiểm chứng kết quả AI và bảo mật dữ liệu.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        }
+      ],
+      "editorial_status": "awaiting_owner_review",
+      "image": {
+        "template": "checklist",
+        "scene": null,
+        "mode": "infographic",
+        "headline": "Prompt rõ.\nCó tiêu chí kiểm.",
+        "subline": "Đừng để AI đoán hết yêu cầu.",
+        "accent": "#087D72",
+        "ink": "#123E3B",
+        "paper": "#EDF7F4",
+        "cards": [
+          [
+            "Mục tiêu",
+            "Người đọc cần hiểu gì?"
+          ],
+          [
+            "Bối cảnh",
+            "Đối tượng, nguồn, phạm vi"
+          ],
+          [
+            "Đầu ra",
+            "Dạng bài và phần cần có"
+          ],
+          [
+            "Kiểm tra",
+            "Đúng gì, thiếu gì cần báo?"
+          ]
+        ],
+        "takeaway": "Prompt tốt vẫn cần kiểm chứng."
+      }
+    },
+    {
+      "id": "R04",
+      "slot": null,
+      "pool": "reserve",
+      "group": "A",
+      "audience": "SV",
+      "title": "Vẽ quy trình trước khi chọn công cụ tự động hóa",
+      "level": "Áp dụng",
+      "brief": "Quy trình quản lý hoạt động CLB giả định, nhận diện ngoại lệ và chỗ cần con người; không hướng dẫn công cụ cụ thể",
+      "image_brief": "Minh họa ít chữ",
+      "source_start": "CAREER-01 tr. 11–12",
+      "status": "brief",
+      "prerequisites": [],
+      "body": "VẼ QUY TRÌNH TRƯỚC KHI CHỌN CÔNG CỤ TỰ ĐỘNG HÓA\n\nBạn muốn tự động hóa việc đăng ký hoạt động CLB. Trước khi tìm công cụ, hãy vẽ luồng đang diễn ra và những trường hợp không đi theo đường bình thường.\n\nTình huống giả định: nhận đăng ký → kiểm tra còn chỗ → ghi danh sách → gửi xác nhận. Nếu có người đăng ký hai lần, biểu mẫu thiếu thông tin hoặc hoạt động đã đủ chỗ thì sao?\n\nĐánh dấu trong sơ đồ:\n• Đầu vào và người nhận thông tin.\n• Điều kiện để chuyển sang bước tiếp.\n• Ngoại lệ cần dừng hoặc nhờ người xử lý.\n• Sản phẩm bàn giao ở cuối luồng.\n\nMột sơ đồ chưa cần đẹp. Điều quan trọng là người khác có thể đi theo nó và nhận ra chỗ cần quyết định. Sau đó mới chọn công cụ phù hợp với từng bước.\n\nThực hành theo nhóm: một người mô tả quy trình, một người đi thử bằng các trường hợp giả định. Khi không biết phải làm gì, sửa sơ đồ trước khi nối thêm tự động hóa.\n\nBản vẽ rõ giúp bạn giải thích yêu cầu với người sử dụng và người triển khai. Công cụ có thể thay đổi, nhưng hiểu quy trình vẫn là một phần năng lực cần rèn.",
+      "reader_outcome": "Vẽ quy trình có điều kiện, ngoại lệ và bàn giao trước khi chọn công cụ.",
+      "source_refs": [
+        {
+          "id": "CAREER-01",
+          "pages": [
+            11,
+            12
+          ],
+          "section": "5.1–5.2; 5.5; 6.2",
+          "supports": "Mô hình hóa quy trình, tư duy hệ thống, dự án số hóa nhỏ và đo hiệu quả; vai trò con người.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        }
+      ],
+      "editorial_status": "awaiting_owner_review",
+      "image": {
+        "template": "scene",
+        "scene": "bridge",
+        "mode": "illustration",
+        "headline": "Vẽ quy trình.\nRồi chọn công cụ.",
+        "subline": "Nhìn cả đường đi và ngoại lệ.",
+        "accent": "#087D72",
+        "ink": "#123E3B",
+        "paper": "#EDF7F4",
+        "cards": [],
+        "takeaway": "Chỗ cần quyết định phải được nhìn thấy."
+      }
+    },
+    {
+      "id": "R05",
+      "slot": null,
+      "pool": "reserve",
+      "group": "B",
+      "audience": "HS",
+      "title": "Một cửa hàng online cần những vai trò nào?",
+      "level": "Hiểu",
+      "brief": "Tình huống giả định về nội dung, vận hành, dữ liệu và chăm sóc; gợi tự khám phá sở thích",
+      "image_brief": "Minh họa ít chữ",
+      "source_start": "CAREER-07 tr. 5–9; CAREER-03 tr. 5–8",
+      "status": "brief",
+      "prerequisites": [],
+      "body": "MỘT CỬA HÀNG ONLINE CẦN NHỮNG VAI TRÒ NÀO?\n\nMột gian hàng online có thể nhỏ, nhưng công việc phía sau không chỉ là đăng sản phẩm. Thử nhìn các vai trò để khám phá điều bạn thích làm.\n\nTrong cửa hàng giả định:\n• Người làm nội dung giúp mô tả sản phẩm rõ và đúng.\n• Người vận hành cập nhật hàng, theo dõi đơn và phối hợp xử lý.\n• Người chăm sóc khách tiếp nhận câu hỏi và phản hồi.\n• Người đọc dữ liệu tổng hợp thông tin để nhóm tìm chỗ cần cải thiện.\n\nMột người có thể làm nhiều vai trò; một nhóm lớn có thể phân công riêng. Đây là cách hình dung nhiệm vụ, không phải sơ đồ nhân sự bắt buộc hoặc tin tuyển dụng.\n\nBạn có thể thử chia vai trong một bài tập: dùng ba sản phẩm giả định, tạo thông tin mô tả, đặt một đơn thử và một câu hỏi từ khách. Xem dữ liệu cần đi từ người này sang người kia thế nào.\n\nSau lượt thử, mỗi người ghi việc thích làm, việc thấy khó và một kỹ năng muốn học thêm. Khám phá nghề bắt đầu từ trải nghiệm nhiệm vụ, không nhất thiết từ việc chọn ngay một chức danh.",
+      "reader_outcome": "Khám phá bốn nhóm nhiệm vụ trong cửa hàng online bằng bài tập chia vai.",
+      "source_refs": [
+        {
+          "id": "CAREER-07",
+          "pages": [
+            4,
+            5
+          ],
+          "section": "1.1; Vận hành sàn",
+          "supports": "Nội dung, vận hành, chăm sóc và dữ liệu trong thương mại số.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        }
+      ],
+      "editorial_status": "awaiting_owner_review",
+      "image": {
+        "template": "scene",
+        "scene": "operations",
+        "mode": "illustration",
+        "headline": "Một gian hàng.\nNhiều vai trò.",
+        "subline": "Khám phá nghề qua việc cụ thể.",
+        "accent": "#A74725",
+        "ink": "#63311E",
+        "paper": "#FCF2EA",
+        "cards": [],
+        "takeaway": "Nội dung, vận hành, khách hàng, dữ liệu."
+      }
+    },
+    {
+      "id": "R06",
+      "slot": null,
+      "pool": "reserve",
+      "group": "B",
+      "audience": "SV",
+      "title": "Customer Success: khách hàng mua rồi, công việc chưa kết thúc",
+      "level": "Hiểu",
+      "brief": "Minh họa hướng dẫn sử dụng, theo dõi giá trị nhận được và phối hợp xử lý vấn đề; không đồng nhất mọi vị trí với quản lý",
+      "image_brief": "Infographic hành trình",
+      "source_start": "CAREER-02 tr. 7–8",
+      "status": "brief",
+      "prerequisites": [],
+      "body": "CUSTOMER SUCCESS: KHÁCH HÀNG MUA RỒI, CÔNG VIỆC CHƯA KẾT THÚC\n\nKhách đã mua phần mềm nhưng chưa dùng được tính năng cần thiết. Lúc này, công việc đồng hành cần đi xa hơn một lời chào sau bán.\n\nCẩm nang kinh doanh số mô tả nhóm Customer Success với việc hướng dẫn sử dụng, hỗ trợ giải quyết vấn đề và theo dõi giá trị khách nhận được.\n\nTình huống giả định: cửa hàng mua công cụ quản lý đơn nhưng nhân viên vẫn ghi ngoài giấy. Thay vì chỉ hỏi “có hài lòng không?”, thử tìm hiểu họ vướng ở bước nhập đơn, phân quyền hay cách xem báo cáo.\n\nMột vòng đồng hành để luyện tập:\n• Xác định mục tiêu sử dụng cùng khách.\n• Hướng dẫn bước phù hợp và phối hợp xử lý vấn đề.\n• Xem lại điều khách đã làm được và phần còn vướng.\n\nKhông hứa tính năng hoặc kết quả mà mình chưa xác nhận. Khi vấn đề thuộc nhóm kỹ thuật, chuyển thông tin rõ để phối hợp; tránh để khách phải kể lại từ đầu.\n\nHãy viết một ghi chú sau hỗ trợ gồm mục tiêu, vướng mắc, việc đã làm và bước tiếp theo. Tên vị trí có thể khác giữa các tổ chức; trọng tâm bài này là giúp khách dùng sản phẩm để giải quyết việc của họ.",
+      "reader_outcome": "Hiểu Customer Success qua hướng dẫn, xử lý vấn đề và xem lại giá trị sử dụng.",
+      "source_refs": [
+        {
+          "id": "CAREER-02",
+          "pages": [
+            7
+          ],
+          "section": "Chuyên viên Thành công khách hàng",
+          "supports": "Hướng dẫn sử dụng, giải quyết vấn đề, theo dõi hài lòng và giá trị sản phẩm.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        }
+      ],
+      "editorial_status": "awaiting_owner_review",
+      "image": {
+        "template": "flow",
+        "scene": null,
+        "mode": "infographic",
+        "headline": "Khách đã mua.\nCần dùng được.",
+        "subline": "Đồng hành sau lần bán đầu tiên.",
+        "accent": "#A74725",
+        "ink": "#63311E",
+        "paper": "#FCF2EA",
+        "cards": [
+          [
+            "Mục tiêu",
+            "Khách cần đạt việc gì?"
+          ],
+          [
+            "Hỗ trợ",
+            "Vướng đâu, ai cùng xử lý?"
+          ],
+          [
+            "Xem lại",
+            "Làm được gì, còn thiếu gì?"
+          ]
+        ],
+        "takeaway": "Ghi rõ bước tiếp theo sau hỗ trợ."
+      }
+    },
+    {
+      "id": "R07",
+      "slot": null,
+      "pool": "reserve",
+      "group": "S",
+      "audience": "SV",
+      "title": "Khi nhận góp ý cho dự án: hỏi gì để sửa hiệu quả?",
+      "level": "Áp dụng",
+      "brief": "Làm rõ mục tiêu, ví dụ vấn đề và tiêu chí bản sửa; mẫu ghi phản hồi và việc tiếp theo",
+      "image_brief": "Infographic quy trình",
+      "source_start": "CAREER-09 tr. 13; BM11 giao tiếp/làm việc nhóm; khung biên soạn riêng",
+      "status": "brief",
+      "prerequisites": [],
+      "body": "KHI NHẬN GÓP Ý CHO DỰ ÁN: HỎI GÌ ĐỂ SỬA HIỆU QUẢ?\n\n“Bài này chưa ổn” khiến bạn khó biết cần sửa ở đâu. Khi nhận góp ý, hãy làm rõ vấn đề trước khi sửa toàn bộ sản phẩm.\n\nBạn có thể hỏi:\n• Phần nào đang chưa phục vụ đúng mục tiêu?\n• Có một ví dụ cụ thể để tôi nhìn thấy vấn đề không?\n• Ở bản sửa, dấu hiệu nào cho thấy đã cải thiện?\n\nTình huống giả định: bạn gửi slide báo cáo và được nhận xét “khó hiểu”. Nếu vấn đề là thiếu đơn vị trên biểu đồ, đổi toàn bộ màu chưa giải quyết được điều người xem cần.\n\nGhi phản hồi thành ba cột: vấn đề, việc sẽ sửa, cách kiểm tra. Nếu hai góp ý khác nhau, quay về mục tiêu và đối tượng của sản phẩm để trao đổi, thay vì chọn theo người nói mạnh hơn.\n\nSau bản sửa, nêu rõ mình đã điều chỉnh gì và điều gì còn cần làm rõ. Góp ý là một lượt phối hợp, không chỉ là nhận một danh sách lỗi.\n\nLuyện với một sản phẩm nhỏ của nhóm: người góp ý chỉ một điểm cụ thể, người sửa tóm tắt lại trước khi làm. Bạn sẽ thấy việc hỏi rõ giúp tiết kiệm những lượt sửa không đúng chỗ.",
+      "reader_outcome": "Chuyển phản hồi thành vấn đề cụ thể, việc sửa và cách kiểm tra.",
+      "source_refs": [
+        {
+          "id": "CAREER-09",
+          "pages": [
+            13
+          ],
+          "section": "4.2–4.3",
+          "supports": "Hồ sơ có sản phẩm minh chứng, mô tả dự án và chuẩn bị phỏng vấn; góp ý từ nơi thực tập.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        },
+        {
+          "id": "BM11",
+          "pages": [
+            4
+          ],
+          "section": "PLO5–PLO6",
+          "supports": "Giao tiếp đa bối cảnh, phối hợp nhóm và cải tiến công việc.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        }
+      ],
+      "editorial_status": "awaiting_owner_review",
+      "image": {
+        "template": "flow",
+        "scene": null,
+        "mode": "infographic",
+        "headline": "Nhận góp ý.\nHỏi cho rõ.",
+        "subline": "Sửa đúng vấn đề của sản phẩm.",
+        "accent": "#245CBC",
+        "ink": "#183761",
+        "paper": "#EFF4FC",
+        "cards": [
+          [
+            "Mục tiêu",
+            "Chưa phục vụ điều gì?"
+          ],
+          [
+            "Ví dụ",
+            "Vấn đề nằm ở phần nào?"
+          ],
+          [
+            "Tiêu chí",
+            "Bản sửa tốt hơn bằng gì?"
+          ]
+        ],
+        "takeaway": "Tóm tắt điều hiểu trước khi sửa."
+      }
+    },
+    {
+      "id": "R08",
+      "slot": null,
+      "pool": "reserve",
+      "group": "R",
+      "audience": "SV",
+      "title": "Làm nghề Web3 và đầu tư tài sản số là hai quyết định khác nhau",
+      "level": "Hiểu",
+      "brief": "Phân biệt năng lực nghề, tìm hiểu đơn vị và rủi ro tài chính; không đề xuất token/sàn hoặc kết luận pháp lý hiện hành",
+      "image_brief": "Minh họa ít chữ",
+      "source_start": "CAREER-04 tr. 5, 15",
+      "status": "brief",
+      "prerequisites": [],
+      "body": "LÀM NGHỀ WEB3 VÀ ĐẦU TƯ TÀI SẢN SỐ LÀ HAI QUYẾT ĐỊNH KHÁC NHAU\n\nTìm hiểu công việc trong lĩnh vực Web3 và quyết định mua tài sản số là hai việc khác nhau. Một bài học nghề nghiệp có thể bắt đầu từ nhiệm vụ, kỹ năng và sản phẩm minh chứng.\n\nBạn có thể khám phá các việc như biên tập nội dung, hỗ trợ cộng đồng hoặc nghiên cứu sản phẩm qua tài liệu công khai. Khi đọc một mô tả công việc, chú ý nhiệm vụ, người hướng dẫn, sản phẩm bàn giao và thông tin đơn vị.\n\nCẩm nang Web3 nhấn mạnh việc tách làm nghề khỏi đầu tư cá nhân, tìm hiểu kỹ dự án và cảnh giác khi có yêu cầu nộp tiền hoặc lời hứa lợi nhuận phi thực tế.\n\nTình huống giả định: một lời mời “cộng tác nội dung” chuyển sang yêu cầu mua gói để nhận việc. Hãy dừng để xác minh yêu cầu ấy, thay vì coi việc mua là một bài thực hành nghề.\n\nLượt khám phá không cần giao dịch: chọn một tài liệu công khai, viết bản giải thích ngắn, ghi nguồn và phần chưa hiểu. Nhờ người có kiến thức góp ý rồi sửa. Bạn có thể xây bằng chứng học tập mà không phải mua token.\n\nBài viết hướng đến năng lực nghề, không đề xuất tài sản, sàn giao dịch hoặc kết luận về pháp lý hiện hành.",
+      "reader_outcome": "Tách nhiệm vụ học nghề Web3 khỏi việc mua tài sản số.",
+      "source_refs": [
+        {
+          "id": "CAREER-04",
+          "pages": [
+            5,
+            15
+          ],
+          "section": "1.4; 6.1–6.2",
+          "supports": "Tách làm việc trong ngành và đầu tư; tìm hiểu dự án, cảnh giác lời hứa và yêu cầu nộp tiền.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        }
+      ],
+      "editorial_status": "awaiting_owner_review",
+      "image": {
+        "template": "scene",
+        "scene": "bridge",
+        "mode": "illustration",
+        "headline": "Học nghề Web3.\nTách việc đầu tư.",
+        "subline": "Khám phá bằng nhiệm vụ và sản phẩm.",
+        "accent": "#8B3A68",
+        "ink": "#51233E",
+        "paper": "#F9EFF5",
+        "cards": [],
+        "takeaway": "Có thể học và thực hành không giao dịch."
+      }
+    },
+    {
+      "id": "R09",
+      "slot": null,
+      "pool": "reserve",
+      "group": "I",
+      "audience": "HS",
+      "title": "Tìm hiểu ngành qua ba câu hỏi về cách học và năng lực",
+      "level": "Hiểu",
+      "brief": "Học điều gì, ứng dụng vào đâu, rèn năng lực thế nào; dẫn thông tin CTĐT đã đối chiếu, không thêm tuyển sinh chi tiết",
+      "image_brief": "Infographic câu hỏi",
+      "source_start": "BM03/BM11/BM12; CAREER-05 tr. 8–10, 24–25",
+      "status": "brief",
+      "prerequisites": [],
+      "body": "TÌM HIỂU NGÀNH QUA BA CÂU HỎI VỀ CÁCH HỌC VÀ NĂNG LỰC\n\nNếu đang tìm hiểu ngành Kinh tế số, bạn có thể bắt đầu bằng ba câu hỏi về việc học thay vì chỉ đọc tên các công nghệ.\n\n1. Học để hiểu điều gì?\nMục tiêu chương trình kết nối nền tảng kinh tế với công nghệ và kinh doanh số, dữ liệu và giải quyết vấn đề chuyển đổi số.\n\n2. Có thể hình dung việc ứng dụng ra sao?\nTình huống học tập tự đề xuất: hiểu nhu cầu khách, xem dữ liệu đơn hàng hoặc đề xuất cải tiến một quy trình. Đây là ví dụ để khám phá, không phải hoạt động đã diễn ra.\n\n3. Cần rèn cách làm việc thế nào?\nChuẩn đầu ra đề cập giao tiếp, phối hợp nhóm, ứng dụng công cụ số và trách nhiệm nghề nghiệp. Công cụ là một phần, cách đặt câu hỏi và phối hợp cũng cần được luyện.\n\nKhóa 2026 có thời gian đào tạo 3,5 năm theo xác nhận của ngành. Bài này giới thiệu cách tìm hiểu chương trình, không bổ sung điều kiện hoặc chỉ tiêu tuyển sinh.\n\nHãy ghi một điều bạn đã hiểu và một điều muốn hỏi thêm về việc học. Một câu hỏi cụ thể sẽ giúp cuộc trao đổi với ngành có ích hơn câu hỏi “học xong có tốt không?”.",
+      "reader_outcome": "Tìm hiểu ngành qua mục tiêu, ví dụ ứng dụng và năng lực làm việc.",
+      "source_refs": [
+        {
+          "id": "BM03",
+          "pages": [
+            8
+          ],
+          "section": "1.6 Mục tiêu",
+          "supports": "Nền tảng kinh tế, công nghệ/kinh doanh số và giải quyết vấn đề.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        },
+        {
+          "id": "BM11",
+          "pages": [
+            4
+          ],
+          "section": "PLO5–PLO9",
+          "supports": "Giao tiếp, nhóm, công cụ số và trách nhiệm nghề nghiệp.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        },
+        {
+          "id": "OWNER-2026",
+          "pages": [],
+          "section": "Đính chính của người quản lý ngày 04/10/2026",
+          "supports": "Áp dụng khóa 2026, thời gian đào tạo 3,5 năm.",
+          "adaptation": "Ưu tiên đính chính của người quản lý so với dòng khóa/thời lượng cũ trong PDF; không sửa tài liệu gốc."
+        }
+      ],
+      "editorial_status": "awaiting_owner_review",
+      "image": {
+        "template": "flow",
+        "scene": null,
+        "mode": "infographic",
+        "headline": "Tìm hiểu ngành.\nHỏi về cách học.",
+        "subline": "Ba câu hỏi để khám phá chương trình.",
+        "accent": "#0056A6",
+        "ink": "#123453",
+        "paper": "#EEF5FB",
+        "cards": [
+          [
+            "Hiểu gì?",
+            "Kinh tế, công nghệ, kinh doanh"
+          ],
+          [
+            "Ứng dụng đâu?",
+            "Bài toán và dữ liệu cụ thể"
+          ],
+          [
+            "Rèn thế nào?",
+            "Thực hành, phối hợp, trách nhiệm"
+          ]
+        ],
+        "takeaway": "Ghi một điều muốn hỏi thêm."
+      }
+    },
+    {
+      "id": "R10",
+      "slot": null,
+      "pool": "reserve",
+      "group": "I",
+      "audience": "SV",
+      "title": "Tự đánh giá năng lực số từ chuẩn đầu ra",
+      "level": "Áp dụng",
+      "brief": "Checklist bằng chứng và việc cần rèn; khác P24 ở góc tự đánh giá, chỉ giữ nếu biên tập xác nhận đủ khác biệt",
+      "image_brief": "Minh họa ít chữ",
+      "source_start": "BM11 chuẩn đầu ra; BM03 mục mục tiêu",
+      "status": "brief",
+      "prerequisites": [],
+      "body": "TỰ ĐÁNH GIÁ NĂNG LỰC SỐ TỪ CHUẨN ĐẦU RA\n\nTrước khi tự đánh giá “mình giao tiếp tốt”, hãy tìm một sản phẩm cho thấy năng lực ấy. Một nhận xét về bản thân sẽ có ích hơn khi đi cùng bằng chứng.\n\nTheo chuẩn đầu ra ngành Kinh tế số, các nhóm năng lực có giao tiếp, phối hợp nhóm và ứng dụng công cụ số. Bạn có thể chọn một sản phẩm đã làm để xem lại từng nhóm:\n• Giao tiếp: người đọc có hiểu thông điệp và việc cần làm không?\n• Phối hợp: nhiệm vụ và phần bàn giao có rõ không?\n• Công cụ số: sản phẩm có giải quyết bài toán đã đặt không?\n\nTình huống giả định: nhóm có một bảng theo dõi đẹp nhưng không ai cập nhật. Bảng cho thấy khả năng trình bày, chưa đủ để nói quy trình phối hợp đã hiệu quả. Ghi điều quan sát được và điều chưa có bằng chứng.\n\nĐây là gợi ý tự xem lại, không phải thang đánh giá chính thức hoặc xác nhận đạt chuẩn đầu ra. Khóa 2026 có thời gian đào tạo 3,5 năm theo xác nhận của ngành.\n\nLượt thực hành: chọn một sản phẩm hiện có, viết hai điểm được minh chứng và một điểm chưa thể kết luận. Tự đánh giá bắt đầu từ việc nhìn đúng bằng chứng, rồi mới chọn điều cần rèn tiếp.",
+      "reader_outcome": "Tự đánh giá từ sản phẩm hiện có, phân biệt bằng chứng với nhận xét chủ quan.",
+      "source_refs": [
+        {
+          "id": "BM11",
+          "pages": [
+            4,
+            5
+          ],
+          "section": "PLO5–PLO10",
+          "supports": "Giao tiếp, nhóm, công cụ số và xác định/bồi dưỡng năng lực cá nhân.",
+          "adaptation": "Tình huống, câu hỏi và mẫu thực hành do dự án biên soạn. Ví dụ là giả định, không phải kết quả khảo sát hoặc hoạt động đã diễn ra tại NTTU."
+        },
+        {
+          "id": "OWNER-2026",
+          "pages": [],
+          "section": "Đính chính của người quản lý ngày 04/10/2026",
+          "supports": "Áp dụng khóa 2026, thời gian đào tạo 3,5 năm.",
+          "adaptation": "Ưu tiên đính chính của người quản lý so với dòng khóa/thời lượng cũ trong PDF; không sửa tài liệu gốc."
+        }
+      ],
+      "editorial_status": "awaiting_owner_review",
+      "image": {
+        "template": "scene",
+        "scene": "portfolio",
+        "mode": "illustration",
+        "headline": "Tự đánh giá.\nNhìn bằng chứng.",
+        "subline": "Đừng chỉ chấm bằng cảm nhận.",
+        "accent": "#0056A6",
+        "ink": "#123453",
+        "paper": "#EEF5FB",
+        "cards": [],
+        "takeaway": "Sản phẩm chứng minh điều gì, chưa gì?"
+      }
+    }
+  ]
+}

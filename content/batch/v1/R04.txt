@@ -1,0 +1,29 @@
+VẼ QUY TRÌNH TRƯỚC KHI CHỌN CÔNG CỤ TỰ ĐỘNG HÓA
+
+Bạn muốn tự động hóa việc đăng ký hoạt động CLB. Trước khi tìm công cụ, hãy vẽ luồng đang diễn ra và những trường hợp không đi theo đường bình thường.
+
+Tình huống giả định: nhận đăng ký → kiểm tra còn chỗ → ghi danh sách → gửi xác nhận. Nếu có người đăng ký hai lần, biểu mẫu thiếu thông tin hoặc hoạt động đã đủ chỗ thì sao?
+
+Đánh dấu trong sơ đồ:
+• Đầu vào và người nhận thông tin.
+• Điều kiện để chuyển sang bước tiếp.
+• Ngoại lệ cần dừng hoặc nhờ người xử lý.
+• Sản phẩm bàn giao ở cuối luồng.
+
+Một sơ đồ chưa cần đẹp. Điều quan trọng là người khác có thể đi theo nó và nhận ra chỗ cần quyết định. Sau đó mới chọn công cụ phù hợp với từng bước.
+
+Thực hành theo nhóm: một người mô tả quy trình, một người đi thử bằng các trường hợp giả định. Khi không biết phải làm gì, sửa sơ đồ trước khi nối thêm tự động hóa.
+
+Bản vẽ rõ giúp bạn giải thích yêu cầu với người sử dụng và người triển khai. Công cụ có thể thay đổi, nhưng hiểu quy trình vẫn là một phần năng lực cần rèn.
+
+============
+
+Ngành Kinh tế số (Chuyên ngành Kinh doanh số) giúp người học làm chủ công nghệ AI, blockchain, big data để phân tích dữ liệu và đưa ra quyết định thông minh. Kết hợp kiến thức kinh tế - công nghệ hiện đại, bạn sẽ phát triển tư duy kinh doanh sáng tạo, làm chủ xu hướng chuyển đổi số và tự tin chinh phục thị trường toàn cầu!
+NGÀNH KINH TẾ SỐ, KHOA QTKD, TRƯỜNG ĐẠI HỌC NGUYỄN TẤT THÀNH
+📞 Hotline: 1900 2039 – Ext: 429
+✉️ Email: tran.tung@nttu.edu.vn
+🚩 Địa chỉ: Tầng 1, 331 Đỗ Mười, Phường An Phú Đông, TP. Hồ Chí Minh, Việt Nam
+🌐 Website: https://fba.ntt.edu.vn/kinh-te-so/
+🌟 Fanpage: https://www.facebook.com/NganhKinhTeSoNTTU
+🌟 Tiktok: https://www.tiktok.com/@nganhkinhteso_nttu
+#NTTU #NguyenTatThanhUniversity #nganhkinhteso #kinhteso

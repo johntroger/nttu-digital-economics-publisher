@@ -1,0 +1,25 @@
+MỘT QUY TRÌNH TỰ ĐỘNG HÓA NHỎ CÓ TẠO RA GIÁ TRỊ?
+
+Tự động hóa một tác vụ không đồng nghĩa tác vụ ấy đã tạo ra giá trị. Trước khi chọn công cụ, hãy xác định việc lặp lại và cách biết bản thử có tốt hơn không.
+
+Tình huống giả định: mỗi lần có đăng ký hoạt động, bạn chép thông tin từ biểu mẫu sang bảng theo dõi. Có thể thử chuyển dữ liệu tự động, nhưng vẫn cần xử lý người đăng ký trùng hoặc thiếu thông tin.
+
+Bắt đầu từ một luồng nhỏ: nhận biểu mẫu → kiểm tra thông tin → ghi vào bảng → báo người phụ trách khi có ngoại lệ. Chỉ dùng dữ liệu thử hoặc được phép sử dụng.
+
+Đo trước và sau trên cùng một nhóm tình huống: thời gian xử lý, số lỗi và thời gian sửa. Nếu thao tác nhanh hơn nhưng mất thêm nhiều thời gian kiểm tra, hãy ghi cả hai phần.
+
+Giữ bước kiểm tra của con người ở nơi cần quyết định. Khi chưa chắc, luồng nên đưa trường hợp đó về xử lý thay vì tự đoán.
+
+Bạn muốn thử? Vẽ luồng trên giấy trước, chọn vài trường hợp bình thường và bất thường, rồi ghi kết quả từng lần chạy. Một thử nghiệm nhỏ có thể cho bạn bằng chứng rõ hơn một danh sách công cụ dài.
+
+============
+
+Ngành Kinh tế số (Chuyên ngành Kinh doanh số) giúp người học làm chủ công nghệ AI, blockchain, big data để phân tích dữ liệu và đưa ra quyết định thông minh. Kết hợp kiến thức kinh tế - công nghệ hiện đại, bạn sẽ phát triển tư duy kinh doanh sáng tạo, làm chủ xu hướng chuyển đổi số và tự tin chinh phục thị trường toàn cầu!
+NGÀNH KINH TẾ SỐ, KHOA QTKD, TRƯỜNG ĐẠI HỌC NGUYỄN TẤT THÀNH
+📞 Hotline: 1900 2039 – Ext: 429
+✉️ Email: tran.tung@nttu.edu.vn
+🚩 Địa chỉ: Tầng 1, 331 Đỗ Mười, Phường An Phú Đông, TP. Hồ Chí Minh, Việt Nam
+🌐 Website: https://fba.ntt.edu.vn/kinh-te-so/
+🌟 Fanpage: https://www.facebook.com/NganhKinhTeSoNTTU
+🌟 Tiktok: https://www.tiktok.com/@nganhkinhteso_nttu
+#NTTU #NguyenTatThanhUniversity #nganhkinhteso #kinhteso
