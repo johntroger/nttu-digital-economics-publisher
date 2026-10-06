@@ -54,9 +54,12 @@ export async function ensureStagingResources(settings, env, fetcher = fetch) {
   const result = await created.json();
   if (!created.ok || !result.success || result.result?.subdomain !== expected) throw new Error('Workers subdomain setup failed');
 }
-export function assertLiveUiChanges(paths) {
+export function historyCheckoutOnly(before,after) {
+  return typeof before==='string' && typeof after==='string' && after!==before && after.replace(/^\s*fetch-depth: 0\r?\n/m,'')===before;
+}
+export function assertLiveUiChanges(paths,historyCheckout=false) {
   if (!Array.isArray(paths) || paths.some(path =>
-    !path.startsWith('ui/cloud/') && !['scripts/cloud-deploy.mjs','tests/cloud.test.mjs','docs/steps/28-nearest-scheduled-trial.md'].includes(path))) {
+    !path.startsWith('ui/cloud/') && !['scripts/cloud-deploy.mjs','tests/cloud.test.mjs','docs/steps/28-nearest-scheduled-trial.md'].includes(path) && !(historyCheckout&&path==='.github/workflows/ci.yml'))) {
     throw new Error('Active schedule only permits reviewed UI/deployment-verification changes; pause required for backend/schema changes');
   }
 }
@@ -76,7 +79,13 @@ export async function deploymentState(settings, fetcher = fetch) {
       diff=spawnSync('git',['diff','--name-only',body.release,settings.releaseSha],{encoding:'utf8'});
     }
     if(diff.status!==0)throw new Error('Cannot compare deployed release');
-    assertLiveUiChanges(diff.stdout.trim().split('\n').filter(Boolean));
+    const paths=diff.stdout.trim().split('\n').filter(Boolean);
+    let historyCheckout=false;
+    if(paths.includes('.github/workflows/ci.yml')){
+      const old=spawnSync('git',['show',body.release+':.github/workflows/ci.yml'],{encoding:'utf8'}),next=spawnSync('git',['show',settings.releaseSha+':.github/workflows/ci.yml'],{encoding:'utf8'});
+      historyCheckout=old.status===0&&next.status===0&&historyCheckoutOnly(old.stdout,next.stdout);
+    }
+    assertLiveUiChanges(paths,historyCheckout);
   }
   return {paused:state.paused,publishingEnabled:state.publishingEnabled};
 }
