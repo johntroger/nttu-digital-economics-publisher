@@ -33,4 +33,6 @@ Code, caption và manifest được quản lý trên GitHub. PDF nguồn, logo g
 
 ## Điều kiện sang bước tiếp theo
 
-Người quản lý cần duyệt 37 bài còn lại hoặc chỉ rõ bài cần sửa. Bước tiếp theo đề xuất là nhập kho đã duyệt vào staging, gắn phiên bản caption/ảnh/nguồn, lưu dấu duyệt và kiểm thử điều phối giả lập. Việc triển khai bước đó cần phê duyệt riêng. Duyệt nội dung và thiết kế không đồng nghĩa cho phép đăng Facebook hoặc bật lịch.
+Ngày 06/10/2026, người quản lý xác nhận: “duyệt nội dung và thiết kế của 37 bài còn lại”. Biên nhận `content/batch/step23-approval.json` ghim checksum caption, ảnh và bản tổng hợp được duyệt. Kết hợp biên nhận Bước 22, toàn bộ 40 bài đã được duyệt về nội dung và thiết kế. Các file batch/manifest/catalog là bản bàn giao tại thời điểm xin duyệt nên giữ nguyên trạng thái lịch sử “chờ duyệt”; trạng thái phê duyệt sau đó được lưu riêng trong hai biên nhận.
+
+Bước 24 đề xuất là nhập kho đã duyệt vào staging, gắn phiên bản caption/ảnh/nguồn, lưu dấu duyệt và kiểm thử điều phối giả lập. Việc triển khai bước đó cần phê duyệt riêng. Duyệt nội dung và thiết kế không đồng nghĩa cho phép đăng Facebook hoặc bật lịch.
