@@ -195,3 +195,12 @@ test('deployment verification times out without accepting wrong release, unpause
     assert.equal(time, 10000);
   }
 });
+
+test('Live UI deployment rejects backend/schema changes and verifies unchanged enabled state',async()=>{
+ const {assertLiveUiChanges}=await import('../scripts/cloud-deploy.mjs');
+ assert.doesNotThrow(()=>assertLiveUiChanges(['ui/cloud/manager.js','scripts/cloud-deploy.mjs','tests/cloud.test.mjs']));
+ for(const path of ['src/cloud/daily.ts','cloud/daily.sql','scripts/cloud-prepare.mjs','.github/workflows/ci.yml'])assert.throws(()=>assertLiveUiChanges(['ui/cloud/manager.js',path]),/pause required/);
+ const settings={url:'https://staging.invalid',releaseSha:'a'.repeat(40),token:'fixture'};
+ for(const changed of [false,true]){let time=0;const fn=()=>verifyStaging(settings,{expectedState:{paused:false,publishingEnabled:true},now:()=>time,pause:async n=>{time+=n;},timeoutMs:1000,fetcher:async(url,opts)=>url.endsWith('/health')?Response.json({release:settings.releaseSha,environment:'staging',publishingImplemented:true,schedulerImplemented:true}):opts.headers?Response.json({paused:changed,publishingEnabled:!changed,databaseChecked:true}):Response.json({}, {status:401})});if(changed)await assert.rejects(fn(),/schedule-state/);else await fn();}
+});
+test('Deployment preflight refuses unavailable or inconsistent schedule state',async()=>{const {deploymentState}=await import('../scripts/cloud-deploy.mjs');const settings={url:'https://staging.invalid',token:'fixture'};for(const response of [Response.json({code:'DATABASE_NOT_READY'},{status:503}),Response.json({environment:'staging',databaseChecked:true,paused:false,publishingEnabled:false}),Response.json({}, {status:401})])await assert.rejects(deploymentState(settings,async()=>response),/schedule state/);assert.deepEqual(await deploymentState(settings,async()=>Response.json({environment:'staging',databaseChecked:true,paused:true,publishingEnabled:false})),{paused:true,publishingEnabled:false});});
