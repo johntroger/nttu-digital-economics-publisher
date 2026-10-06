@@ -77,7 +77,7 @@ export async function runMonitor(config,{fetcher=fetch,probe=probes,test=false}=
   await save();
  }
  // Only fixed codes are logged. Never log provider bodies, error URLs, credentials or captions.
- const summary={checkedAt:new Date(data.now).toISOString(),issues:result.codes,notified:ready,notificationFailed};
+ const summary={checkedAt:new Date(data.now).toISOString(),issues:result.codes,notified:ready,notificationFailed:notificationFailed||Object.values(state.incidents).some(item=>['intent','unknown','rejected'].includes(item.notification))};
  return summary;
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
