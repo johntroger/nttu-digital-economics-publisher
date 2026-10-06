@@ -19,12 +19,13 @@ import {createBackup,continueBackup,checkBackup,backupManifest,backupFile} from 
 import {BACKUP_SCHEMA} from '../src/cloud/backup-schema.ts';
 import {enqueueTelegramTest,dispatchTelegram} from '../src/cloud/telegram.ts';
 import {metaStatus,checkMeta} from '../src/cloud/meta.ts';
+import {prepareTrial,sendTrial,TRIAL_PAGE} from '../src/cloud/meta-trial.ts';
 
 export async function managementFixture({testOnlyMigration}={}) {
   const output = 'tmp/cloud-management/' + crypto.randomUUID();
   const origin = 'https://nttu-publisher-staging.example.workers.dev';
   const { directory } = prepareCloud({ output, origin, storageEnabled: true });
-  if(testOnlyMigration)writeFileSync(resolve(directory,'migrations','0015_test_only_workflow.sql'),testOnlyMigration);
+  if(testOnlyMigration)writeFileSync(resolve(directory,'migrations','0016_test_only_workflow.sql'),testOnlyMigration);
   const configPath = resolve(directory, 'wrangler.json'), state = resolve(directory, 'state');
   const migration = spawnSync(process.execPath, [resolve('node_modules/wrangler/bin/wrangler.js'), 'd1', 'migrations', 'apply', 'DB', '--local', '--config', configPath, '--persist-to', state],
     { encoding: 'utf8', timeout: 120000, env: { ...process.env, WRANGLER_SEND_METRICS: 'false', CI: 'true' } });
@@ -36,7 +37,7 @@ export async function managementFixture({testOnlyMigration}={}) {
     ASSETS: { async fetch(request) {
       const name = new URL(request.url).pathname.slice(1);
       if(name.startsWith('fonts/')&&([...DESIGN_REGISTRY.fonts.map(f=>'fonts/'+f.name),'fonts/BricolageGrotesque-OFL.txt','fonts/WorkSans-OFL.txt']).includes(name))return new Response(readFileSync(resolve('assets',name)),{headers:{'Content-Type':name.endsWith('.ttf')?'font/ttf':'text/plain'}});
-      if (!['manager.html','manager.js','cloud.css','artwork.js','artwork-ui.js','backups.js','zip.js','telegram-ui.js','meta-ui.js'].includes(name)) return new Response('', { status: 404 });
+      if (!['manager.html','manager.js','cloud.css','artwork.js','artwork-ui.js','backups.js','zip.js','telegram-ui.js','meta-ui.js','meta-trial-ui.js'].includes(name)) return new Response('', { status: 404 });
       return new Response(readFileSync(resolve('ui/cloud', name)), { headers: { 'Content-Type': name.endsWith('.html') ? 'text/html; charset=utf-8' : name.endsWith('.js') ? 'text/javascript; charset=utf-8' : 'text/css; charset=utf-8' } });
     } },
   };
@@ -112,6 +113,19 @@ export async function runManagementSmoke() {
     let graphCalls=0;const meta=await checkMeta(f.env,f.owner,{requestId:crypto.randomUUID()},{transport:async(url,init)=>{graphCalls++;assert.equal(init.method,'GET');return Response.json(String(url).includes('/debug_token')?{data:{is_valid:true,type:'PAGE',app_id:f.env.META_APP_ID,scopes:['pages_read_engagement','pages_manage_posts'],expires_at:0,data_access_expires_at:0}}:{id:f.env.META_PAGE_ID,name:'D1 fixture Page'});}});
     assert.equal(meta.verifiedReadOnly,true);assert.equal(graphCalls,2);assert.equal((await metaStatus(f.env)).lastCheck.verifiedReadOnly,true);assert.equal((await f.env.DB.prepare('SELECT count(*) n FROM page_connections').first()).n,0);
     console.log('Meta D1 checks passed: durable read-only receipt, pinned Page/app and no live page connection; Graph transport mocked.');
+    f.env.META_PAGE_ID=TRIAL_PAGE;const trialInput={requestId:crypto.randomUUID(),libraryId:file.file.id};
+    const trial=await prepareTrial(f.env,f.owner,trialInput);let trialPosts=0;
+    const trialTransport=async(url,init)=>{
+      if(String(url).includes('/debug_token'))return Response.json({data:{is_valid:true,type:'PAGE',app_id:f.env.META_APP_ID,scopes:['pages_read_engagement','pages_manage_posts'],expires_at:0,data_access_expires_at:0}});
+      if(String(url).includes('/me?'))return Response.json({id:TRIAL_PAGE,name:'D1 trial fixture'});
+      if(init.method==='POST'){trialPosts++;assert.equal(init.body.get('caption'),trial.caption);return Response.json({id:'1234567890',post_id:TRIAL_PAGE+'_1234567890'});}
+      const stored=await f.env.DB.prepare('SELECT * FROM cloud_meta_trial WHERE id=1').first();return Response.json({id:TRIAL_PAGE+'_1234567890',message:stored.caption,created_time:new Date(stored.sent_at).toISOString()});
+    };
+    const trialApproval={requestId:trialInput.requestId,confirmPageId:TRIAL_PAGE,approveCaption:true,approveImage:true};
+    await Promise.all([sendTrial(f.env,f.owner,trialApproval,{transport:trialTransport}),sendTrial(f.env,f.owner,trialApproval,{transport:trialTransport})]);
+    assert.equal(trialPosts,1);assert.equal((await f.env.DB.prepare('SELECT state FROM cloud_meta_trial').first()).state,'published');
+    assert.equal((await f.env.DB.prepare('SELECT count(*) n FROM publications').first()).n,0);
+    console.log('Meta trial D1 passed: singleton concurrent intent, binary POST and readback/notification receipt; transport mocked, no Facebook publication.');
     console.log('Cloud source/review D1/R2 passed: version provenance, page validation, image alignment, CAS receipt and no readiness.');
     console.log('Private storage D1/R2 local passed: conditional upload, deduplication, verified download, PDF and new image version.');
     console.log('Management local D1 passed: concurrent CAS, duplicate rollback, owner API, bounded JSON and private UI. Google login is not emulated as remote acceptance.');

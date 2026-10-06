@@ -10,6 +10,7 @@ import { runManagementSmoke } from './cloud-management-smoke.mjs';
 import { Miniflare, convertV4MiniflareOptions } from 'miniflare';
 import {SignJWT} from 'jose';
 import {POLICY} from '../src/domain/policy.ts';
+import {runNativeTrial} from './cloud-meta-trial-smoke.mjs';
 const output = 'tmp/cloud-smoke/' + randomUUID();
 const { directory } = prepareCloud({ output });
 const configPath = resolve(directory, 'wrangler.json');
@@ -55,7 +56,7 @@ try {
   assert(scheduled.status === 200, 'Scheduled handler must succeed');
   const after = await status(); assert(after.heartbeatCount === 1 && after.lastScheduledAt > 0, 'Cron must write to D1');
   assert((await fetch(base + '/api/trial-publish', { method: 'POST' })).status === 501, 'Publish must stay disabled');
-    console.log('Cloud smoke passed: bundle, 14 D1 migrations, private status, scheduled heartbeat, publishing disabled. This is local emulation, not deployed cloud.');
+    console.log('Cloud smoke passed: bundle, 15 D1 migrations, private status, scheduled heartbeat, publishing disabled. This is local emulation, not deployed cloud.');
 } catch (error) {
   console.error(logs.replaceAll(token, '[redacted]')); throw error;
 } finally {
@@ -127,3 +128,4 @@ try{
  metaRedirect=true;const blocked=await (await probe(randomUUID())).json();assert(blocked.reason==='META_REDIRECT_BLOCKED'&&blocked.verifiedReadOnly===false&&metaCalls===3,'Meta redirect must not be followed');
  console.log('Meta native Workers fetch passed: server credentials, bounded GETs, pinned app/Page, receipt replay and blocked redirects; no external Graph request.');
 }finally{await meta.dispose();}
+await runNativeTrial(resolve(directory,'bundle/worker.js'));

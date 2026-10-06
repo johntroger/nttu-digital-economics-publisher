@@ -194,3 +194,11 @@ khi cấu hình thay đổi. Đã xác minh thật Trang Tập Viết (551227411
 ứng dụng và đủ scope; chưa bật lịch hoặc đăng bài. Token đang dùng có hạn đến
 12:00 ngày 06/10/2026 giờ Việt Nam, cần xử lý trước vận hành tiếp. Chi tiết:
 `docs/steps/20-meta-test-connection.md`.
+
+## Bước 21: luồng đăng thử và theo dõi token
+
+Lịch đăng có bản xem trước bài kỹ thuật và ảnh ba logo. Máy chủ giới hạn một bài
+trên Tập Viết, ghi intent trước POST, đọc lại caption/ID trước xác nhận và không
+đăng lại khi mất phản hồi. Token còn dưới 24 giờ bị chặn; cảnh báo Telegram khi
+còn tối đa ba ngày. Lịch hằng ngày vẫn dừng. Chưa nghiệm thu đăng thật; cần token
+phù hợp và phê duyệt bản xem trước. Xem `docs/steps/21-meta-trial-publication.md`.

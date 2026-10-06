@@ -25,6 +25,18 @@ export async function metaStatus(env:CloudBindings,now=Date.now()){
   return {configured,purpose:'test',pageId:id(env.META_PAGE_ID)?env.META_PAGE_ID:null,appId:id(env.META_APP_ID)?env.META_APP_ID:null,apiVersion:/^v[1-9][0-9]\.0$/.test(env.META_API_VERSION??'')?env.META_API_VERSION:null,
     requiredScopes:REQUIRED,publishingEnabled:false,lastCheck:row?view(row,configured&&row.config_hash===hash,now):null};
 }
+export const metaProof=(env:CloudBindings)=>appProof(env);
+export const metaFingerprint=(env:CloudBindings)=>fingerprint(env);
+export async function monitorMetaExpiry(env:CloudBindings,now=Date.now()){
+  if(!metaConfigured(env))return;
+  const status=await metaStatus(env,now),check=status.lastCheck;
+  if(!check?.current||check.state!=='verified_read_only')return;
+  const expiry=[check.expiresAt,check.dataAccessExpiresAt].filter((n):n is number=>n!==null).sort((a,b)=>a-b)[0];
+  if(expiry===undefined||expiry-now>3*86400000)return;
+  const eventId='meta-expiry:'+env.META_PAGE_ID+':'+expiry;
+  await env.DB!.prepare('INSERT INTO notification_outbox(event_id,payload_json) VALUES(?,?) ON CONFLICT(event_id) DO NOTHING')
+    .bind(eventId,JSON.stringify({kind:'connection_error',environment:'staging',page:check.pageName??'Fanpage thử',title:'Token hoặc quyền dữ liệu cần cấp lại trước '+new Date(expiry).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh'})})).run();
+}
 class MetaFailure extends Error {readonly code:string;constructor(code:string){super(code);this.code=code;}}
 async function graph(url:URL,bearer:string,transport:typeof fetch):Promise<ObjectValue>{
   // Every request is GET to a server-built, versioned Graph endpoint. No paging/redirect follow.

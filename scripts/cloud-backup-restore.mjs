@@ -37,7 +37,7 @@ export function restoreCloudBundle({bundle,requestId,confirmQuarantine=false}){
   for(const parent of ['tmp','tmp/step-17','tmp/step-17/restores'])if(existsSync(parent)&&lstatSync(parent).isSymbolicLink())fail('BACKUP_PATH_INVALID');
   if(existsSync(target)){if(lstatSync(target).isSymbolicLink())fail('BACKUP_PATH_INVALID');const result=jsonFile(join(target,'restore-result.json'),10000);if(result.manifestHash!==manifestHash)fail('BACKUP_REQUEST_REUSED');return {...result,replayed:true};}
   if(existsSync(building))fail('BACKUP_RESTORE_INCOMPLETE');
-  const trusted=trustedSchema(),business=trusted.definitions.filter(d=>!['cloud_backups','cloud_backup_checks','cloud_telegram_runtime','cloud_telegram_attempts','cloud_meta_checks'].includes(d.tbl_name));
+  const trusted=trustedSchema(),business=trusted.definitions.filter(d=>!['cloud_backups','cloud_backup_checks','cloud_telegram_runtime','cloud_telegram_attempts','cloud_meta_checks','cloud_meta_trial'].includes(d.tbl_name));
   if(hash(JSON.stringify(business))!==BACKUP_SCHEMA.fingerprint||JSON.stringify(verified.snapshot.tables.schema_migrations)!==JSON.stringify(trusted.migrations))fail('BACKUP_SCHEMA_UNSUPPORTED');
   mkdirSync(building,{recursive:true});const database=join(building,'warehouse.sqlite'),db=new DatabaseSync(database);
   try{

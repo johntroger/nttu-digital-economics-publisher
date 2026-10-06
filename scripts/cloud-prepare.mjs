@@ -32,8 +32,9 @@ export function prepareCloud({ databaseId = '00000000-0000-0000-0000-00000000000
   writeFileSync(resolve(directory,'migrations','0012_cloud_backups.sql'),readFileSync('cloud/backups.sql'));
   writeFileSync(resolve(directory,'migrations','0013_telegram.sql'),readFileSync('cloud/telegram.sql'));
   writeFileSync(resolve(directory,'migrations','0014_meta.sql'),readFileSync('cloud/meta.sql'));
+  writeFileSync(resolve(directory,'migrations','0015_meta_trial.sql'),readFileSync('cloud/meta-trial.sql'));
   const assets = resolve(directory, 'assets'); mkdirSync(assets, { recursive: true });
-  for (const name of ['manager.html', 'manager.js', 'cloud.css','artwork.js','artwork-ui.js','backups.js','zip.js','telegram-ui.js','meta-ui.js']) writeFileSync(resolve(assets, name), readFileSync(resolve('ui/cloud', name)));
+  for (const name of ['manager.html', 'manager.js', 'cloud.css','artwork.js','artwork-ui.js','backups.js','zip.js','telegram-ui.js','meta-ui.js','meta-trial-ui.js']) writeFileSync(resolve(assets, name), readFileSync(resolve('ui/cloud', name)));
   mkdirSync(resolve(assets,'fonts'),{recursive:true});
   for(const font of DESIGN_REGISTRY.fonts){const bytes=readFileSync(resolve('assets/fonts',font.name));if(createHash('sha256').update(bytes).digest('hex')!==font.sha256)throw new Error('Approved font changed');writeFileSync(resolve(assets,'fonts',font.name),bytes);}
   for(const license of ['BricolageGrotesque-OFL.txt','WorkSans-OFL.txt'])writeFileSync(resolve(assets,'fonts',license),readFileSync(resolve('assets/fonts',license)));

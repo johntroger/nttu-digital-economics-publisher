@@ -2,12 +2,14 @@ import {createArtworkBuilder} from './artwork-ui.js';
 import {createBackupsPanel} from './backups.js';
 import {createTelegramPanel} from './telegram-ui.js';
 import {createMetaPanel} from './meta-ui.js';
+import {createTrialPanel} from './meta-trial-ui.js';
 const $ = id => document.getElementById(id);
 let session, catalog, selected, resources, sourceCatalog, postAudit, pendingSave, pendingImage, pendingReview, saving = false, opening = 0;
 const artworkBuilder=createArtworkBuilder({root:$('editor'),getPost:()=>selected,isDirty:dirty,isBusy:()=>saving,api,message,csrf:()=>session.csrf,setBusy:lock,reload:async id=>{selected=null;lock(false);await loadLibrary();await loadCatalog();await openPost(id,true);}});
 const backupsPanel=createBackupsPanel({root:$('main'),api,message});
 const telegramPanel=createTelegramPanel({root:$('main'),api,message});
 const metaPanel=createMetaPanel({api,message});
+const trialPanel=createTrialPanel({api,message,csrf:()=>session.csrf});
 const mediaSection = document.createElement('section'); mediaSection.className = 'media-section';
 const mediaHeading = document.createElement('h3'); mediaHeading.textContent = 'Ảnh minh họa của phiên bản';
 const mediaImage = document.createElement('img'); mediaImage.id = 'post-image'; mediaImage.hidden = true;
@@ -159,8 +161,14 @@ for (const button of document.querySelectorAll('[data-view]')) button.addEventLi
   heading.textContent = labels[view] ?? 'Kho bài';
   text.textContent = view === 'schedule' ? 'Lịch tự động đang dừng. Thời gian dự kiến: 10:00 mỗi ngày theo giờ Việt Nam. Bài đăng thủ công trên fanpage độc lập.' : view === 'history' ? 'Chưa có bài đăng Facebook thật trong môi trường staging.' : 'Telegram chưa được kết nối trong môi trường staging.';
   $('other-content').append(heading, text);
+  if(view==='history'){
+    text.textContent='Lịch sử kho nội dung và bài kiểm thử kỹ thuật được ghi nhận riêng.';
+    const trialHistory=document.createElement('section');trialHistory.id='trial-history';$('other-content').append(trialHistory);
+    api('/api/meta/trial').then(data=>{if(!data.trial){trialHistory.textContent='Chưa có bài kiểm thử kỹ thuật.';return;}const t=data.trial,p=document.createElement('p');p.textContent='Bài kiểm thử Tập Viết · '+t.state+' · '+t.requestId;trialHistory.append(p);const caption=document.createElement('p');caption.textContent=t.caption;trialHistory.append(caption);if(t.url){const a=document.createElement('a');a.href=t.url;a.textContent='Mở bài thử trên Facebook';a.target='_blank';a.rel='noopener';trialHistory.append(a);}}).catch(e=>message(e.message,true));
+  }
   if(view==='schedule'){
     metaPanel.mount($('other-content'));metaPanel.load().catch(e=>message(e.message,true));
+    trialPanel.mount($('other-content'));trialPanel.load().catch(e=>message(e.message,true));
     const preflight=document.createElement('p');preflight.id='workflow-preflight';preflight.setAttribute('role','status');preflight.textContent='Đang kiểm tra điều kiện vận hành…';$('other-content').append(preflight);
     api('/api/workflow').then(report=>{
       preflight.textContent=`${report.totalPosts} bài trong kho · ${report.reviewedPosts} bài đã rà soát · ${report.eligibleToPublish} bài được cấp quyền đăng. Chưa bật bộ đăng Facebook thật. Bộ giả lập chỉ chạy trong kho kiểm thử riêng.`;

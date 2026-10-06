@@ -9,7 +9,8 @@ import {DESIGN_REGISTRY} from './design-registry.ts';
 import {listBackups,createBackup,continueBackup,checkBackup,backupManifest,backupFile} from './backups.ts';
 import {telegramStatus,enqueueTelegramTest,retryTelegram,dispatchTelegram,discoverTelegram} from './telegram.ts';
 import {cloudWorkflowStatus} from './workflow.ts';
-import {metaStatus,checkMeta} from './meta.ts';
+import {metaStatus,checkMeta,monitorMetaExpiry} from './meta.ts';
+import {trialStatus,prepareTrial,sendTrial,reconcileTrial} from './meta-trial.ts';
 
 const UI_HEADERS = { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer',
   'Content-Security-Policy': "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'" };
@@ -72,7 +73,7 @@ export default {
     try { assertStaging(env); } catch { return json({ code: 'CONFIGURATION_NOT_READY' }, 503); }
     const path = new URL(request.url).pathname;
     if (request.method === 'GET' && path === '/health') {
-      return json({ service: 'nttu-publisher', step: 20, environment: 'staging',
+      return json({ service: 'nttu-publisher', step: 21, environment: 'staging',trialPublishingImplemented:true,
         integrationMode: 'unconfigured', publishingImplemented: false,
         databaseChecked: false, schedulerImplemented: false, heartbeatImplemented: true,
         release: env.RELEASE_SHA ?? 'local' });
@@ -101,7 +102,7 @@ export default {
     const session = await ownerSession(request, env);
     if (!session) {
       if (path === '/' && request.method === 'GET') return loginPage(authConfigured(env), new URL(request.url).searchParams.get('login') === 'failed', new URL(request.url).searchParams.get('reason') ?? '');
-      if (path.startsWith('/api/') || path.startsWith('/fonts/') || ['/auth/logout','/manager.html','/manager.js','/artwork.js','/artwork-ui.js','/backups.js','/zip.js','/telegram-ui.js','/meta-ui.js'].includes(path)) return json({ code: 'UNAUTHORIZED' }, 401);
+      if (path.startsWith('/api/') || path.startsWith('/fonts/') || ['/auth/logout','/manager.html','/manager.js','/artwork.js','/artwork-ui.js','/backups.js','/zip.js','/telegram-ui.js','/meta-ui.js','/meta-trial-ui.js'].includes(path)) return json({ code: 'UNAUTHORIZED' }, 401);
       return json({ code: 'NOT_FOUND' }, 404);
     }
     try {
@@ -110,7 +111,13 @@ export default {
       if(path==='/api/meta')return request.method==='GET'?json(await metaStatus(env)):json({code:'METHOD_NOT_ALLOWED'},405);
       if(path==='/api/meta/check'){
         if(request.method!=='POST')return json({code:'METHOD_NOT_ALLOWED'},405);
-        requireMutation(request,env,session);return json(await checkMeta(env,session,await input(request)));
+        requireMutation(request,env,session);const result=await checkMeta(env,session,await input(request));await monitorMetaExpiry(env);return json(result);
+      }
+      if(path==='/api/meta/trial')return request.method==='GET'?json(await trialStatus(env)):json({code:'METHOD_NOT_ALLOWED'},405);
+      if(['/api/meta/trial/prepare','/api/meta/trial/send','/api/meta/trial/reconcile'].includes(path)){
+        if(request.method!=='POST')return json({code:'METHOD_NOT_ALLOWED'},405);
+        requireMutation(request,env,session);const data=await input(request);
+        return json(path.endsWith('/prepare')?await prepareTrial(env,session,data):path.endsWith('/send')?await sendTrial(env,session,data):await reconcileTrial(env,data));
       }
       if(path==='/api/telegram'&&request.method==='GET')return json(await telegramStatus(env));
       if(['/api/telegram/test','/api/telegram/retry','/api/telegram/discover'].includes(path)){
@@ -178,7 +185,7 @@ export default {
         }
         return json({ code: 'METHOD_NOT_ALLOWED' }, 405);
       }
-      if (['/', '/manager.html', '/manager.js','/artwork.js','/artwork-ui.js','/backups.js','/zip.js','/telegram-ui.js','/meta-ui.js'].includes(path) && request.method === 'GET') return asset(request, env, path === '/' ? '/manager.html' : undefined);
+      if (['/', '/manager.html', '/manager.js','/artwork.js','/artwork-ui.js','/backups.js','/zip.js','/telegram-ui.js','/meta-ui.js','/meta-trial-ui.js'].includes(path) && request.method === 'GET') return asset(request, env, path === '/' ? '/manager.html' : undefined);
       if (path.startsWith('/api/')) return json({ code: 'CLOUD_FEATURE_PENDING' }, 501);
     } catch (error) {
       if (error instanceof AuthError) return json({ code: 'CSRF_REQUIRED' }, 403);
@@ -189,6 +196,7 @@ export default {
   },
   async scheduled(event: { cron: string; scheduledTime: number }, env: CloudBindings): Promise<void> {
     await recordHeartbeat(event, env);
+    await monitorMetaExpiry(env);
     await dispatchTelegram(env);
   },
 };
