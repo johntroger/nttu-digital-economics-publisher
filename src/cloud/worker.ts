@@ -76,7 +76,7 @@ export default {
     try { assertStaging(env); } catch { return json({ code: 'CONFIGURATION_NOT_READY' }, 503); }
     const path = new URL(request.url).pathname;
     if (request.method === 'GET' && path === '/health') {
-      return json({ service: 'nttu-publisher', step: 27, environment: 'staging',trialPublishingImplemented:true,presenceMonitoringImplemented:true,
+      return json({ service: 'nttu-publisher', step: 28, environment: 'staging',trialPublishingImplemented:true,presenceMonitoringImplemented:true,
         integrationMode: 'unconfigured', publishingImplemented: true,
         databaseChecked: false, schedulerImplemented: true, heartbeatImplemented: true,
         release: env.RELEASE_SHA ?? 'local' });

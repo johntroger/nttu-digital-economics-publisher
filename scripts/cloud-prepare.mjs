@@ -37,6 +37,7 @@ export function prepareCloud({ databaseId = '00000000-0000-0000-0000-00000000000
   const assets = resolve(directory, 'assets'); mkdirSync(assets, { recursive: true });
   writeFileSync(resolve(directory,'migrations','0017_content_trial.sql'),readFileSync('cloud/content-trial.sql'));
   writeFileSync(resolve(directory,'migrations','0018_publication_presence.sql'),readFileSync('cloud/presence.sql'));
+  writeFileSync(resolve(directory,'migrations','0019_daily_test_time.sql'),readFileSync('cloud/daily-test.sql'));
   for (const name of ['manager.html', 'manager.js', 'cloud.css','artwork.js','artwork-ui.js','backups.js','zip.js','telegram-ui.js','meta-ui.js','meta-trial-ui.js','daily-ui.js','content-trial-ui.js']) writeFileSync(resolve(assets, name), readFileSync(resolve('ui/cloud', name)));
   mkdirSync(resolve(assets,'fonts'),{recursive:true});
   for(const font of DESIGN_REGISTRY.fonts){const bytes=readFileSync(resolve('assets/fonts',font.name));if(createHash('sha256').update(bytes).digest('hex')!==font.sha256)throw new Error('Approved font changed');writeFileSync(resolve(assets,'fonts',font.name),bytes);}
