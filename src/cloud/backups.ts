@@ -24,14 +24,15 @@ async function putVerified(env:CloudBindings,key:string,bytes:Uint8Array,type='a
   await readObject(env,key,bytes.length,await checksum(bytes));
 }
 export async function listBackups(env:CloudBindings){await readStatus(env);return{maxBackups:10,backups:(await rows(env,`SELECT b.*, (SELECT max(c.completed_at) FROM cloud_backup_checks c WHERE c.backup_id=b.id) last_verified_at FROM cloud_backups b ORDER BY b.created_at DESC`)).map(view)};}
-export async function createBackup(env:CloudBindings,owner:OwnerSession,input:unknown){
+export async function createBackup(env:CloudBindings,owner:OwnerSession,input:unknown){return initializeBackup(env,owner,input);}
+async function initializeBackup(env:CloudBindings,owner:OwnerSession,input:unknown,existing?:Row){
   await idle(env);const request=(input as {requestId?:unknown}|null)?.requestId;if(!uuid(request))fail('BACKUP_REQUEST_INVALID',422);
   const id='backup-'+request;
   await env.DB!.prepare(`INSERT INTO cloud_backups(id,actor,created_at) SELECT ?,?,? WHERE (SELECT count(*) FROM cloud_backups)<10 AND ${guard} ON CONFLICT(id) DO NOTHING`).bind(id,owner.email,new Date().toISOString()).run();
-  const row=(await rows(env,'SELECT * FROM cloud_backups WHERE id=?',id))[0];if(!row)fail('BACKUP_QUOTA_OR_BUSY');
+  const row=existing??(await rows(env,'SELECT * FROM cloud_backups WHERE id=?',id))[0];if(!row)fail('BACKUP_QUOTA_OR_BUSY');
   if(row.snapshot_json)return view(row);
   // A single transaction captures every business table at one point in time.
-  const results=await env.DB!.batch!([...BACKUP_SCHEMA.tables.map(t=>env.DB!.prepare(`SELECT * FROM "${t.name}" ORDER BY ${t.columns.map(c=>'"'+c+'"').join(',')} LIMIT 5001`)),env.DB!.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%' AND name NOT IN ('d1_migrations','cloud_backups','cloud_backup_checks','cloud_telegram_runtime','cloud_telegram_attempts','cloud_meta_checks','cloud_meta_trial','cloud_daily_config','cloud_content_trial') ORDER BY name")]) as {results:Row[]}[];
+  const results=await env.DB!.batch!([...BACKUP_SCHEMA.tables.map(t=>env.DB!.prepare(`SELECT * FROM "${t.name}" ORDER BY ${t.columns.map(c=>'"'+c+'"').join(',')} LIMIT 5001`)),env.DB!.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%' AND name NOT IN ('d1_migrations','cloud_backups','cloud_backup_checks','cloud_telegram_runtime','cloud_telegram_attempts','cloud_meta_checks','cloud_meta_trial','cloud_daily_config','cloud_content_trial','cloud_presence_runs','cloud_presence_items') ORDER BY name")]) as {results:Row[]}[];
   if(results[BACKUP_SCHEMA.tables.length]?.results.map(r=>r.name).join('|')!==BACKUP_SCHEMA.tables.map(t=>t.name).join('|'))fail('BACKUP_SCHEMA_UNSUPPORTED');
   const tables:Record<string,Row[]>={};for(const [i,t] of BACKUP_SCHEMA.tables.entries()){const data=results[i]?.results;if(!Array.isArray(data)||data.length>5000)fail('BACKUP_SNAPSHOT_TOO_LARGE');for(const r of data)if(Object.keys(r).sort().join('|')!==[...t.columns].sort().join('|')||Object.values(r).some(v=>v!==null&&typeof v!=='string'&&(typeof v!=='number'||!Number.isFinite(v))))fail('BACKUP_SCHEMA_UNSUPPORTED');tables[t.name]=data;}
   if(tables.publish_jobs!.some(r=>['held','publish_requested','evidence_pending','retry_wait','unknown'].includes(String(r.state)))||tables.application_state!.some(r=>r.paused_by_user!==1||r.maintenance_owner!==null))fail('BACKUP_CONNECTED_OR_BUSY');
@@ -46,7 +47,7 @@ export async function createBackup(env:CloudBindings,owner:OwnerSession,input:un
 }
 export async function continueBackup(env:CloudBindings,id:string,owner:OwnerSession){
   await readStatus(env);const row=await get(env,id);if(row.state==='complete')return view(row);
-  if(!row.snapshot_json)return await createBackup(env,owner,{requestId:id.slice(7)});
+  if(!row.snapshot_json)return await initializeBackup(env,owner,{requestId:id.slice(7)},row);
   await idle(env);
   const files=filesOf(row),index=Number(row.next_index),file=files[index];
   if(file){let bytes:Uint8Array;

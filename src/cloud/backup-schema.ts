@@ -1,7 +1,7 @@
 // Trusted schema/resource metadata; no snapshot contents.
 export const BACKUP_SCHEMA = {
-  "version": 12,
-  "fingerprint": "568735a7a1e1a71709ef12c171ce17a27603d4bef155277918257dbe4e6460e7",
+  "version": 13,
+  "fingerprint": "7fb6648137d61729bf4e01267b6eddf613448e7b241d864aa760fbaf7c33d96d",
   "tables": [
     {
       "name": "actual_day_guards",
@@ -80,6 +80,19 @@ export const BACKUP_SCHEMA = {
         "state",
         "actor",
         "created_at"
+      ]
+    },
+    {
+      "name": "cloud_publication_presence",
+      "columns": [
+        "remote_id",
+        "page_id",
+        "observed_status",
+        "observed_at",
+        "first_unavailable_at",
+        "checked_at",
+        "check_result",
+        "reason"
       ]
     },
     {

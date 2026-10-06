@@ -12,6 +12,7 @@ import {cloudWorkflowStatus} from './workflow.ts';
 import {metaStatus,checkMeta,monitorMetaExpiry} from './meta.ts';
 import {dailyStatus,configureDaily,activateDaily,pauseDaily,reconcileDaily,runDaily} from './daily.ts';
 import {contentTrialStatus,prepareContentTrial,sendContentTrial,reconcileContentTrial,monitorContentTrial} from './content-trial.ts';
+import {readPresence,scanPresence} from './presence.ts';
 import {trialStatus,prepareTrial,sendTrial,reconcileTrial} from './meta-trial.ts';
 
 const UI_HEADERS = { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer',
@@ -75,7 +76,7 @@ export default {
     try { assertStaging(env); } catch { return json({ code: 'CONFIGURATION_NOT_READY' }, 503); }
     const path = new URL(request.url).pathname;
     if (request.method === 'GET' && path === '/health') {
-      return json({ service: 'nttu-publisher', step: 26, environment: 'staging',trialPublishingImplemented:true,
+      return json({ service: 'nttu-publisher', step: 27, environment: 'staging',trialPublishingImplemented:true,presenceMonitoringImplemented:true,
         integrationMode: 'unconfigured', publishingImplemented: true,
         databaseChecked: false, schedulerImplemented: true, heartbeatImplemented: true,
         release: env.RELEASE_SHA ?? 'local' });
@@ -109,6 +110,7 @@ export default {
     }
     try {
       if (path === '/api/me' && request.method === 'GET') return json({ email: session.email, csrf: session.csrf });
+      if(path==='/api/presence')return request.method==='GET'?json(await readPresence(env)):json({code:'METHOD_NOT_ALLOWED'},405);
       if(path==='/api/daily')return request.method==='GET'?json(await dailyStatus(env)):json({code:'METHOD_NOT_ALLOWED'},405);
       if(['/api/daily/configure','/api/daily/activate','/api/daily/pause','/api/daily/reconcile'].includes(path)){
         if(request.method!=='POST')return json({code:'METHOD_NOT_ALLOWED'},405);
@@ -218,6 +220,10 @@ export default {
     }
     // Defer notification delivery to the next tick after a send/recovery-heavy invocation.
     if(!['unconfigured','paused','not_due','prepared','day_complete','reconciliation_required'].includes(dailyState))return;
+    // Give the real publishing preparation/send priority; presence only reads Facebook.
+    if(['unconfigured','paused','not_due','day_complete'].includes(dailyState)){
+      const presence=await scanPresence(env);if(presence.state==='processed')return;
+    }
     await monitorContentTrial(env);
     await monitorMetaExpiry(env);
     await dispatchTelegram(env);

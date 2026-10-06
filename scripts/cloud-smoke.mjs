@@ -56,7 +56,7 @@ try {
   assert(scheduled.status === 200, 'Scheduled handler must succeed');
   const after = await status(); assert(after.heartbeatCount === 1 && after.lastScheduledAt > 0, 'Cron must write to D1');
   assert((await fetch(base + '/api/trial-publish', { method: 'POST' })).status === 501, 'Publish must stay disabled');
-    console.log('Cloud smoke passed: bundle, 17 D1 migrations, private status, scheduled heartbeat, publishing disabled. This is local emulation, not deployed cloud.');
+    console.log('Cloud smoke passed: bundle, 18 D1 migrations, private status, scheduled heartbeat, publishing disabled. This is local emulation, not deployed cloud.');
 } catch (error) {
   console.error(logs.replaceAll(token, '[redacted]')); throw error;
 } finally {
@@ -132,3 +132,4 @@ await runNativeTrial(resolve(directory,'bundle/worker.js'));
 
 await (await import('./cloud-daily-smoke.mjs')).runDailyD1Smoke();
 await (await import('./cloud-content-trial-smoke.mjs')).runContentTrialD1Smoke();
+await (await import('./cloud-presence-smoke.mjs')).runPresenceD1Smoke();
