@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "step": 22,
+  "recorded_at": "2026-10-06T07:24:03.263Z",
+  "authority": "owner_message_in_current_conversation",
+  "owner_statement": "duyệt nội dung và thiết kế của cả ba mẫu này",
+  "scope": "content_and_design_only",
+  "samples": [
+    {
+      "id": "P02",
+      "title": "Dùng AI xong, bạn kiểm tra kết quả thế nào?",
+      "body_sha256": "5fad20f58135f6c0e01cdbec4dca453cbc9714cd72e870b878638be6be717dc5",
+      "caption_sha256": "04613c35626761e1771cb028d88003e601a952d4af6de4defba53d9fedc12925",
+      "image_sha256": "b9a012633c8c1506ec900ab8632c5e49b19fbc958e40df8cd433ba83f277b873",
+      "proof_sha256": "4eb786ad50cd6eaffaabfacdd16efbd257d56c28cfc6264743114c7b1ed39ceb",
+      "content_approved": true,
+      "design_approved": true
+    },
+    {
+      "id": "P04",
+      "title": "CV có công cụ rồi, đã có bằng chứng chưa?",
+      "body_sha256": "591727b37f91bb27e439cf920de2501216c7a1d13e1db7497cdb8053734ab637",
+      "caption_sha256": "d4e34544c137665f00439f48886ffe6b05e0ff2d1545fb44c367e64826e9d00d",
+      "image_sha256": "0ce1aab16132ae1322e8b2b8cb983ded7b990aedc501f7a8f55fdc1a6a7b5778",
+      "proof_sha256": "44d966112fb098431b991a7cfc95c2fe18649b2c9051b7d785cfc34bfa9b8509",
+      "content_approved": true,
+      "design_approved": true
+    },
+    {
+      "id": "P05",
+      "title": "Học Kinh tế số: kết nối kinh doanh với công nghệ",
+      "body_sha256": "307e18c78276ce7c505eeed446ab64969bace414db90762851c9449c83aeda0c",
+      "caption_sha256": "f5c59d0efc081ee5e0d0209db9b42f8b01513a02e79fff71e9eaeef296cf78ac",
+      "image_sha256": "ae59d3d18f45db8d4ae6e509072f78811cd7575cc461d5de433c4b1e8ce34bd2",
+      "proof_sha256": "a17449e007d478292c7359514df1da612cc60e428ac5901c2146e9400abb61d4",
+      "content_approved": true,
+      "design_approved": true
+    }
+  ],
+  "publication_authorized": false,
+  "daily_schedule_authorized": false,
+  "cloud_readiness_granted": false
+}

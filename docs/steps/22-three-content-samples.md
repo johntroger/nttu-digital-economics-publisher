@@ -32,3 +32,15 @@ tràn chữ và tái lập pixel). Bộ HTTP cần chạy ngoài sandbox vì loo
 kiểm tra ảnh dùng thư mục tạm trong workspace. Không có thay đổi ứng dụng cloud.
 Trình duyệt kiểm thử chặn giao thức file://, nên chưa nghiệm thu bố cục HTML trên
 trình duyệt; cung cấp Markdown caption/căn cứ và PNG trực tiếp để người quản lý duyệt.
+
+## Phê duyệt của người quản lý
+
+Người quản lý đã xác nhận trong hội thoại: “duyệt nội dung và thiết kế của cả ba
+mẫu này”. Ghi nhận riêng tại `content/samples/step22-approval.json`, ghim hash của
+caption đầy đủ, PNG 1080px và bản xem 360px cho P02, P04, P05. Đã đối chiếu các hash
+với manifest trước khi lưu; không sửa nội dung hoặc ảnh sau phê duyệt.
+
+Manifest/gói duyệt trước đó giữ nguyên như bằng chứng tại thời điểm trình duyệt;
+receipt mới ghi nhận quyết định của người quản lý cho đúng ba phiên bản đó.
+Phê duyệt nội dung/thiết kế chưa cấp quyền đăng, bật lịch hoặc trạng thái ready
+trong cloud. Bước 22 hoàn tất phạm vi ba mẫu. Bước tiếp theo cần phê duyệt riêng.
