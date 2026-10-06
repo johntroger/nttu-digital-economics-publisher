@@ -12,7 +12,7 @@ export function createContentTrialPanel({api,message}){
  }
  async function action(fn){if(busy)return;busy=true;controls();try{await fn();}catch(e){message('Chưa hoàn tất: '+(e.code??e.message),true);}finally{busy=false;await load().catch(e=>message(e.message,true));controls();}}
  $('approve').addEventListener('change',controls);
- $('prepare').addEventListener('click',()=>action(async()=>{await api('/api/meta/content-trial/prepare',{requestId,expectedVersion:versionId});message('Đã lưu caption và ảnh P01; lịch hằng ngày vẫn dừng.');}));
+ $('prepare').addEventListener('click',()=>action(async()=>{await api('/api/meta/content-trial/prepare',{requestId,expectedVersion:versionId});message('Đã lưu caption và ảnh P01; chưa gửi bài lên Facebook.');}));
  $('send').addEventListener('click',()=>action(async()=>{await api('/api/meta/content-trial/send',{requestId:current.requestId,confirmPageId:'551227411605506',approveCaption:true,approveImage:$('approve').checked});message('Đã xử lý yêu cầu đăng P01. Xem kết quả đối chiếu bên dưới.');}));
  $('reconcile').addEventListener('click',()=>action(async()=>{await api('/api/meta/content-trial/reconcile',{requestId:current.requestId,remoteId:$('remote').value.trim()||current.remoteId});}));
  return{mount(root){root.append(panel);},load};
