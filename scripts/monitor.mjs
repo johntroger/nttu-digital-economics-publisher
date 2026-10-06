@@ -1,0 +1,86 @@
+import {pathToFileURL} from 'node:url';
+
+export const STATE_TITLE='[Operations] Independent staging monitor state';
+export const MONITOR_SQL=`SELECT r.environment,r.last_scheduled_at,a.paused_by_user,c.enabled,c.start_date,c.test_publish_at,
+ (SELECT count(*) FROM publications p JOIN publish_jobs j ON j.id=p.job_id WHERE j.page_connection_id=c.page_connection_id AND j.slot_id IS NOT NULL AND p.remote_business_date=?) AS published_today,
+ (SELECT count(*) FROM publish_jobs j JOIN schedule_slots s ON s.id=j.slot_id WHERE j.page_connection_id=c.page_connection_id AND s.business_date<=? AND j.state IN ('unknown','publish_requested','evidence_pending')) AS unresolved_today
+ FROM cloud_runtime r JOIN application_state a ON a.environment=r.environment JOIN cloud_daily_config c ON c.id=1 WHERE r.id=1`;
+const ORIGIN='https://nttu-publisher-staging.nttu-kts-johntroger.workers.dev';
+export function settings(env){
+ if(env.STAGING_WORKER_URL?.replace(/\/$/,'')!==ORIGIN||env.GITHUB_REPOSITORY!=='johntroger/nttu-digital-economics-publisher'||!/^\d+$/.test(env.MONITOR_STATE_ISSUE??'')||env.MONITOR_TELEGRAM_CHAT_ID!=='1548618770'||!env.GITHUB_TOKEN||!/^\d+:[A-Za-z0-9_-]+$/.test(env.MONITOR_TELEGRAM_BOT_TOKEN??'')||!env.CLOUDFLARE_API_TOKEN||env.CLOUDFLARE_ACCOUNT_ID!=='4d46e32e5c27ff522ee857308a53e729'||env.STAGING_D1_DATABASE_ID!=='83881fd7-88e6-4835-b616-6f4f8f2d25cd'||!env.STAGING_HEALTH_TOKEN)throw Error('Monitor configuration missing or invalid; secret values suppressed');
+ return {...env,origin:ORIGIN};
+}
+export function businessDay(now){return new Date(now+7*3600000).toISOString().slice(0,10);}
+const names={worker:'Cloud chưa phản hồi hoặc nhận dạng không đúng.',status:'Không đọc được trạng thái riêng của cloud.',database:'Không đọc được dữ liệu vận hành D1.',heartbeat:'Cron cloud chưa ghi heartbeat mới trong hơn 20 phút.',config:'Cấu hình lịch và quyền bật lịch không khớp.',late:'Đã quá giờ đăng 20 phút nhưng chưa có bài được xác minh.',unknown:'Kết quả đăng hôm nay chưa rõ; cần đối soát, không đăng lại.',test:'Tin kiểm thử giám sát độc lập. Không thay đổi lịch hoặc đăng Facebook.'};
+export function assess({health,status,snapshot},now){
+ const day=businessDay(now),codes=[],observed=['worker','status','database'];
+ if(!health||health.service!=='nttu-publisher'||health.environment!=='staging'||! /^[a-f0-9]{40}$/.test(health.release??''))codes.push('worker');
+ if(!status||status.environment!=='staging'||status.databaseChecked!==true||typeof status.publishingEnabled!=='boolean'||typeof status.paused!=='boolean')codes.push('status');
+ if(!snapshot||snapshot.environment!=='staging'||![0,1].includes(snapshot.enabled)||![0,1].includes(snapshot.paused_by_user)||!Number.isSafeInteger(snapshot.published_today)||!Number.isSafeInteger(snapshot.unresolved_today))codes.push('database');
+ else {
+  observed.push('heartbeat','late','unknown');
+  if(!Number.isSafeInteger(snapshot.last_scheduled_at)||snapshot.last_scheduled_at>now+60000||now-snapshot.last_scheduled_at>20*60000)codes.push('heartbeat');
+  if(status){observed.push('config');if(status.paused!==(snapshot.paused_by_user===1)||status.publishingEnabled!==(snapshot.enabled===1&&snapshot.paused_by_user===0))codes.push('config');}
+  if(snapshot.enabled===1&&snapshot.paused_by_user===0&&snapshot.start_date&&snapshot.start_date<=day){
+   const trial=Date.parse(snapshot.test_publish_at??''),due=Number.isFinite(trial)&&businessDay(trial)===day?trial:Date.parse(day+'T10:00:00+07:00');
+   if(now>=due+20*60000&&snapshot.published_today===0)codes.push(snapshot.unresolved_today>0?'unknown':'late');
+  }
+ }
+ return {day,codes,observed};
+}
+export function parseState(body){
+ if(typeof body!=='string'||body.length>30000)throw Error('Monitor state invalid');
+ const match=body.match(/^Independent monitor checkpoint\. Do not edit while a run is active\.\n```json\n([\s\S]+)\n```\n?$/);if(!match)throw Error('Monitor state invalid');
+ const state=JSON.parse(match[1]);if(state.schema!==1||!state.incidents||typeof state.incidents!=='object'||Array.isArray(state.incidents)||Object.keys(state.incidents).length>20)throw Error('Monitor state invalid');
+ for(const [code,item] of Object.entries(state.incidents))if(!Object.hasOwn(names,code)||!item||!Number.isSafeInteger(item.firstSeen)||item.firstSeen<0||!Number.isSafeInteger(item.lastSeen)||item.lastSeen<item.firstSeen||!Number.isSafeInteger(item.count)||item.count<1||!['pending','intent','delivered','unknown','rejected'].includes(item.notification))throw Error('Monitor state invalid');
+ return state;
+}
+export function stateBody(state){return 'Independent monitor checkpoint. Do not edit while a run is active.\n```json\n'+JSON.stringify(state,null,2)+'\n```\n';}
+export function transition(previous,result,now){
+ const state=structuredClone(previous);state.lastCheckedAt=now;
+ for(const code of result.observed)if(!result.codes.includes(code))delete state.incidents[code];
+ for(const code of result.codes){let item=state.incidents[code];if(!item){item={firstSeen:now,lastSeen:now,count:1,notification:'pending'};state.incidents[code]=item;}else if(now-item.lastSeen>=5*60000){item.count++;item.lastSeen=now;}}
+ const ready=Object.keys(state.incidents).filter(code=>result.codes.includes(code)&&state.incidents[code].notification==='pending'&&(state.incidents[code].count>=2||['late','unknown','test'].includes(code)));
+ return {state,ready};
+}
+async function jsonFetch(fetcher,url,options={}){const response=await fetcher(url,{...options,redirect:'error',signal:AbortSignal.timeout(15000)});if(!response.ok)throw Error('Provider request failed');return response.json();}
+export async function probes(config,fetcher=fetch){
+ const now=Date.now(),day=businessDay(now);
+ const results=await Promise.allSettled([
+  jsonFetch(fetcher,config.origin+'/health'),
+  jsonFetch(fetcher,config.origin+'/api/staging/status',{headers:{Authorization:'Bearer '+config.STAGING_HEALTH_TOKEN}}),
+  jsonFetch(fetcher,'https://api.cloudflare.com/client/v4/accounts/'+config.CLOUDFLARE_ACCOUNT_ID+'/d1/database/'+config.STAGING_D1_DATABASE_ID+'/query',{method:'POST',headers:{Authorization:'Bearer '+config.CLOUDFLARE_API_TOKEN,'Content-Type':'application/json'},body:JSON.stringify({sql:MONITOR_SQL,params:[day,day]})})
+ ]);
+ const value=i=>results[i].status==='fulfilled'?results[i].value:null,d1=value(2);
+ return {health:value(0),status:value(1),snapshot:d1?.success===true&&d1.result?.[0]?.success===true&&d1.result[0].results?.length===1?d1.result[0].results[0]:null,now};
+}
+export async function runMonitor(config,{fetcher=fetch,probe=probes,test=false}={}){
+ const issue='https://api.github.com/repos/'+config.GITHUB_REPOSITORY+'/issues/'+config.MONITOR_STATE_ISSUE;
+ const headers={Authorization:'Bearer '+config.GITHUB_TOKEN,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28','Content-Type':'application/json'};
+ const read=await jsonFetch(fetcher,issue,{headers});if(read.title!==STATE_TITLE||read.pull_request)throw Error('Monitor checkpoint identity invalid');
+ const previous=parseState(read.body),data=await probe(config,fetcher),result=assess(data,data.now);
+ if(test){result.codes.push('test');result.observed.push('test');}else{result.observed.push('test');}
+ const {state,ready}=transition(previous,result,data.now);
+ const save=()=>jsonFetch(fetcher,issue,{method:'PATCH',headers,body:JSON.stringify({body:stateBody(state)})});
+ // Persist intent before any Telegram send. A crash or missing response cannot trigger an automatic repeat.
+ for(const code of ready)state.incidents[code].notification='intent';
+ await save();
+ let notificationFailed=Object.values(state.incidents).some(item=>['intent','unknown','rejected'].includes(item.notification));
+ if(ready.length){
+  const text='Ngành Kinh tế số · NTTU [GIÁM SÁT STAGING]\n'+(test?'[KIỂM THỬ]\n':'')+ready.map(code=>'• '+names[code]+'\nMã: '+code+':'+state.incidents[code].firstSeen).join('\n')+'\nGiờ Việt Nam: '+new Date(data.now+7*3600000).toISOString().slice(0,19).replace('T',' ')+'\nhttps://github.com/'+config.GITHUB_REPOSITORY+'/actions/workflows/monitor.yml';
+  try{
+   const response=await fetcher('https://api.telegram.org/bot'+config.MONITOR_TELEGRAM_BOT_TOKEN+'/sendMessage',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:config.MONITOR_TELEGRAM_CHAT_ID,text,disable_web_page_preview:true}),redirect:'error',signal:AbortSignal.timeout(15000)});
+   const body=await response.json();const delivered=response.ok&&body.ok===true&&Number.isSafeInteger(body.result?.message_id);
+   for(const code of ready){state.incidents[code].notification=delivered?'delivered':body.ok===false?'rejected':'unknown';if(delivered)state.incidents[code].messageId=body.result.message_id;}
+   notificationFailed=!delivered;
+  }catch{for(const code of ready)state.incidents[code].notification='unknown';notificationFailed=true;}
+  await save();
+ }
+ // Only fixed codes are logged. Never log provider bodies, error URLs, credentials or captions.
+ const summary={checkedAt:new Date(data.now).toISOString(),issues:result.codes,notified:ready,notificationFailed};
+ return summary;
+}
+if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
+ try{const result=await runMonitor(settings(process.env),{test:process.env.MONITOR_TEST==='true'&&process.env.GITHUB_EVENT_NAME==='workflow_dispatch'});console.log(JSON.stringify(result));if(result.issues.some(code=>code!=='test')||result.notificationFailed)process.exitCode=1;}
+ catch{console.error('Independent monitor failed; configuration/checkpoint/provider unavailable. Sensitive details suppressed.');process.exitCode=1;}
+}

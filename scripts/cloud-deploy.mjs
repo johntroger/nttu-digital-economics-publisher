@@ -59,7 +59,7 @@ export function historyCheckoutOnly(before,after) {
 }
 export function assertLiveUiChanges(paths,historyCheckout=false) {
   if (!Array.isArray(paths) || paths.some(path =>
-    !path.startsWith('ui/cloud/') && !['scripts/cloud-deploy.mjs','tests/cloud.test.mjs','docs/steps/28-nearest-scheduled-trial.md'].includes(path) && !(historyCheckout&&path==='.github/workflows/ci.yml'))) {
+    !path.startsWith('ui/cloud/') && !['scripts/cloud-deploy.mjs','tests/cloud.test.mjs','docs/steps/28-nearest-scheduled-trial.md','scripts/monitor.mjs','tests/monitor.test.mjs','.github/workflows/monitor.yml','docs/steps/29-independent-monitor.md'].includes(path) && !(historyCheckout&&path==='.github/workflows/ci.yml'))) {
     throw new Error('Active schedule only permits reviewed UI/deployment-verification changes; pause required for backend/schema changes');
   }
 }
