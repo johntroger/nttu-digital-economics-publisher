@@ -191,8 +191,8 @@ Tab **Lịch đăng** có phần kết nối fanpage thử, kiểm tra Page toke
 scope và thời hạn qua hai GET Graph. Secret chỉ nằm trong Worker; receipt vận hành
 không có trong backup nội dung. Kết quả mới có hiệu lực 10 phút và bị vô hiệu hóa
 khi cấu hình thay đổi. Đã xác minh thật Trang Tập Viết (551227411605506), đúng
-ứng dụng và đủ scope; chưa bật lịch hoặc đăng bài. Token đang dùng có hạn đến
-12:00 ngày 06/10/2026 giờ Việt Nam, cần xử lý trước vận hành tiếp. Chi tiết:
+ứng dụng và đủ scope; bước này chưa bật lịch hoặc đăng bài. Token đã gia hạn ở
+Bước 21, có hạn đến 10:27:17 ngày 05/12/2026 giờ Việt Nam. Chi tiết:
 `docs/steps/20-meta-test-connection.md`.
 
 ## Bước 21: luồng đăng thử và theo dõi token
@@ -200,5 +200,6 @@ khi cấu hình thay đổi. Đã xác minh thật Trang Tập Viết (551227411
 Lịch đăng có bản xem trước bài kỹ thuật và ảnh ba logo. Máy chủ giới hạn một bài
 trên Tập Viết, ghi intent trước POST, đọc lại caption/ID trước xác nhận và không
 đăng lại khi mất phản hồi. Token còn dưới 24 giờ bị chặn; cảnh báo Telegram khi
-còn tối đa ba ngày. Lịch hằng ngày vẫn dừng. Chưa nghiệm thu đăng thật; cần token
-phù hợp và phê duyệt bản xem trước. Xem `docs/steps/21-meta-trial-publication.md`.
+còn tối đa ba ngày. Đã đăng và đọc lại xác nhận một bài kỹ thuật lên Tập Viết sau
+phê duyệt, lưu lịch sử và Telegram đã tiếp nhận thông báo lần 1. Lịch hằng ngày
+vẫn dừng; 40 đề cương giữ nguyên. Xem `docs/steps/21-meta-trial-publication.md`.

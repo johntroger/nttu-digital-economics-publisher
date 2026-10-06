@@ -49,16 +49,29 @@ Meta giả lập nội bộ, không có bài hoặc tin Telegram thật từ tes
 Bằng chứng riêng: tmp/meta-trial-unit-step21.log, cloud-runtime-step21.log,
 meta-trial-native-final-step21.log và tmp/step-21/browser-results.json.
 
-Chưa nghiệm thu đăng thật. Token hiện tại hết hạn 12:00 ngày 06/10/2026 giờ Việt Nam;
-đang hướng dẫn người quản lý dùng Access Token Debugger. Cần cấu hình token phù hợp,
-xác minh lại, dựng bản xem trước staging và phê duyệt bài cụ thể trước gửi Facebook.
+Người quản lý đã gia hạn token qua Access Token Debugger
+và cập nhật Secret trực tiếp trên Cloudflare. Kiểm tra Graph thật lúc 11:13:52 ngày
+06/10/2026 giờ Việt Nam đạt: PAGE token đúng App 1125636386458970 và Trang Tập Viết
+551227411605506, đủ pages_read_engagement/pages_manage_posts. Token hết hạn
+10:27:17 ngày 05/12/2026; quyền dữ liệu hết hạn 10:27:17 ngày 04/01/2027 (giờ Việt Nam).
+Bản xem trước đã chuẩn bị và người quản lý đã phê duyệt đăng ngay đúng một bài này.
+Bằng chứng riêng: tmp/step-21/staging-token-renewed.png. Không đọc/lưu token trong chat.
 Pre-push đạt 256 Node/SQLite/HTTP tests, 9 kiểm tra ảnh, TypeScript và repository
 guard. Release b8e5727e594a2b0cf3f6bd657397831f3e288668 qua CI Windows/Ubuntu,
 native trial trên Ubuntu và deploy thành công, Actions run 37412035994.
 Nghiệm thu staging ngày 06/10/2026: migration 15, 49 đường dẫn private trả 401,
 40 đề cương, checksum 13 PDF/21 tài nguyên gốc giữ nguyên, 0 publications/jobs,
 lịch vẫn dừng. Tại phiên owner, đã dựng/lưu PNG và snapshot bài thử request
-e6de2e57-0f09-41c6-94ce-4143cb065db8, state=prepared; chưa gửi Facebook.
+e6de2e57-0f09-41c6-94ce-4143cb065db8.
 Bằng chứng riêng: tmp/step-21/remote-evidence.json và staging-trial-preview.png.
-Thời hạn token và nghiệm thu đăng thật còn chờ người quản lý; chưa hoàn tất Bước 21.
+Bước 21 đã nghiệm thu đăng thật ngày 06/10/2026 sau phê duyệt cụ thể. POST ảnh
+thành công, GET đọc lại xác nhận caption/UUID/footer và thời gian; state=published.
+Post ID 551227411605506_1139280348454275, photo ID 1139280325120944; ảnh checksum
+a31f8d9e736260693de4f4cd1de7c79b81722f2ef00aa8e8b757916312a17a79.
+Receipt singleton giữ nút gửi lại bị khóa. Tab Lịch sử hiển thị bài và liên kết
+Facebook; Telegram đã tiếp nhận tin thành công lần 1, message_id=5, state=delivered.
+Không xác nhận người quản lý đã đọc tin. Kho 40 đề cương không bị tiêu, 0 daily
+publications/jobs, application_state.paused_by_user=1. Không bật lịch hằng ngày.
+Bằng chứng riêng: tmp/step-21/publication-evidence.json và staging-trial-published.png.
+Bước 21 hoàn tất phạm vi token và đăng thử một bài; chưa nghiệm thu vận hành tự động.
 Không bắt đầu Bước 22 khi chưa có phê duyệt riêng.
