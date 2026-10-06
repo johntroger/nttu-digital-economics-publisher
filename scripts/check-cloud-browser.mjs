@@ -33,6 +33,8 @@ const browser=await chromium.launch({headless:!headedPDF,args:headedPDF?['--wind
 const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage(),errors=[],results=[];
 page.on('pageerror',error=>errors.push(error.message));
 const check=async(name,fn)=>{await fn();results.push(name);};
+const originalFetch=globalThis.fetch;let telegramMode='blocked';
+globalThis.fetch=async(input,init)=>{const url=typeof input==='string'?input:input instanceof URL?input.href:input.url;if(!url.startsWith('https://api.telegram.org/'))return originalFetch(input,init);if(url.endsWith('/getUpdates'))return Response.json({ok:true,result:[{message:{text:'/start',chat:{id:12345678,type:'private'}}}]});if(telegramMode==='blocked')return Response.json({ok:false},{status:403});return Response.json({ok:true,result:{message_id:41,chat:{id:12345678,type:'private'}}});};
 try {
   await check('anonymous sees login and cannot download management scripts',async()=>{
     await page.goto(base); assert.equal(await page.locator('h1').textContent(),'Phòng nội dung');
@@ -225,9 +227,17 @@ try {
     try{assert.equal(db.prepare('SELECT count(*) n FROM posts').get().n,40);assert.equal(db.prepare('SELECT count(*) n FROM cloud_reviews').get().n,1);assert.equal(db.prepare("SELECT count(*) n FROM post_versions WHERE status!='quarantined'").get().n,0);assert.equal(db.prepare('PRAGMA foreign_key_check').all().length,0);}finally{db.close();}
     writeFileSync('tmp/step-17/browser-restore-result.json',JSON.stringify(restored,null,2));assert.equal((await f.env.DB.prepare('SELECT count(*) n FROM publish_jobs').first()).n,0);
   });
+  await check('Telegram panel blocks sends until configured and discovers only the private start chat ID',async()=>{
+    await page.getByRole('button',{name:'Cảnh báo',exact:true}).click();await page.waitForFunction(()=>document.getElementById('telegram-connection').textContent.includes('chưa đủ'));assert.equal(await page.locator('#telegram-test').isDisabled(),true);
+    Object.assign(f.env,{TELEGRAM_ENABLED:'true',TELEGRAM_BOT_TOKEN:'123456789:'+'t'.repeat(35),TELEGRAM_CHAT_ID:'12345678'});await page.locator('#telegram-refresh').click();await page.waitForFunction(()=>!document.getElementById('telegram-test').disabled);await page.getByText('Thiết lập từ đầu',{exact:true}).click();await page.locator('#telegram-discover').click();await page.waitForFunction(()=>document.getElementById('telegram-chats').textContent.includes('12345678'));assert.equal((await page.content()).includes(f.env.TELEGRAM_BOT_TOKEN),false);
+  });
+  await check('Telegram UI shows permanent failure and retries only the notification after correcting connection',async()=>{
+    await page.locator('#telegram-test').click();await page.waitForFunction(()=>document.getElementById('telegram-events').textContent.includes('Cần xử lý'));assert.equal((await f.env.DB.prepare('SELECT count(*) n FROM notification_outbox').first()).n,1);telegramMode='success';await f.env.DB.prepare('UPDATE cloud_telegram_runtime SET next_send_at=NULL WHERE id=1').run();await page.getByRole('button',{name:'Thử lại sau khi sửa kết nối',exact:true}).click();await page.waitForFunction(()=>document.getElementById('telegram-events').textContent.includes('Đã được Telegram tiếp nhận'));assert.equal((await f.env.DB.prepare('SELECT tries FROM notification_outbox').first()).tries,2);assert.equal((await f.env.DB.prepare('SELECT count(*) n FROM publish_jobs').first()).n,0);await page.setViewportSize({width:1440,height:1000});mkdirSync('tmp/step-18',{recursive:true});await page.screenshot({path:'tmp/step-18/telegram-desktop.png',fullPage:true});await page.setViewportSize({width:390,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);await page.screenshot({path:'tmp/step-18/telegram-mobile.png',fullPage:true});
+  });
   assert.deepEqual(errors,[]);
   writeFileSync('tmp/step-15/browser-results.json',JSON.stringify({results,errors,nativePDFViewer:headedPDF,mode:'isolated local D1/R2 and fixture session; not Google login acceptance'},null,2));
   console.log('PASS '+results.length+' cloud browser checks');
   writeFileSync('tmp/step-16/browser-results.json',JSON.stringify({results,errors,mode:'local private originals and fixture D1/R2; no remote owner mutation'},null,2));
   writeFileSync('tmp/step-17/browser-results.json',JSON.stringify({results,errors,mode:'fixture D1/R2, private originals, independent Python ZIP check and isolated SQLite restore'},null,2));
-} finally {await browser.close();await new Promise(resolve=>server.close(resolve));await f.dispose();}
+  writeFileSync('tmp/step-18/browser-results.json',JSON.stringify({results,errors,mode:'fixture D1/R2 and mocked Telegram; no remote messages'},null,2));
+} finally {globalThis.fetch=originalFetch;await browser.close();await new Promise(resolve=>server.close(resolve));await f.dispose();}

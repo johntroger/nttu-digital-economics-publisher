@@ -37,7 +37,7 @@ export function restoreCloudBundle({bundle,requestId,confirmQuarantine=false}){
   for(const parent of ['tmp','tmp/step-17','tmp/step-17/restores'])if(existsSync(parent)&&lstatSync(parent).isSymbolicLink())fail('BACKUP_PATH_INVALID');
   if(existsSync(target)){if(lstatSync(target).isSymbolicLink())fail('BACKUP_PATH_INVALID');const result=jsonFile(join(target,'restore-result.json'),10000);if(result.manifestHash!==manifestHash)fail('BACKUP_REQUEST_REUSED');return {...result,replayed:true};}
   if(existsSync(building))fail('BACKUP_RESTORE_INCOMPLETE');
-  const trusted=trustedSchema(),business=trusted.definitions.filter(d=>!['cloud_backups','cloud_backup_checks'].includes(d.tbl_name));
+  const trusted=trustedSchema(),business=trusted.definitions.filter(d=>!['cloud_backups','cloud_backup_checks','cloud_telegram_runtime','cloud_telegram_attempts'].includes(d.tbl_name));
   if(hash(JSON.stringify(business))!==BACKUP_SCHEMA.fingerprint||JSON.stringify(verified.snapshot.tables.schema_migrations)!==JSON.stringify(trusted.migrations))fail('BACKUP_SCHEMA_UNSUPPORTED');
   mkdirSync(building,{recursive:true});const database=join(building,'warehouse.sqlite'),db=new DatabaseSync(database);
   try{
@@ -46,7 +46,7 @@ export function restoreCloudBundle({bundle,requestId,confirmQuarantine=false}){
     for(const d of trusted.definitions.filter(d=>d.type==='index'))db.exec(d.sql);
     if(db.prepare('PRAGMA integrity_check').get().integrity_check!=='ok'||db.prepare('PRAGMA foreign_key_check').all().length)fail('BACKUP_DATABASE_INVALID');
     for(const d of trusted.definitions.filter(d=>d.type==='trigger'))db.exec(d.sql);
-    db.exec("UPDATE application_state SET paused_by_user=1,blocked_reasons='[\"RESTORED_BACKUP\"]'; UPDATE post_versions SET status='quarantined',check_version=check_version+1; UPDATE simulation_settings SET enabled=0;");
+    db.exec("UPDATE application_state SET paused_by_user=1,blocked_reasons='[\"RESTORED_BACKUP\"]'; UPDATE post_versions SET status='quarantined',check_version=check_version+1; UPDATE simulation_settings SET enabled=0; UPDATE notification_outbox SET state='quarantined',next_at=NULL WHERE state!='delivered'; INSERT INTO cloud_telegram_runtime(id) VALUES(1);");
     db.exec('COMMIT; PRAGMA foreign_keys=ON');if(db.prepare('PRAGMA integrity_check').get().integrity_check!=='ok'||db.prepare('PRAGMA foreign_key_check').all().length)fail('BACKUP_DATABASE_INVALID');
   }catch(error){try{db.exec('ROLLBACK');}catch{}if(error.code?.startsWith('BACKUP_'))throw error;fail('BACKUP_DATABASE_INVALID');}finally{db.close();}
   for(const file of verified.manifest.files){const output=join(building,file.path);mkdirSync(dirname(output),{recursive:true});copyFileSync(join(verified.root,file.path),output);}

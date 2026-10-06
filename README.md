@@ -167,3 +167,12 @@ chưa có lịch tự động hoặc tự xóa. Bản cùng R2 cần thêm bản
 Khôi phục ZIP đã giải nén bằng `scripts/cloud-backup-restore.mjs` vào SQLite dưới
 tmp mới, mọi phiên bản quarantined/lịch dừng. Không ghi đè D1/R2 hiện tại và không
 chuyển binding sang kho khác. Giới hạn và nghiệm thu: `docs/steps/17-cloud-backups.md`.
+
+## Bước 18: Telegram và hàng chờ
+
+Tab **Cảnh báo** có thiết lập mã chat, gửi tin kiểm thử và trạng thái hàng chờ.
+Token/mã chat lưu Secret Worker; TELEGRAM_ENABLED=true bật gửi. Chỉ chat cá nhân.
+Cron mỗi 5 phút xử lý tối đa một tin, tách khỏi lịch Facebook. Mất phản hồi có
+thể lặp thông báo cùng mã sự kiện; không đăng lại Facebook. Khôi phục cách ly tin
+chưa giao và không khôi phục quyền gửi. Tình trạng nghiệm thu và giới hạn:
+`docs/steps/18-telegram-outbox.md`.

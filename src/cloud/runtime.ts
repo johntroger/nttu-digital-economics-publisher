@@ -15,6 +15,9 @@ export interface CloudBindings {
   GOOGLE_CLIENT_ID?: string;
   GOOGLE_CLIENT_SECRET?: string;
   SESSION_SIGNING_KEY?: string;
+  TELEGRAM_BOT_TOKEN?: string;
+  TELEGRAM_CHAT_ID?: string;
+  TELEGRAM_ENABLED?: string;
   ASSETS?: { fetch(request: Request): Promise<Response> };
   MEDIA?: {
     put(key: string, data: ArrayBuffer | Uint8Array, options?: { onlyIf?: { etagDoesNotMatch: string }; httpMetadata?: { contentType: string }; customMetadata?: Record<string,string> }): Promise<unknown>;

@@ -1,9 +1,11 @@
 import {createArtworkBuilder} from './artwork-ui.js';
 import {createBackupsPanel} from './backups.js';
+import {createTelegramPanel} from './telegram-ui.js';
 const $ = id => document.getElementById(id);
 let session, catalog, selected, resources, sourceCatalog, postAudit, pendingSave, pendingImage, pendingReview, saving = false, opening = 0;
 const artworkBuilder=createArtworkBuilder({root:$('editor'),getPost:()=>selected,isDirty:dirty,isBusy:()=>saving,api,message,csrf:()=>session.csrf,setBusy:lock,reload:async id=>{selected=null;lock(false);await loadLibrary();await loadCatalog();await openPost(id,true);}});
 const backupsPanel=createBackupsPanel({root:$('main'),api,message});
+const telegramPanel=createTelegramPanel({root:$('main'),api,message});
 const mediaSection = document.createElement('section'); mediaSection.className = 'media-section';
 const mediaHeading = document.createElement('h3'); mediaHeading.textContent = 'Ảnh minh họa của phiên bản';
 const mediaImage = document.createElement('img'); mediaImage.id = 'post-image'; mediaImage.hidden = true;
@@ -145,7 +147,8 @@ for (const id of ['search', 'group']) $(id).addEventListener(id === 'search' ? '
 $('body').addEventListener('input', preview);$('edit-form').addEventListener('input',refreshReview);
 for (const button of document.querySelectorAll('[data-view]')) button.addEventListener('click', () => {
   for (const item of document.querySelectorAll('[data-view]')) item.removeAttribute('aria-current'); button.setAttribute('aria-current', 'page');
-  const view = button.dataset.view; $('posts-view').hidden = view !== 'posts'; $('library-view').hidden = view !== 'library';$('backups-view').hidden=view!=='backups'; $('other-view').hidden = ['posts','library','backups'].includes(view);
+  const view = button.dataset.view; $('posts-view').hidden = view !== 'posts'; $('library-view').hidden = view !== 'library';$('backups-view').hidden=view!=='backups';$('telegram-view').hidden=view!=='notifications'; $('other-view').hidden = ['posts','library','backups','notifications'].includes(view);
+  if(view==='notifications'){telegramPanel.load().catch(error=>message(error.message,true));return;}
   if(view==='backups'){backupsPanel.load().catch(error=>message(error.message,true));return;}
   if(view === 'library') {loadLibrary().catch(error=>message(error.message,true));return;}
   $('other-content').replaceChildren();
