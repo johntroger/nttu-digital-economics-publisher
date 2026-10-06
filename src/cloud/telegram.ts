@@ -15,11 +15,15 @@ export async function discoverTelegram(env:CloudBindings,transport:Transport=fet
     const response=await transport('https://api.telegram.org/bot'+env.TELEGRAM_BOT_TOKEN+'/getUpdates',{method:'POST',redirect:'manual',headers:{'Content-Type':'application/json'},body:JSON.stringify({limit:10,timeout:0,allowed_updates:['message']}),signal:controller.signal});
     const reader=response.body?.getReader(),parts:Uint8Array[]=[];let size=0;if(reader){while(true){const part=await reader.read();if(part.done)break;size+=part.value.length;if(size>32768){await reader.cancel();fail('TELEGRAM_DISCOVERY_FAILED',503);}parts.push(part.value);}}
     const bytes=new Uint8Array(size);let at=0;for(const p of parts){bytes.set(p,at);at+=p.length;}
+    if(response.status===401||response.status===404)fail('TELEGRAM_TOKEN_INVALID',409);
+    if(response.status===409)fail('TELEGRAM_BOT_IN_USE',409);
+    if(response.status===429)fail('TELEGRAM_RATE_LIMIT',429);
+    if(response.status>=500)fail('TELEGRAM_PROVIDER_UNAVAILABLE',503);
     const body=JSON.parse(new TextDecoder().decode(bytes)) as {ok?:boolean;result?:{message?:{text?:string;chat?:{id?:number;type?:string}}}[]};
     if(response.status!==200||body.ok!==true||!Array.isArray(body.result))fail('TELEGRAM_DISCOVERY_FAILED',503);
     const ids=[...new Set(body.result.filter(u=>u.message?.chat?.type==='private'&&u.message?.text?.trim()==='/start'&&Number.isSafeInteger(u.message.chat.id)&&u.message.chat.id!>0).map(u=>String(u.message!.chat!.id)))];
     return{chatIds:ids};
-  }catch{fail('TELEGRAM_DISCOVERY_FAILED',503);}finally{clearTimeout(timer);}
+  }catch(error){if(error instanceof CatalogError)throw error;fail('TELEGRAM_DISCOVERY_FAILED',503);}finally{clearTimeout(timer);}
 }
 // No payload-supplied recipients, arbitrary text, parse_mode, redirects or raw provider errors.
 export function notificationText(eventId:string,payload:unknown):string {

@@ -8,6 +8,8 @@ import { createServer } from 'node:net';
 import { HEARTBEAT_CRON } from '../src/cloud/runtime.ts';
 import { runManagementSmoke } from './cloud-management-smoke.mjs';
 import { Miniflare, convertV4MiniflareOptions } from 'miniflare';
+import {SignJWT} from 'jose';
+import {POLICY} from '../src/domain/policy.ts';
 const output = 'tmp/cloud-smoke/' + randomUUID();
 const { directory } = prepareCloud({ output });
 const configPath = resolve(directory, 'wrangler.json');
@@ -91,3 +93,15 @@ try {
   assert(second.category === 'provider' && second.status === 302 && exchanges === 2, 'OAuth must not follow provider redirects');
   console.log('OAuth Workers runtime passed: form POST, private diagnostic and redirects blocked; no real Google calls.');
 } finally { await oauth.dispose(); }
+
+// Verify native Workers fetch and JSON parsing for Telegram; provider stays inside fixture.
+const telegramOrigin='https://nttu-publisher-staging.example.workers.dev',signing='a'.repeat(64);
+let telegramCalls=0;
+const telegram=new Miniflare(convertV4MiniflareOptions({workers:[{name:'telegram-fixture',modules:true,scriptPath:resolve(directory,'bundle/worker.js'),compatibilityDate:'2026-10-05',d1Databases:['DB'],bindings:{APP_ENV:'staging',INTEGRATION_MODE:'unconfigured',AUTH_ORIGIN:telegramOrigin,GOOGLE_CLIENT_ID:'fixture.apps.googleusercontent.com',GOOGLE_CLIENT_SECRET:'fixture-only-secret',SESSION_SIGNING_KEY:signing,TELEGRAM_BOT_TOKEN:'123456789:'+'t'.repeat(35)},outboundService:async request=>{telegramCalls++;assert(request.url.endsWith('/getUpdates'),'Telegram endpoint must be fixed');assert(request.method==='POST','Telegram JSON POST required');return Response.json({ok:true,result:[{message:{text:'/start',chat:{id:12345678,type:'private'}}}]});}}]}));
+try{
+  const db=await telegram.getD1Database('DB');
+  for(const sql of ["CREATE TABLE cloud_runtime(id INTEGER,environment TEXT,last_scheduled_at INTEGER,heartbeat_count INTEGER)","INSERT INTO cloud_runtime VALUES(1,'staging',NULL,0)","CREATE TABLE application_state(environment TEXT,paused_by_user INTEGER)","INSERT INTO application_state VALUES('staging',1)","CREATE TABLE schema_migrations(name TEXT)","INSERT INTO schema_migrations VALUES('1'),('2'),('3'),('4'),('5'),('6')"])await db.prepare(sql).run();
+  const jwt=await new SignJWT({email:POLICY.ownerEmail,csrf:'c'.repeat(64)}).setSubject('fixture').setProtectedHeader({alg:'HS256',typ:'nttu-session+jwt'}).setIssuer(telegramOrigin).setAudience('nttu-manager').setIssuedAt().setExpirationTime('1h').sign(new TextEncoder().encode(signing));
+  const response=await telegram.dispatchFetch(telegramOrigin+'/api/telegram/discover',{method:'POST',headers:{Cookie:'__Host-nttu_session='+jwt,Origin:telegramOrigin,'X-CSRF-Token':'c'.repeat(64),'Content-Type':'application/json'},body:'{}'});
+  const result=await response.json();assert(response.status===200&&result.chatIds?.[0]==='12345678','Native Telegram fetch/JSON failed: '+JSON.stringify(result));assert(telegramCalls===1,'Exactly one fixture API call required');console.log('Telegram native Workers fetch passed: bounded JSON POST, private chat discovery; no external Telegram request.');
+}finally{await telegram.dispose();}
