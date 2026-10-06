@@ -1,7 +1,7 @@
 // Local D1 integration evidence. Fixture sessions never reach a remote Worker.
 import { getPlatformProxy } from 'wrangler';
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readFileSync,writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import assert from 'node:assert/strict';
 import { pathToFileURL } from 'node:url';
@@ -19,10 +19,11 @@ import {createBackup,continueBackup,checkBackup,backupManifest,backupFile} from 
 import {BACKUP_SCHEMA} from '../src/cloud/backup-schema.ts';
 import {enqueueTelegramTest,dispatchTelegram} from '../src/cloud/telegram.ts';
 
-export async function managementFixture() {
+export async function managementFixture({testOnlyMigration}={}) {
   const output = 'tmp/cloud-management/' + crypto.randomUUID();
   const origin = 'https://nttu-publisher-staging.example.workers.dev';
   const { directory } = prepareCloud({ output, origin, storageEnabled: true });
+  if(testOnlyMigration)writeFileSync(resolve(directory,'migrations','0014_test_only_workflow.sql'),testOnlyMigration);
   const configPath = resolve(directory, 'wrangler.json'), state = resolve(directory, 'state');
   const migration = spawnSync(process.execPath, [resolve('node_modules/wrangler/bin/wrangler.js'), 'd1', 'migrations', 'apply', 'DB', '--local', '--config', configPath, '--persist-to', state],
     { encoding: 'utf8', timeout: 120000, env: { ...process.env, WRANGLER_SEND_METRICS: 'false', CI: 'true' } });

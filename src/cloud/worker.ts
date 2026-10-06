@@ -8,6 +8,7 @@ import {designResources,saveArtwork} from './artwork.ts';
 import {DESIGN_REGISTRY} from './design-registry.ts';
 import {listBackups,createBackup,continueBackup,checkBackup,backupManifest,backupFile} from './backups.ts';
 import {telegramStatus,enqueueTelegramTest,retryTelegram,dispatchTelegram,discoverTelegram} from './telegram.ts';
+import {cloudWorkflowStatus} from './workflow.ts';
 
 const UI_HEADERS = { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer',
   'Content-Security-Policy': "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'" };
@@ -70,7 +71,7 @@ export default {
     try { assertStaging(env); } catch { return json({ code: 'CONFIGURATION_NOT_READY' }, 503); }
     const path = new URL(request.url).pathname;
     if (request.method === 'GET' && path === '/health') {
-      return json({ service: 'nttu-publisher', step: 18, environment: 'staging',
+      return json({ service: 'nttu-publisher', step: 19, environment: 'staging',
         integrationMode: 'unconfigured', publishingImplemented: false,
         databaseChecked: false, schedulerImplemented: false, heartbeatImplemented: true,
         release: env.RELEASE_SHA ?? 'local' });
@@ -104,6 +105,7 @@ export default {
     }
     try {
       if (path === '/api/me' && request.method === 'GET') return json({ email: session.email, csrf: session.csrf });
+      if(path==='/api/workflow')return request.method==='GET'?json(await cloudWorkflowStatus(env)):json({code:'METHOD_NOT_ALLOWED'},405);
       if(path==='/api/telegram'&&request.method==='GET')return json(await telegramStatus(env));
       if(['/api/telegram/test','/api/telegram/retry','/api/telegram/discover'].includes(path)){
         if(request.method!=='POST')return json({code:'METHOD_NOT_ALLOWED'},405);

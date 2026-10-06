@@ -807,3 +807,13 @@ subdomain đã duyệt cụ thể; không tạo gói trả phí/production. Chư
 GUI/dựng ảnh local cần chuyển API sang D1/R2 và
 Google auth ở các bước tiếp theo đã trình/phê duyệt riêng. Không tải private tài liệu/logo
 lên cloud trong bước này. Chi tiết và cổng nghiệm thu: docs/steps/12-staging-foundation.md.
+
+## Phạm vi được duyệt Bước 19 — 06/10/2026
+
+Sau Google/R2/biên tập/rà soát/dựng ảnh/sao lưu và Telegram đã nghiệm thu,
+người quản lý chọn xây nền điều phối D1 và kiểm thử giả lập trước kết nối Meta.
+Kho giả lập tách khỏi staging, chỉ dùng đích fixture và không gửi ra ngoài.
+Lịch đăng staging chỉ đọc trạng thái điều kiện; lịch thật tiếp tục dừng.
+Nghiệm thu intent/receipt, retry 5 phút/tối đa ba lần, dự phòng cùng ngày,
+unknown/đối chiếu muộn, chống trùng ngày, rollback D1 và auth trước chuyển bước.
+Chi tiết phạm vi/giới hạn: docs/steps/19-cloud-workflow.md.

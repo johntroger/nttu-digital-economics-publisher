@@ -63,6 +63,7 @@ try {
   await Promise.race([new Promise(resolve => child.once('exit', resolve)), new Promise(resolve => setTimeout(resolve, 5000))]);
 }
 await runManagementSmoke();
+await (await import('./cloud-workflow-smoke.mjs')).runCloudWorkflowSmoke({bundlePath:resolve(directory,'bundle/worker.js')});
 // Exercise OAuth's actual fetch implementation inside workerd, not only Node mocks.
 // This catches runtime differences such as unsupported redirect='error'. No Google request leaves this fixture.
 let exchanges = 0, redirectFixture = false;

@@ -157,6 +157,12 @@ for (const button of document.querySelectorAll('[data-view]')) button.addEventLi
   heading.textContent = labels[view] ?? 'Kho bài';
   text.textContent = view === 'schedule' ? 'Lịch tự động đang dừng. Thời gian dự kiến: 10:00 mỗi ngày theo giờ Việt Nam. Bài đăng thủ công trên fanpage độc lập.' : view === 'history' ? 'Chưa có bài đăng Facebook thật trong môi trường staging.' : 'Telegram chưa được kết nối trong môi trường staging.';
   $('other-content').append(heading, text);
+  if(view==='schedule'){
+    const preflight=document.createElement('p');preflight.id='workflow-preflight';preflight.setAttribute('role','status');preflight.textContent='Đang kiểm tra điều kiện vận hành…';$('other-content').append(preflight);
+    api('/api/workflow').then(report=>{
+      preflight.textContent=`${report.totalPosts} bài trong kho · ${report.reviewedPosts} bài đã rà soát · ${report.eligibleToPublish} bài được cấp quyền đăng. Chưa kết nối Facebook và chưa bật bộ đăng thật. Bộ giả lập chỉ chạy trong kho kiểm thử riêng.`;
+    }).catch(()=>{preflight.textContent='Chưa kiểm tra được điều kiện vận hành. Lịch đăng vẫn dừng.';});
+  }
   for (const row of catalog[view === 'history' ? 'publications' : view === 'schedule' ? 'schedule' : 'notifications'] ?? []) {
     const item = document.createElement('p');
     item.textContent = view === 'history' ? `${row.confirmed_at} · ${row.caption_snapshot}`

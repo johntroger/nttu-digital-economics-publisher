@@ -176,3 +176,11 @@ Cron mỗi 5 phút xử lý tối đa một tin, tách khỏi lịch Facebook. M
 thể lặp thông báo cùng mã sự kiện; không đăng lại Facebook. Khôi phục cách ly tin
 chưa giao và không khôi phục quyền gửi. Tình trạng nghiệm thu và giới hạn:
 `docs/steps/18-telegram-outbox.md`.
+
+## Bước 19: nền điều phối D1 và giả lập riêng
+
+Luồng cloud bất đồng bộ kiểm thử trên D1 local riêng: intent/receipt, ngày thực
+tế, retry/dự phòng, unknown, crash và rollback. Chạy `npm run test:cloud:workflow`.
+Tab **Lịch đăng** hiển thị kiểm tra điều kiện chỉ đọc; chưa có bài được cấp quyền
+đăng thật. Bộ giả lập không có trong bundle Worker, không ghi lịch sử staging
+và không gửi Facebook/Telegram thật. Xem `docs/steps/19-cloud-workflow.md`.

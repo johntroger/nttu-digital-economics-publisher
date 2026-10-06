@@ -98,3 +98,14 @@ Tin thật lúc 09:33 giờ Việt Nam có receipt delivered, tries=1, message_i
 người quản lý xác nhận nhận được. Lịch Facebook vẫn dừng; nối các sự kiện
 đăng/tồn kho sẽ thuộc bước cloud publisher được phê duyệt sau. Chưa chuyển Bước 19. Chi tiết:
 docs/steps/18-telegram-outbox.md.
+
+## Bước 19 — kiểm thử local đã đạt, chờ CI/staging (06/10/2026)
+
+Được duyệt phạm vi điều phối cloud và giả lập. Nền runner D1 bất đồng bộ đã
+kiểm thử intent/receipt, ngày thực tế, retry 5 phút/ba lần, dự phòng, unknown,
+đối chiếu muộn, crash và rollback. 17 ca workflow và 6 ca D1/workerd local đạt;
+22 kiểm tra giao diện đạt. GET /api/workflow riêng cho Google owner chỉ đọc;
+tab Lịch đăng hiển thị điều kiện và không có quyền bật giả lập hay đăng thật.
+Schema/engine fixture không đưa vào staging, không thay kho 40 bài hay 21 tài
+nguyên. CI và nghiệm thu staging của release cuối chờ xác nhận. Chưa triển
+khai Bước 20. Chi tiết: docs/steps/19-cloud-workflow.md.

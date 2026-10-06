@@ -1,7 +1,7 @@
 # Bước 18 — Telegram và hàng chờ thông báo
 
 Phê duyệt 06/10/2026: người quản lý chọn kết nối Telegram và hàng chờ.
-Đã triển khai nền trên staging; đang chờ hoàn tất cấu hình để nghiệm thu gửi thật.
+Đã triển khai và nghiệm thu gửi thật trên staging, người quản lý xác nhận nhận tin.
 Facebook vẫn dừng.
 
 Tab Cảnh báo có trạng thái, tin kiểm thử, lấy mã chat từ /start và thử lại
