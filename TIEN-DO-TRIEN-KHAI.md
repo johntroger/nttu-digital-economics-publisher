@@ -87,12 +87,14 @@ publisher, Gemini runtime, Meta hoặc Telegram live tại mốc này. Các báo
 docs/steps/13-google-management.md đến 17-cloud-backups.md ghi bằng chứng cụ thể.
 Các mốc cũ phía trên là lịch sử và không phản ánh tình trạng cloud hiện hành.
 
-## Bước 18 — đang nghiệm thu (06/10/2026)
+## Bước 18 — đã nghiệm thu (06/10/2026)
 
 Người quản lý đã chọn Telegram và hàng chờ. Đã xây/triển khai tab Cảnh báo,
 thiết lập chat cá nhân và nền gửi bền vững có intent/receipt, retry/backoff,
 delivery_unknown, chặn đổi đích, auth/CSRF. 220 Node tests, 21 GUI checks và
 9 kiểm tra ảnh đạt; CI Windows/Ubuntu và native Workers fetch/D1/R2 đạt.
-Người quản lý đã tạo bot, lưu token qua Cloudflare và gửi /start; chờ lưu mã
-chat/bật cấu hình rồi nghiệm thu tin thật. Chưa chuyển Bước 19. Chi tiết:
+Người quản lý đã tạo bot, lưu token/mã chat qua Cloudflare và bật thông báo.
+Tin thật lúc 09:33 giờ Việt Nam có receipt delivered, tries=1, message_id=3;
+người quản lý xác nhận nhận được. Lịch Facebook vẫn dừng; nối các sự kiện
+đăng/tồn kho sẽ thuộc bước cloud publisher được phê duyệt sau. Chưa chuyển Bước 19. Chi tiết:
 docs/steps/18-telegram-outbox.md.

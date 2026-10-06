@@ -57,7 +57,19 @@ Staging release ae08c3f2ae896bb7c9a029020256f7bc1e3b7920 qua GitHub Actions;
 13 migrations, 40 private paths không đăng nhập trả 401, health bearer không
 được đọc Telegram. Dữ liệu gốc giữ nguyên checksum, lịch dừng, publish 501.
 Đã gọi getUpdates thật qua phiên Google owner và nhận mã chat cá nhân /start.
-Token không đọc/đưa vào chat hoặc Git. Chờ người quản lý lưu TELEGRAM_CHAT_ID,
-TELEGRAM_ENABLED=true và kiểm tra tin thật; chưa có receipt gửi thật.
+Token không đọc/đưa vào chat hoặc Git. Người quản lý đã lưu TELEGRAM_CHAT_ID
+và TELEGRAM_ENABLED=true; nghiệm thu gửi thật đã đạt như ghi bên dưới.
 Bằng chứng riêng: tmp/step-18/browser-results.json, telegram-desktop.png,
 telegram-mobile.png, remote-evidence.json. Không coi thử giả lập là live pass.
+
+## Nghiệm thu Telegram thật — 06/10/2026
+
+Release 9e3888ba73219253555c492c68f0ef9cecd720b6: CI Ubuntu/Windows và
+triển khai staging đều thành công. Gửi một tin kiểm thử qua giao diện Google
+owner lúc 09:33 giờ Việt Nam; event telegram-test:24576bb7-3a69-43d2-8596-42e90339f652.
+D1 ghi delivered, tries=1, message_id=3, last_error=null và không còn intent
+đang xử lý. Người quản lý xác nhận đã nhận tin trong cuộc trò chuyện với bot.
+Bằng chứng riêng: tmp/step-18/live-delivery.json và staging-telegram-delivered.png.
+Bước 18 hoàn thành phạm vi kết nối Telegram/hàng chờ. Lịch Facebook vẫn dừng;
+các sự kiện đăng bài/tồn kho chờ tích hợp với cloud publisher ở bước được duyệt
+sau. Chưa triển khai Bước 19.
