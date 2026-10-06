@@ -11,7 +11,8 @@ const artworkBuilder=createArtworkBuilder({root:$('editor'),getPost:()=>selected
 const backupsPanel=createBackupsPanel({root:$('main'),api,message});
 const telegramPanel=createTelegramPanel({root:$('main'),api,message});
 const metaPanel=createMetaPanel({api,message});
-const dailyPanel=createDailyPanel({api,message});
+const dailyPanel=createDailyPanel({api,message,onState:updateDailyBanner});
+function updateDailyBanner(state){$('daily-banner').textContent=state.enabled?'Lịch đăng đang bật trên Tập Viết':'Lịch đăng đang tạm dừng';}
 const contentTrialPanel=createContentTrialPanel({api,message});
 const trialPanel=createTrialPanel({api,message,csrf:()=>session.csrf});
 const mediaSection = document.createElement('section'); mediaSection.className = 'media-section';
@@ -163,7 +164,7 @@ for (const button of document.querySelectorAll('[data-view]')) button.addEventLi
   const heading = document.createElement('h2'), text = document.createElement('p');
   const labels = { schedule: 'Lịch đăng', history: 'Lịch sử', notifications: 'Cảnh báo' };
   heading.textContent = labels[view] ?? 'Kho bài';
-  text.textContent = view === 'schedule' ? 'Lịch tự động đang dừng. Thời gian dự kiến: 10:00 mỗi ngày theo giờ Việt Nam. Bài đăng thủ công trên fanpage độc lập.' : view === 'history' ? 'Chưa có bài đăng Facebook thật trong môi trường staging.' : 'Telegram chưa được kết nối trong môi trường staging.';
+  text.textContent = view === 'schedule' ? 'Lịch đăng hằng ngày dùng giờ Việt Nam. Giờ thử và trạng thái vận hành hiển thị trong bảng bên dưới. Bài đăng thủ công trên fanpage độc lập.' : view === 'history' ? 'Chưa có bài đăng Facebook thật trong môi trường staging.' : 'Telegram chưa được kết nối trong môi trường staging.';
   $('other-content').append(heading, text);
   if(view==='history'){
     text.textContent='Lịch sử kho nội dung và bài kiểm thử kỹ thuật được ghi nhận riêng.';
@@ -179,8 +180,8 @@ for (const button of document.querySelectorAll('[data-view]')) button.addEventLi
     trialPanel.mount($('other-content'));trialPanel.load().catch(e=>message(e.message,true));
     const preflight=document.createElement('p');preflight.id='workflow-preflight';preflight.setAttribute('role','status');preflight.textContent='Đang kiểm tra điều kiện vận hành…';$('other-content').append(preflight);
     api('/api/workflow').then(report=>{
-      preflight.textContent=`${report.totalPosts} bài trong kho · ${report.reviewedPosts} bài đã rà soát · ${report.eligibleToPublish} bài được cấp quyền đăng. Chưa bật bộ đăng Facebook thật. Bộ giả lập chỉ chạy trong kho kiểm thử riêng.`;
-    }).catch(()=>{preflight.textContent='Chưa kiểm tra được điều kiện vận hành. Lịch đăng vẫn dừng.';});
+      preflight.textContent=`${report.totalPosts} bài trong kho · ${report.reviewedPosts} bài đã rà soát · Trạng thái đăng thật theo bảng lịch hằng ngày. Bộ giả lập chỉ chạy trong kho kiểm thử riêng.`;
+    }).catch(()=>{preflight.textContent='Chưa kiểm tra được điều kiện vận hành. Xem trạng thái trong bảng lịch hằng ngày.';});
   }
   for (const row of (view==='history'?[]:catalog[view === 'schedule' ? 'schedule' : 'notifications']) ?? []) {
     const item = document.createElement('p');
@@ -245,6 +246,6 @@ $('upload-form').addEventListener('submit',async event=>{
     await loadLibrary();message(result.reused?'File đã có trong thư viện; đã dùng lại bản đã lưu.':'Đã lưu file vào thư viện riêng tư.');
   } catch(error){message(error.message,true);}finally{$('upload-file').disabled=!resources?.configured;}
 });
-(async () => { try { session = await api('/api/me'); $('account').textContent = session.email; await loadCatalog(); await loadLibrary();sourceCatalog=await api('/api/sources'); message('Kho staging đã tải. Lịch đăng vẫn đang dừng.'); } catch (error) { message(error.message, true); } })();
+(async () => { try { session = await api('/api/me'); updateDailyBanner(await api('/api/daily')); $('account').textContent = session.email; await loadCatalog(); await loadLibrary();sourceCatalog=await api('/api/sources'); message('Kho staging đã tải.'); } catch (error) { message(error.message, true); } })();
 
 function appendPresence(root,observation){const p=document.createElement('p');p.setAttribute('role','status');const labels={available:'Bài còn trên fanpage',unavailable:'Không còn truy cập được bài trên fanpage',unverified:'Chưa xác minh được trạng thái bài'};p.textContent=observation?(labels[observation.check_result]+' · Kiểm tra: '+new Date(observation.checked_at).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh'})):'Chưa kiểm tra bài trên fanpage';if(observation?.first_unavailable_at)p.textContent+=' · Lần đầu ghi nhận không truy cập được: '+new Date(observation.first_unavailable_at).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh'});root.append(p);}
