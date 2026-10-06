@@ -14,6 +14,7 @@
     "catalog": "node scripts/catalog.mjs",
     "simulate": "node scripts/simulate.mjs",
     "samples": "node scripts/samples.mjs build",
+    "samples:review": "node scripts/build-sample-review.mjs",
     "test:images": "node scripts/samples.mjs test",
     "test:portable": "node scripts/test-portable.mjs",
     "check:repository": "node scripts/check-repository.mjs",
