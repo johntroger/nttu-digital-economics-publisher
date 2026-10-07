@@ -6,7 +6,10 @@ import {metaFingerprint} from '../../src/cloud/meta.ts';
 import {POLICY} from '../../src/domain/policy.ts';
 import {TRIAL_PAGE} from '../../src/cloud/meta-trial.ts';
 const owner={email:POLICY.ownerEmail,sub:'fixture',csrf:''};
-export async function seedDailyFixture(f){Object.assign(f.env,{META_APP_ID:'123456789012345',META_APP_SECRET:'s'.repeat(40),META_PAGE_ID:TRIAL_PAGE,META_PAGE_ACCESS_TOKEN:'t'.repeat(80),META_API_VERSION:'v26.0',META_CONNECTION_PURPOSE:'test',DAILY_PUBLISHING_ENABLED:'true'});
+// Seed approval evidence before the simulated publishing dates, independently of
+// the host clock. Tests within a file run sequentially; restore the caller clock.
+export async function seedDailyFixture(f){const PreviousDate=globalThis.Date,seedTime=PreviousDate.parse('2026-10-06T00:00:00Z');globalThis.Date=class extends PreviousDate{constructor(...args){super(...(args.length?args:[seedTime]));}static now(){return seedTime;}};try{return await buildDailyFixture(f);}finally{globalThis.Date=PreviousDate;}}
+async function buildDailyFixture(f){Object.assign(f.env,{META_APP_ID:'123456789012345',META_APP_SECRET:'s'.repeat(40),META_PAGE_ID:TRIAL_PAGE,META_PAGE_ACCESS_TOKEN:'t'.repeat(80),META_API_VERSION:'v26.0',META_CONNECTION_PURPOSE:'test',DAILY_PUBLISHING_ENABLED:'true'});
  const registry=[{id:'CAREER-01',name:'Fixture',pages:2,sha256:await checksum(pdf),authority:'document'}],ref={id:'CAREER-01',pages:[1],section:'Fixture',supports:'Căn cứ tài liệu.',adaptation:'Bài tập sinh viên.'};
  await uploadFile(f.env,owner,{kind:'document',filename:'Fixture.pdf',contentType:'application/pdf',sourceKey:'CAREER-01'},pdf);
  const image=await uploadFile(f.env,owner,{kind:'image',filename:'Fixture.png',contentType:'image/png'},png());
