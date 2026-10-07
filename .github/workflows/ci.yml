@@ -39,6 +39,7 @@ jobs:
           npm run test:cloud
           node scripts/production-management-smoke.mjs
           node scripts/production-publisher-smoke.mjs
+          node scripts/production-live-smoke.mjs
   deploy-staging:
     name: Deploy staging foundation
     needs: portable-checks

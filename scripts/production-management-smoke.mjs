@@ -43,7 +43,7 @@ try{
  const cookie='__Host-nttu_session='+jwt;
  const health=await mf.dispatchFetch(origin+'/health');assert.equal(health.status,200);assert.equal((await health.json()).publishingEnabled,false);
  assert.equal(readFileSync(resolve(directory,'bundle/worker.js'),'utf8').includes('production_fixture_jobs'),false);
- for(const path of ['/api/me','/api/management','/api/production/preview','/management.js','/manager.html'])assert.equal((await mf.dispatchFetch(origin+path)).status,401);
+ for(const path of ['/api/me','/api/management','/api/production/preview','/api/production/preflight','/management.js','/manager.html'])assert.equal((await mf.dispatchFetch(origin+path)).status,401);
  const manager=await mf.dispatchFetch(origin+'/',{headers:{Cookie:cookie}});assert.equal(manager.status,200);assert.match(await manager.text(),/Kho nội dung/);
  const read=await mf.dispatchFetch(origin+'/api/management',{headers:{Cookie:cookie}});assert.equal(read.status,200);const data=await read.json();assert.deepEqual(data.posts,[]);assert.deepEqual(data.history,[]);assert.equal(data.paused,true);
  assert.equal((await mf.dispatchFetch(origin+'/api/meta/check',{method:'POST',headers:{Cookie:cookie},body:'{}'})).status,403);
@@ -62,6 +62,9 @@ try{
  for(const f of library){await db.prepare('INSERT INTO cloud_library VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)').bind(f.id,f.kind,f.id,f.source_key??null,f.checksum,'private/'+f.id,f.kind==='image'?'image/png':'application/pdf',5000,f.width??null,f.height??null,'complete','owner','now').run();
   if(f.kind==='image')await db.prepare('INSERT INTO assets VALUES(?,?,?,?,?,?,?,?)').bind('library-'+f.id,'private/'+f.id,f.checksum,'image/png',1080,1080,5000,'complete').run();}
  await db.batch(productionWarehouseStatements(pack,library,'f'.repeat(64),'2026-10-07T03:00:00Z').map(sql=>db.prepare(sql)));
+ const preflight=await mf.dispatchFetch(origin+'/api/production/preflight',{headers:{Cookie:cookie}});assert.equal(preflight.status,200);const gates=await preflight.json();assert.equal(gates.schemaReady,true);assert.equal(gates.state,'closed');assert.ok(Object.values(gates.gates).every(v=>v===false));
+ for(const token of ['b','d'])assert.equal((await mf.dispatchFetch(origin+'/api/production/publisher/tick',{method:'POST',headers:{Authorization:'Bearer '+token.repeat(64)}})).status,401);
+ assert.equal((await db.prepare('SELECT heartbeat_count FROM production_publisher_runtime').first()).heartbeat_count,0);
  const previewResponse=await mf.dispatchFetch(origin+'/api/production/preview',{headers:{Cookie:cookie}});assert.equal(previewResponse.status,200);const preview=await previewResponse.json();assert.equal(preview.valid,40);assert.equal(preview.calendar.length,30);assert.equal(preview.reserves.length,10);assert.equal(preview.publishingEnabled,false);
  assert.equal((await mf.dispatchFetch(origin+'/api/production/preview',{method:'POST',headers:{Cookie:cookie},body:'{}'})).status,405);
  const warehouse=await(await mf.dispatchFetch(origin+'/api/management',{headers:{Cookie:cookie}})).json();assert.equal(warehouse.posts.length,40);assert.ok(warehouse.posts.every(p=>p.contentDesignApproved&&p.imageUrl));assert.deepEqual(warehouse.schedule,[]);assert.deepEqual(warehouse.history,[]);assert.equal(warehouse.publishingEnabled,false);

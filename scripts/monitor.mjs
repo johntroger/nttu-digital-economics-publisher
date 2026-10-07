@@ -29,7 +29,7 @@ export function settings(env){
  return {...env,origin:ORIGIN};
 }
 export function businessDay(now){return new Date(now+7*3600000).toISOString().slice(0,10);}
-const names={worker:'Cloud chưa phản hồi hoặc nhận dạng không đúng.',status:'Không đọc được trạng thái riêng của cloud.',database:'Không đọc được dữ liệu vận hành D1.',heartbeat:'Nguồn kích hoạt vận hành chưa ghi heartbeat hoặc hoàn tất lượt xử lý mới trong hơn 20 phút.',config:'Cấu hình lịch và quyền bật lịch không khớp.',late:'Đã quá giờ đăng 20 phút nhưng chưa có bài được xác minh.',unknown:'Kết quả đăng hôm nay chưa rõ; cần đối soát, không đăng lại.',trigger_delay:'Yêu cầu từ lịch bên ngoài mất hơn 10 phút mới bắt đầu kiểm tra.',monitor_gap:'Bộ giám sát có khoảng trống kiểm tra trên 75 phút.',test:'Tin kiểm thử giám sát độc lập. Không thay đổi lịch hoặc đăng Facebook.'};
+const names={publisher:'Bộ đăng production có trạng thái khác cấu hình cửa đóng đã duyệt.',publisher_budget:'Bộ đăng vượt ngân sách truy vấn/thời gian hoặc lượt chạy bị lỗi.',worker:'Cloud chưa phản hồi hoặc nhận dạng không đúng.',status:'Không đọc được trạng thái riêng của cloud.',database:'Không đọc được dữ liệu vận hành D1.',heartbeat:'Nguồn kích hoạt vận hành chưa ghi heartbeat hoặc hoàn tất lượt xử lý mới trong hơn 20 phút.',config:'Cấu hình lịch và quyền bật lịch không khớp.',late:'Đã quá giờ đăng 20 phút nhưng chưa có bài được xác minh.',unknown:'Kết quả đăng hôm nay chưa rõ; cần đối soát, không đăng lại.',trigger_delay:'Yêu cầu từ lịch bên ngoài mất hơn 10 phút mới bắt đầu kiểm tra.',monitor_gap:'Bộ giám sát có khoảng trống kiểm tra trên 75 phút.',test:'Tin kiểm thử giám sát độc lập. Không thay đổi lịch hoặc đăng Facebook.'};
 export function triggerInfo(config,now){
  const source=config.MONITOR_TRIGGER_SOURCE||'manual';if(!['manual','github-schedule','cron-job.org'].includes(source))throw Error('Monitor trigger source invalid');
  const stamp=config.MONITOR_TRIGGER_AT||'';if(source==='cron-job.org'&&!/^\d{10}$/.test(stamp))throw Error('External trigger timestamp required');
@@ -42,12 +42,18 @@ export function assessProduction({health,status,snapshot},now){
  const codes=[],observed=['worker','status','database'];
  if(!health||health.environment!=='production'||health.phase!=='management'||! /^[a-f0-9]{40}$/.test(health.release??'')||health.publishingEnabled!==false||health.schedulerImplemented!==false||health.operationsSchedulerImplemented!==true)codes.push('worker');
  if(!status||status.environment!=='production'||status.databaseChecked!==true||status.schemaReady!==true||status.publishingEnabled!==false||status.paused!==true)codes.push('status');
- if(!snapshot||snapshot.environment!=='production'||snapshot.enabled!==0||snapshot.paused_by_user!==1||snapshot.migration_count!==13||![0,1].includes(snapshot.http_enabled)||!Number.isSafeInteger(snapshot.jobs)||!Number.isSafeInteger(snapshot.publications))codes.push('database');
+ if(!snapshot||snapshot.environment!=='production'||snapshot.enabled!==0||snapshot.paused_by_user!==1||![13,14].includes(snapshot.migration_count)||![0,1].includes(snapshot.http_enabled)||!Number.isSafeInteger(snapshot.jobs)||!Number.isSafeInteger(snapshot.publications))codes.push('database');
  else{
   observed.push('heartbeat','config');const http=snapshot.http_enabled===1;
   const times=http?[snapshot.last_http_at,snapshot.last_complete_at]:[snapshot.last_scheduled_at];
   if(times.some(t=>!Number.isSafeInteger(t)||t>now+60000||now-t>20*60000))codes.push('heartbeat');
   if(snapshot.jobs!==0||snapshot.publications!==0||status?.triggerSource!==(http?'http':'cron'))codes.push('config');
+ }
+ if(snapshot?.migration_count===14){
+  observed.push('publisher','publisher_budget','unknown');const p=status?.publisher;
+  if(!p?.schemaReady||p.state!=='closed'||p.counts?.permits!==0||p.counts?.publications!==0||Object.values(p.gates??{}).some(Boolean))codes.push('publisher');
+  if(p?.counts?.unknown>0)codes.push('unknown');
+  if(p?.runtime?.last_queries>50||p?.runtime?.last_duration_ms>30000||p?.runtime?.state==='failed')codes.push('publisher_budget');
  }
  if(status&&status.environment==='production'&&status.databaseChecked===true){
   observed.push('meta','meta_expiring','meta_expired','telegram');

@@ -130,3 +130,7 @@ Bước 36 chưa được phê duyệt và chưa code. Phạm vi đề xuất �
 ## Bước 36 — đã hoàn thành phạm vi chuẩn bị
 
 Đã xây bản xem trước riêng tư 30 ngày và bộ publisher giả lập với gate mặc định khóa, intent/evidence/finalization, phục hồi rollback và timeout 10 giây. Kho thật 40/40 khớp duyệt; mô phỏng 30 ngày giữ nguyên 10 dự phòng, không outbound Meta. Native D1 và bộ xử lý biên dịch workerd đều đạt. CI Windows/Ubuntu đã đạt và phần xem trước đã triển khai. Giao diện owner hiển thị 40/40 khớp duyệt; đổi ngày preview không tạo lịch/job/publication. HTTP Telegram vẫn hoạt động, staging giữ release cũ; chưa mở production CHECK/gate, chưa đăng thật. Chi tiết: `docs/steps/36-production-publisher.md`.
+
+## Bước 37 — hoàn thành adapter live với cửa đăng đóng
+
+Schema14 và adapter D1/R2 production đã triển khai sau CI Windows/Ubuntu. 395/395 kiểm thử và 13 kiểm tra ảnh đạt; native workerd/D1/R2 kiểm chứng intent, unknown, timeout, race, evidence recovery bằng outbound mock. Migration/rollback trên bản sao D1 thật giữ nguyên 40 approvals. Preflight owner hiển thị cửa đóng/chưa cấp; D1 production 0 permit/job/publication, publisher heartbeat0. Telegram HTTP và lịch staging giữ nguyên; monitor sau rollout thành công, không incident. CPU thực tế preflight5ms/preview36ms, chưa đo toàn đường gửi Facebook; không coi đã sẵn sàng đăng. Không tạo Secret/job ngoài mới, không bật lịch, không POST Meta thật. Chi tiết: docs/steps/37-production-live-adapter.md; draft PR9. Bước38 chưa được phê duyệt, xem đề xuất riêng.
