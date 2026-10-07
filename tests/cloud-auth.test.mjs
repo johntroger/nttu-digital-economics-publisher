@@ -13,6 +13,8 @@ const { privateKey, publicKey } = await generateKeyPair('RS256');
 const jwk = await exportJWK(publicKey); jwk.kid = 'fixture';
 const keys = createLocalJWKSet({ keys: [jwk] });
 const request = (path, cookie = '', extra = {}) => new Request(env.AUTH_ORIGIN + path, { headers: { Cookie: cookie, ...extra } });
+
+test('Anonymous login page does not claim the real publishing schedule is paused',async()=>{for(const gate of ['true','false']){const response=await worker.fetch(request('/'),{...env,DAILY_PUBLISHING_ENABLED:gate});assert.equal(response.status,200);const html=await response.text();assert.ok(html.includes('Đăng nhập để xem trạng thái lịch đăng Facebook.'));assert.ok(!html.includes('Lịch đăng Facebook đang dừng.'));}});
 async function identity(nonce, changes = {}, signingKey = privateKey) {
   return new SignJWT({ nonce, email: POLICY.ownerEmail, email_verified: true, ...changes })
     .setProtectedHeader({ alg: 'RS256', kid: 'fixture' }).setSubject('google-owner-id')

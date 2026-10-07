@@ -57,9 +57,13 @@ export async function ensureStagingResources(settings, env, fetcher = fetch) {
 export function historyCheckoutOnly(before,after) {
   return typeof before==='string' && typeof after==='string' && after!==before && after.replace(/^\s*fetch-depth: 0\r?\n/m,'')===before;
 }
-export function assertLiveUiChanges(paths,historyCheckout=false) {
+export function loginStatusCopyOnly(before,after) {
+  const original='<small>Lịch đăng Facebook đang dừng.</small>',replacement='<small>Đăng nhập để xem trạng thái lịch đăng Facebook.</small>';
+  return typeof before==='string'&&typeof after==='string'&&before.split(original).length===2&&after===before.replace(original,replacement);
+}
+export function assertLiveUiChanges(paths,historyCheckout=false,loginStatusCopy=false) {
   if (!Array.isArray(paths) || paths.some(path =>
-    !path.startsWith('ui/cloud/') && !['scripts/cloud-deploy.mjs','tests/cloud.test.mjs','tests/helpers/cloud-daily-fixture.mjs','tests/cloud-content-trial.test.mjs','docs/steps/28-nearest-scheduled-trial.md','scripts/monitor.mjs','tests/monitor.test.mjs','.github/workflows/monitor.yml','docs/steps/29-independent-monitor.md'].includes(path) && !(historyCheckout&&path==='.github/workflows/ci.yml'))) {
+    !path.startsWith('ui/cloud/') && !['scripts/cloud-deploy.mjs','tests/cloud.test.mjs','tests/cloud-auth.test.mjs','tests/helpers/cloud-daily-fixture.mjs','tests/cloud-content-trial.test.mjs','docs/steps/28-nearest-scheduled-trial.md','scripts/monitor.mjs','tests/monitor.test.mjs','.github/workflows/monitor.yml','docs/steps/29-independent-monitor.md','docs/steps/30-operational-acceptance.md','docs/operations.md'].includes(path) && !(historyCheckout&&path==='.github/workflows/ci.yml') && !(loginStatusCopy&&path==='src/cloud/worker.ts'))) {
     throw new Error('Active schedule only permits reviewed UI/deployment-verification changes; pause required for backend/schema changes');
   }
 }
@@ -85,7 +89,12 @@ export async function deploymentState(settings, fetcher = fetch) {
       const old=spawnSync('git',['show',body.release+':.github/workflows/ci.yml'],{encoding:'utf8'}),next=spawnSync('git',['show',settings.releaseSha+':.github/workflows/ci.yml'],{encoding:'utf8'});
       historyCheckout=old.status===0&&next.status===0&&historyCheckoutOnly(old.stdout,next.stdout);
     }
-    assertLiveUiChanges(paths,historyCheckout);
+    let loginStatusCopy=false;
+    if(paths.includes('src/cloud/worker.ts')){
+      const old=spawnSync('git',['show',body.release+':src/cloud/worker.ts'],{encoding:'utf8'}),next=spawnSync('git',['show',settings.releaseSha+':src/cloud/worker.ts'],{encoding:'utf8'});
+      loginStatusCopy=old.status===0&&next.status===0&&loginStatusCopyOnly(old.stdout,next.stdout);
+    }
+    assertLiveUiChanges(paths,historyCheckout,loginStatusCopy);
   }
   return {paused:state.paused,publishingEnabled:state.publishingEnabled};
 }

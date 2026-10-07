@@ -1,0 +1,55 @@
+# Hướng dẫn vận hành Phòng nội dung
+
+## Truy cập và lịch
+
+Staging: https://nttu-publisher-staging.nttu-kts-johntroger.workers.dev/. Đăng nhập Google bằng tranthanhtung37@gmail.com. Nếu phiên hết hạn, đăng nhập lại; không nhập token vào caption hoặc chat. Staging hiện đăng lên Tập Viết, Page ID 551227411605506.
+
+Hệ thống chạy trên cloud khi máy tính tắt. Giờ Việt Nam: 08:00 kiểm tra các bài lịch sử; 09:55 chuẩn bị; 10:00 đăng một bài. Cron xử lý mỗi năm phút nên dịch vụ chậm có thể làm bài đăng muộn. Bài thủ công của người quản lý không được tính thay cho bài tự động và không bị workflow chỉnh sửa.
+
+Mỗi ngày xem lịch, công việc đang xử lý, tồn kho, lịch sử và Telegram. Bài đăng thành công phải có publication ID/lịch sử xác nhận, snapshot và thông báo đã giao; HTTP thành công hoặc trạng thái đang gửi chưa đủ. Bài không còn đọc được trên Facebook được ghi nhận là không truy cập được; lỗi quyền/kết nối không chứng minh bài bị xóa. Hệ thống không đăng lại bài bị người quản lý xóa.
+
+## Nội dung và bổ sung kho
+
+Kho ban đầu gồm 30 bài theo lịch và 10 dự phòng. Bài đã đăng chuyển vào lịch sử; kho giảm theo sử dụng. Không tự gọi Gemini hoặc tạo bổ sung khi hết kho. Còn không quá ba bài đủ điều kiện thì cảnh báo; hết kho thì dừng và báo bổ sung. Thời điểm cảnh báo tương đương khoảng ba ngày chỉ khi mỗi ngày dùng một bài; lỗi/dự phòng có thể làm tồn kho giảm nhanh hơn.
+
+Chuẩn bị nội dung mới từ nguồn đã được xác minh, kiểm tra lịch sử để tránh trùng, tạo ảnh, kiểm tra thiết kế và duyệt đúng phiên bản trước đưa vào kho. Biên nhận duyệt gắn với caption, checksum ảnh, footer và nguồn; chỉnh sửa làm biên nhận cũ mất hiệu lực. Không sửa hàng loạt status thành ready để bỏ qua kiểm tra.
+
+Ảnh vuông, ba logo chuẩn cùng một hàng trên cùng; giữ tỷ lệ và hình dạng logo. Luân phiên infographic và ảnh ít chữ theo chủ đề. Caption có dòng ============ trước footer; chỉ một footer và một nhóm hashtag; TikTok dùng đúng URL đã chốt. Giới thiệu ngành dựa trên tài liệu khóa 2026, thời lượng 3,5 năm; không tự thêm cam kết thu nhập/tuyển sinh.
+
+## Khi đăng gặp lỗi
+
+| Trạng thái | Cách xử lý |
+|---|---|
+| Facebook xác nhận lỗi có thể thử lại | Hệ thống thử cùng snapshot, tối đa ba lần, cách năm phút |
+| Hết lượt hoặc bị từ chối nội dung rõ ràng | Giữ công việc lỗi; chọn dự phòng cùng nhóm trước, rồi nhóm khác; có thể tiếp tục dự phòng trong ngày nếu kết quả trước đã rõ |
+| Timeout, 5xx hoặc không rõ đã đăng chưa | Không bấm gửi lại hoặc ép lấy dự phòng. Kiểm tra Facebook, lấy ID bài đã xuất hiện rồi dùng chức năng đối soát |
+| Token/quyền Facebook không hợp lệ | Lịch dừng và báo Telegram; thay thông tin kết nối riêng tư, kiểm tra đúng Page, giải quyết công việc tồn đọng trước bật lại |
+| Đã có bằng chứng thành công nhưng lịch sử chưa cập nhật | Chờ phục hồi/đối soát; không POST lại. Bằng chứng bền vững ngăn tạo bài thứ hai |
+| Hết kho | Bổ sung và duyệt nội dung; kiểm tra cảnh báo/công việc cũ trước bật lại |
+| Telegram không rõ đã gửi hay chưa | Kiểm tra cuộc trò chuyện và outbox; không reset hàng chờ hàng loạt để tránh thông báo trùng |
+
+Ngày bỏ lỡ không đăng bù nhiều bài. Bài chưa gửi về dự phòng; ngày hôm sau tiếp tục một bài. Nếu xác nhận muộn một bài đã được Facebook tạo, hệ thống dùng ngày thực tế của bài để chặn bài thứ hai cho ngày đó.
+
+## Giám sát độc lập
+
+cron-job.org gửi POST tới workflow monitor.yml trên main mỗi 30 phút. GitHub giữ logic giám sát/checkpoint và secret Cloudflare/Telegram. GitHub còn hai lượt dự phòng lúc 09:23 và 21:23 giờ Việt Nam, theo lịch best effort. Lượt khỏe mạnh không gửi Telegram.
+
+Theo dõi cả lịch sử cron-job.org và GitHub Actions: HTTP 204 chỉ xác nhận nhận yêu cầu, phải có workflow success và checkpoint nguồn cron-job.org. Bật thông báo lỗi của cron-job.org để biết khi yêu cầu bị từ chối; bước này cần người quản lý thực hiện/xác nhận. Nếu GitHub ngừng thực thi hoàn toàn, workflow không thể gửi cảnh báo trong thời gian đó; cảnh báo khoảng trống chỉ xuất hiện khi có lần chạy lại.
+
+Token riêng cho cron-job.org: chỉ repository này, Actions Read and write, thời hạn hiện tại 06/11/2026 lúc 08:24 giờ Việt Nam. Thay trước hạn: tạo token cùng phạm vi, cập nhật header Authorization trong cron-job.org, thử một lần, kiểm tra workflow thành công rồi thu hồi token cũ. Không thay bằng token có quyền rộng hơn. Quyền Actions áp dụng cho các workflow của repository, không giới hạn riêng monitor.yml.
+
+Token Facebook có thể hết hạn hoặc bị thu hồi trước hạn do thay quyền/tài khoản/ứng dụng; kiểm tra kết nối, không dựa vào ngày đã khai báo. Không lưu token trong GitHub source, URL, tài liệu hoặc ảnh chụp. Token cron-job.org chưa có cơ chế nhắc hạn Telegram tự động; hạn trên cần được quản lý riêng.
+
+## Sao lưu và phục hồi
+
+Bản sao lưu cloud qua giao diện yêu cầu lịch dừng và không có công việc chưa rõ kết quả. Không tự dừng lịch đang bật để tạo backup. Khi đã có phê duyệt bảo trì: dừng, giải quyết công việc, tạo/tiếp tục backup tới complete, đối chiếu manifest/checksum, tải bản riêng tư ra ngoài và kiểm thử restore cô lập.
+
+Gói phục hồi Bước 30 nằm ở tmp/step30/recovery-bundle, dùng bản xuất D1 hiện tại và tài nguyên khớp checksum. Có 40 bài, 80 phiên bản, 59 tài nguyên và 40 biên nhận duyệt. Ứng dụng trong bản sao được chuyển sang dừng để phục hồi an toàn; bản SQL gốc vẫn giữ trạng thái thật và dữ liệu vận hành/thử riêng. Không import SQL gốc thẳng vào cloud đang chạy.
+
+Chỉ dùng CLI restoreCloudBundle với manifest hợp lệ để phục hồi vào thư mục cô lập. Bản khôi phục mặc định quarantined và paused, không tự nhận quyền đăng. Kiểm tra dữ liệu, tài nguyên, lịch sử và quyền trước đưa sang môi trường mới. Secret không nằm trong backup nghiệp vụ, cần cấu hình lại riêng.
+
+Lưu ít nhất một bản đầy đủ ở nơi riêng tư độc lập với máy tính. Kho GitHub chứa code và metadata, không thay thế backup database/ảnh/PDF. Sao lưu định kỳ, retention và khôi phục trực tiếp lên cloud chưa được triển khai.
+
+## Trước khi bật môi trường chính thức
+
+Chờ nghiệm thu, phê duyệt riêng và bước triển khai production. Backend hiện giới hạn Page thử; chỉ đổi Page ID trên staging không phải quy trình chuyển production. Không cho staging và production cùng đăng vào một Page. Khi production được phép hoạt động, bảo đảm lịch, kho, thông báo, giám sát và backup đều trỏ đúng môi trường.
