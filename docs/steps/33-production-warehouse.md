@@ -22,4 +22,15 @@ Bốn kiểm thử mới: đủ 40 phiên bản/biên nhận, không trạng th�
 
 Native workerd smoke áp dụng 40 bài bằng D1 batch thật trong fixture, kiểm tra API đọc kho, current reviews, không lịch/lịch sử và nhập lặp bị chặn; đạt. Google trong fixture giả lập, không gửi cookie giả lên cloud. Các nguồn và PNG riêng tư không được đưa vào Git/CI.
 
-Nghiệm thu remote sẽ được ghi sau khi CI đạt, đọc lại đủ 56 object, đối chiếu D1 và kiểm tra giao diện production thật. Token/cookie không nằm trong báo cáo.
+## Nghiệm thu remote — 07/10/2026
+
+CI 37564862190 đạt cho release ece11fa28b5098e7e65c4f3d540d16e60b8fb0f1; 342/342 kiểm thử Node và 13 kiểm tra ảnh trước push đạt. R2 đã đọc lại đủ 56 object, checksum nguyên trạng. D1 nhập thành công lúc 03:19:44 UTC (10:19:44 Việt Nam), đủ 40 bài/40 biên nhận, 30 chính/10 dự phòng, không slot/job/publication/notification/Page connection. Fingerprint c2760cd6e30b410af065f7b495fc57dba6f812a92a0145ef00c8c4109d4221c9.
+
+Snapshot D1 sau nhập được audit độc lập qua readCatalog/eligibility: 40 bài không có lỗi nguồn/facts/binding; chỉ còn NOT_READY và CHECKS_INVALID đúng phạm vi khóa đăng. Integrity và foreign_key_check đạt. Bản trước/sau nhập nằm riêng trong tmp/step33; không đưa caption/PDF/ảnh/snapshot vào Git.
+
+Worker đã triển khai phần xem kho. Health xác nhận DB được kiểm tra, publisher/scheduler không bật; 12 kiểm tra khách/bearer vào API/HTML/JS/file từ chối 401. Staging giữ release 556db22c45e1dcdc76b9628a51415730d007da42, không deploy staging.
+
+Phiên Google owner thật tải 40 bài và 56 tệp. Mở P01/P03: ảnh R2 tải đủ 1080px, caption đúng footer/separator/TikTok/hashtag. P05 hiển thị khóa 2026, 3,5 năm, nguồn theo trang và xác nhận owner. Desktop/mobile 390px đã kiểm tra, scrollWidth 375px không tràn ngang. Nút làm mới và các mục lịch/lịch sử/thông báo/kết nối đã kiểm tra; lịch tắt, lịch sử/thông báo trống và các kết nối vận hành chưa nghiệm thu.
+
+Bằng chứng riêng: tmp/step33/evidence.json, domain-audit.json, web-evidence.json và ảnh giao diện. Bước tiếp theo đề xuất: kết nối/xác minh fanpage chính thức, vẫn chưa bật đăng; cần phê duyệt riêng.
+

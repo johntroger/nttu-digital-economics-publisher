@@ -7,7 +7,7 @@ function render(){
  panel.replaceChildren();const titles={overview:'Chuẩn bị fanpage chính thức',posts:'Kho nội dung',schedule:'Lịch đăng',history:'Lịch sử đăng bài',notifications:'Thông báo',connections:'Kết nối'};
  panel.append(el('h2',titles[view]));
  if(view==='overview'){
-  panel.append(el('p','Kho và lịch sử dưới đây thuộc môi trường chính thức. Nội dung đã duyệt sẽ được nhập và kiểm tra trước khi kết nối đăng bài.'));
+  panel.append(el('p',data.posts.length?'Kho đã nhập và đối chiếu nội dung, ảnh và biên nhận duyệt. Cần hoàn tất kết nối fanpage và nghiệm thu vận hành trước khi bật đăng bài.':'Kho và lịch sử dưới đây thuộc môi trường chính thức. Nội dung đã duyệt sẽ được nhập và kiểm tra trước khi kết nối đăng bài.'));
   panel.append(table(['Hạng mục','Hiện trạng'],[['Kho bài',data.posts.length+' bài'],['Ảnh và tài liệu',data.library.reduce((n,x)=>n+Number(x.count),0)+' tệp'],['Bài đã đăng',data.history.length===100?'100 bài gần nhất':data.history.length+' bài'],['Đăng nhập quản lý',identity.email],['Fanpage',data.connectionVerified?'Đã xác minh':'Chờ xác minh'],['Lịch đăng','Đang tắt']]));
   panel.append(el('p','Thời gian đăng dự kiến: 10:00 mỗi ngày, theo giờ Việt Nam. Chỉ bật sau khi hoàn tất kết nối, kho nội dung và nghiệm thu.'));
  }else if(view==='posts'){
