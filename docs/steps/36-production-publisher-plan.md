@@ -1,6 +1,6 @@
 # Bước 36 — Chuẩn bị publisher production và kiểm thử giả lập
 
-Trạng thái: người quản lý đã phê duyệt Bước 36 theo phạm vi dưới đây. Đang triển khai và kiểm thử; chưa cấp quyền đăng thật. Báo cáo nghiệm thu nằm trong `36-production-publisher.md`.
+Trạng thái: người quản lý đã phê duyệt Bước 36 theo phạm vi dưới đây. Đã hoàn thành phạm vi chuẩn bị, kiểm thử và triển khai xem trước; chưa cấp quyền đăng thật. Báo cáo nghiệm thu nằm trong `36-production-publisher.md`.
 
 ## Điều kiện hiện tại
 

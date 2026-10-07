@@ -127,6 +127,6 @@ Production đã có đăng nhập Google, kho 40 bài/56 assets, xác minh Meta 
 
 Bước 36 chưa được phê duyệt và chưa code. Phạm vi đề xuất ở docs/steps/36-production-publisher-plan.md: chuẩn bị publisher production và kiểm thử giả lập, giữ khóa đăng thật. Các mốc cũ phía trên là lịch sử, không phải trạng thái hiện hành.
 
-## Bước 36 — đã duyệt, đang nghiệm thu
+## Bước 36 — đã hoàn thành phạm vi chuẩn bị
 
-Đã xây bản xem trước riêng tư 30 ngày và bộ publisher giả lập với gate mặc định khóa, intent/evidence/finalization, phục hồi rollback và timeout 10 giây. Kho thật 40/40 khớp duyệt; mô phỏng 30 ngày giữ nguyên 10 dự phòng, không outbound Meta. Native D1 và bộ xử lý biên dịch workerd đều đạt. Chờ CI và triển khai phần xem trước; chưa mở production CHECK/gate, chưa đăng thật. Chi tiết: `docs/steps/36-production-publisher.md`.
+Đã xây bản xem trước riêng tư 30 ngày và bộ publisher giả lập với gate mặc định khóa, intent/evidence/finalization, phục hồi rollback và timeout 10 giây. Kho thật 40/40 khớp duyệt; mô phỏng 30 ngày giữ nguyên 10 dự phòng, không outbound Meta. Native D1 và bộ xử lý biên dịch workerd đều đạt. CI Windows/Ubuntu đã đạt và phần xem trước đã triển khai. Giao diện owner hiển thị 40/40 khớp duyệt; đổi ngày preview không tạo lịch/job/publication. HTTP Telegram vẫn hoạt động, staging giữ release cũ; chưa mở production CHECK/gate, chưa đăng thật. Chi tiết: `docs/steps/36-production-publisher.md`.

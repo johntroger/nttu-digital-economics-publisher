@@ -53,3 +53,18 @@ Kết quả đăng Facebook thật: **NOT_RUN**. Không cam kết exactly-once k
 Chưa có migration mở production, live Meta sender, route đăng thật, lịch bắt đầu được duyệt hoặc publication production. Notification intents giả lập nằm trong bảng fixture riêng; template/outbox live cho publisher cần được tích hợp và kiểm thử trong bước gửi thật. HTTP đang chạy Telegram và monitor 30 phút được giữ nguyên.
 
 Sau nghiệm thu Bước 36, đề xuất Bước 37: chuẩn bị adapter/schema live với cửa vẫn đóng, chạy preflight, rồi xin phê duyệt bài và giờ thử gần nhất trên Page chính thức. Chỉ bật lịch 10:00 sau khi bài thử có bằng chứng xác minh. Phê duyệt Bước 36 không thay thế phê duyệt đó.
+
+## Nghiệm thu triển khai bản xem trước
+
+- Runtime đã triển khai: `caa97b4ea53c42c7a96b3cf8af698b7f0330a5dc`; Cloudflare version `a1cecc7b-7260-4e24-9980-ea46a8fc7cc1`. Không chạy migration trên cloud.
+- [CI runtime 37614703039](https://github.com/johntroger/nttu-digital-economics-publisher/actions/runs/37614703039): Ubuntu và Windows thành công; deploy-staging skipped. Hook trước push: **382 tests / 382 PASS**, TypeScript PASS, **13 kiểm tra ảnh PASS**, kiểm tra repository PASS.
+- [Draft PR #8](https://github.com/johntroger/nttu-digital-economics-publisher/pull/8), xếp trên nhánh Bước 35. Không cập nhật main.
+- SELECT trên D1 production thật: **40/40** bài khớp biên nhận, **30 main / 10 reserve**, 6 truy vấn chỉ đọc cho preview.
+- Health sau deploy đúng release, publishingEnabled=false; **26 kiểm tra quyền riêng tư PASS**. Preview chỉ dành owner; bearer không đọc được. Staging release vẫn `556db22c45e1dcdc76b9628a51415730d007da42`.
+- Owner đã đăng nhập lại qua Google. Giao diện web production hiển thị 40/40 khớp duyệt. Thử đổi ngày bắt đầu sang 09/10 và trả lại 08/10: P01 đổi đúng ngày trong bản xem trước; không lưu lịch. Ảnh nghiệm thu cục bộ: `tmp/step36/calendar-production.png`. Công cụ browser chặn protocol file:// của artifact HTML cục bộ; không đi vòng qua hạn chế đó. Giao diện web HTTPS được kiểm tra trực tiếp bằng phiên owner hợp lệ.
+- D1 trước/sau thử giao diện: **40 posts / 56 assets / 13 migrations**, **0 jobs / 0 slots / 0 publications**; enabled=0, connection_verified=0, page_id=NULL, paused=1. HTTP enabled=1, heartbeat tăng **350 → 364**, lượt cuối hoàn tất, state=idle. Các schema khóa CHECK được giữ nguyên.
+- Bundle quản lý không chứa `production_fixture_jobs`, `FakeProductionPublisher` hoặc fixture staging; phần giả lập không được triển khai.
+
+Bước 36 đã hoàn thành phần code, giả lập, đối chiếu cloud và triển khai xem trước trong phạm vi đã duyệt. Bước gửi thật cần phê duyệt mới.
+
+Lượt [monitor sau deploy 37615844790](https://github.com/johntroger/nttu-digital-economics-publisher/actions/runs/37615844790) đã thành công, checkpoint không có incident. Lịch giám sát ngoài 30 phút giữ nguyên. Phạm vi đề xuất Bước 37 để review trước khi code: `37-production-live-adapter-plan.md`; chưa cấp credential publisher hoặc mở quyền gửi.
