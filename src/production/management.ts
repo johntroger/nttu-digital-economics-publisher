@@ -1,6 +1,7 @@
 import type {CloudBindings} from '../cloud/runtime.ts';
 import {authConfigured} from '../cloud/auth.ts';
 import {composeCaption,FOOTER,CAPTION_SEPARATOR} from '../domain/footer.ts';
+import {verifiedBytes} from '../cloud/storage.ts';
 export interface ManagementBindings extends CloudBindings { PRODUCTION_DATABASE_ID?:string }
 type Row=Record<string,unknown>;
 export async function productionState(env:ManagementBindings) {
@@ -27,8 +28,9 @@ async function rows(env:ManagementBindings,sql:string) {
 export async function managementData(env:ManagementBindings) {
   const state=await productionState(env);
   const posts=await rows(env,`SELECT p.id,p.content_key,p.topic_group,p.pool,v.version,v.caption_title,
-    v.body,v.status,e.stage FROM posts p JOIN content_entries e ON e.post_id=p.id
-    JOIN post_versions v ON v.id=e.active_version_id ORDER BY p.content_key`);
+    v.body,v.status,e.stage,v.metadata_json,l.id image_id,r.id review_id FROM posts p JOIN content_entries e ON e.post_id=p.id
+    JOIN post_versions v ON v.id=e.active_version_id LEFT JOIN cloud_library l ON v.asset_id='library-'||l.id AND l.state='complete'
+    LEFT JOIN cloud_reviews r ON r.version_id=v.id AND r.check_version=v.check_version ORDER BY p.content_key`);
   const history=await rows(env,`SELECT pub.remote_id,pub.confirmed_at,pub.caption_snapshot
     FROM publications pub JOIN publish_jobs j ON j.id=pub.job_id
     JOIN page_connections c ON c.id=j.page_connection_id WHERE c.environment='production'
@@ -38,9 +40,20 @@ export async function managementData(env:ManagementBindings) {
     JOIN page_connections c ON c.id=s.page_connection_id WHERE c.environment='production'
     ORDER BY s.business_date LIMIT 100`);
   const library=await rows(env,'SELECT kind,count(*) count FROM cloud_library WHERE state=\'complete\' GROUP BY kind');
+  const libraryFiles=await rows(env,"SELECT id,kind,filename,source_key,checksum,size_bytes FROM cloud_library WHERE state='complete' ORDER BY kind,filename");
   return {environment:'production',readOnly:true,publishingEnabled:false,schedulerImplemented:false,
     ownerLoginConfigured:authConfigured(env),targetPageUrl:state.target_page_url,pageId:null,connectionVerified:false,
     publishTime:state.publish_time,timeZone:state.timezone,paused:true,
-    posts:posts.map(p=>({...p,caption:composeCaption(String(p.body))})),history,notifications,schedule,library,
+    posts:posts.map(p=>{const meta=JSON.parse(String(p.metadata_json));return {...p,metadata_json:undefined,
+      sourceRefs:meta.sourceRefs??[],contentDesignApproved:Boolean(p.review_id),imageUrl:p.image_id?'/api/library/files/'+p.image_id:null,caption:composeCaption(String(p.body))};}),history,notifications,schedule,library,libraryFiles,
     footer:FOOTER,separator:CAPTION_SEPARATOR};
+}
+export async function productionFile(env:ManagementBindings,id:string) {
+  const row=await env.DB!.prepare("SELECT * FROM cloud_library WHERE id=? AND state='complete'").bind(id).first<Row>();
+  if(!row)return new Response('File unavailable',{status:404,headers:{'Cache-Control':'no-store'}});
+  const bytes=await verifiedBytes(env,row);
+  return new Response(bytes,{headers:{'Content-Type':String(row.content_type),'Content-Length':String(bytes.length),
+    'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer',
+    'Content-Security-Policy':"default-src 'none'; frame-ancestors 'none'",
+    'Content-Disposition':"inline; filename*=UTF-8''"+encodeURIComponent(String(row.filename))}});
 }
