@@ -62,8 +62,16 @@ Lưu ít nhất một bản đầy đủ ở nơi riêng tư độc lập với 
 
 ## Trước khi bật môi trường chính thức
 
-Chờ nghiệm thu, phê duyệt riêng và bước triển khai production. Backend hiện giới hạn Page thử; chỉ đổi Page ID trên staging không phải quy trình chuyển production. Không cho staging và production cùng đăng vào một Page. Khi production được phép hoạt động, bảo đảm lịch, kho, thông báo, giám sát và backup đều trỏ đúng môi trường.
+Chờ nghiệm thu, phê duyệt riêng và bước triển khai production. Publisher staging giới hạn Page thử; adapter production dùng tài nguyên và cửa phê duyệt riêng. Chỉ đổi Page ID trên staging không phải quy trình chuyển production. Không cho staging và production cùng đăng vào một Page. Khi production được phép hoạt động, bảo đảm lịch, kho, thông báo, giám sát và backup đều trỏ đúng môi trường.
 
 ### Bản xem trước Bước 36
 
-Giao diện production → Lịch đăng → Bản xem trước 30 ngày. Chọn ngày chỉ thay bản xem trước, không lưu lịch. Endpoint GET `/api/production/preview` chỉ dành owner; trigger/monitor token không có quyền đọc. Không có route gửi production. Bộ publisher fake và schema fixture không được đưa vào Worker quản lý hoặc D1 cloud. Báo cáo và các điều kiện còn khóa: `docs/steps/36-production-publisher.md`.
+Giao diện production → Lịch đăng → Bản xem trước 30 ngày. Chọn ngày chỉ thay bản xem trước, không lưu lịch. Endpoint GET `/api/production/preview` chỉ dành owner; trigger/monitor token không có quyền đọc. Tại Bước36 chưa có route gửi production; Bước37 bổ sung endpoint riêng nhưng chưa cấp credential hoặc mở cửa đăng. Bộ publisher fake và schema fixture không được đưa vào Worker quản lý hoặc D1 cloud. Báo cáo và các điều kiện còn khóa: `docs/steps/36-production-publisher.md`.
+
+### Adapter và preflight Bước 37
+
+Production → Lịch đăng → Kiểm tra trước khi đăng (cuối trang). Cửa triển khai/dữ liệu phải Đóng, quyền đăng/nguồn kích hoạt Chưa cấp, unknown0 và heartbeat publisher0 trong giai đoạn hiện tại. GET `/api/production/preflight` chỉ owner và chỉ đọc. `/api/production/publisher/tick` là endpoint riêng; token Telegram/monitor không hợp lệ tại đây. Không dùng `/api/production/tick` để đăng Facebook: endpoint đó chỉ xử lý Telegram.
+
+Schema14 bổ sung bảng `production_publisher_*` và `production_send_permits`, không nhập fixture hoặc cấp quyền đăng từ approvals22–23. Không tự sửa enabled, tạo permit bằng SQL hoặc cấp Secret publisher để thử. Cần hoàn tất CPU/full dry-run, duyệt bài/ảnh/version/Page/giờ và phê duyệt cấp capability bên ngoài trước khi thử thật. Báo cáo Bước37 và kế hoạch đề xuất Bước38 nằm trong docs/steps.
+
+Nếu kết quả unknown: giữ khóa, không POST lại; chỉ đối soát GET và bằng chứng khớp intent. Nếu finalizer lỗi mà evidence đã lưu: phục hồi evidence, không gửi lại. Pause thu hồi permit, hủy held/retry_wait nhưng giữ requested/unknown. Migration rollback `cloud/production-publisher-rollback.sql` chỉ dành schema rỗng, tắt, không permit/job/evidence/publication; backup trước, kiểm trên bản sao rồi mới thao tác cloud trong phạm vi bảo trì được duyệt. Không rollback xóa biên nhận vận hành thật.
