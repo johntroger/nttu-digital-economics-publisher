@@ -9,7 +9,7 @@ const parse=(s:unknown)=>{try{return JSON.parse(String(s));}catch{return null;}}
 const hash=async(s:string)=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s))),b=>b.toString(16).padStart(2,'0')).join('');
 const same=(a:unknown,b:unknown)=>JSON.stringify(a)===JSON.stringify(b);
 const future=(s:unknown,n:number)=>s==null||Number.isFinite(Date.parse(String(s)))&&Date.parse(String(s))>n;
-async function rows(env:ManagementBindings,sql:string){return (await env.DB!.prepare(sql).all!<Row>()).results;}
+async function rows(env:ManagementBindings,sql:string,values:string[]=[]){return (await env.DB!.prepare(sql).bind(...values).all!<Row>()).results;}
 // All SQL is SELECT. This projection never grants readiness or consumes stock.
 export async function productionPreview(env:ManagementBindings,startDate?:string,now=Date.now()){
  await productionState(env);
@@ -28,7 +28,7 @@ export async function productionPreview(env:ManagementBindings,startDate?:string
   note:'Bản xem trước không lưu lịch và không cấp quyền đăng bài. Ngày bắt đầu cần được duyệt riêng.'};
 }
 
-export async function approvedProductionItems(env:ManagementBindings,now:number){
+export async function approvedProductionItems(env:ManagementBindings,now:number,versionId?:string){
  const [posts,sources,facts,documents,prerequisites]=await Promise.all([
  rows(env,`SELECT p.id,p.content_key,p.topic_group,p.pool,e.stable_order,e.stage,v.id version_id,v.body,v.caption_title,v.status,v.check_version,v.review_due_at,v.metadata_json,
  a.id asset_id,a.checksum,a.width,a.height,a.content_type,a.size_bytes,a.status asset_status,b.asset_id binding_id,b.checksum binding_checksum,b.check_version binding_version,
@@ -37,7 +37,7 @@ export async function approvedProductionItems(env:ManagementBindings,now:number)
  FROM posts p JOIN content_entries e ON e.post_id=p.id JOIN post_versions v ON v.id=e.active_version_id
  LEFT JOIN assets a ON a.id=v.asset_id LEFT JOIN asset_bindings b ON b.version_id=v.id
  LEFT JOIN cloud_library l ON v.asset_id='library-'||l.id
- LEFT JOIN cloud_reviews r ON r.version_id=v.id AND r.check_version=v.check_version ORDER BY e.stable_order,p.id`),
+ LEFT JOIN cloud_reviews r ON r.version_id=v.id AND r.check_version=v.check_version ${versionId?'WHERE v.id=?':''} ORDER BY e.stable_order,p.id`,versionId?[versionId]:[]),
  rows(env,'SELECT x.version_id,x.location ref_json,s.* FROM version_sources x JOIN sources s ON s.id=x.source_id'),
  rows(env,'SELECT x.version_id,f.* FROM version_facts x JOIN facts f ON f.id=x.fact_id'),
  rows(env,"SELECT source_key,checksum FROM cloud_library WHERE kind='document' AND state='complete'"),

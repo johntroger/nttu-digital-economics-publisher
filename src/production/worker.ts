@@ -1,6 +1,7 @@
 import {publisherPreflight,publisherAuthorized,runProductionPublisher} from './publisher-live.ts';
 import type {PublisherBindings} from './publisher-live.ts';
 import {ProductionMetaPublisher} from './publisher-provider.ts';
+import {productionSendPreflight} from './send-preflight.ts';
 import type {ManagementBindings} from './management.ts';
 import {productionState,managementData,productionFile} from './management.ts';
 import {productionPreview} from './preview.ts';
@@ -74,6 +75,15 @@ export default {
       try{return json(await verifyProductionMeta(env,owner,input));}catch(e){const code=e instanceof Error?e.message:'';return json({error:['META_NOT_CONFIGURED','META_REQUEST_INVALID','REQUEST_REUSED','META_BUSY'].includes(code)?code:'META_CHECK_UNAVAILABLE'},code==='REQUEST_REUSED'?409:422);}
     }
     if(request.method==='GET'&&url.pathname==='/api/management')return json(await managementData(env));
+    if(url.pathname==='/api/production/send-preflight'){
+      if(request.method!=='POST')return json({error:'METHOD_NOT_ALLOWED'},405);
+      try{requireMutation(request,env,owner);}catch{return json({error:'CSRF_REQUIRED'},403);}
+      if(url.search||Number(request.headers.get('Content-Length'))>1024)return json({error:'SEND_REVIEW_INVALID'},422);
+      const text=await request.text();if(text.length>1024)return json({error:'SEND_REVIEW_INVALID'},422);
+      let input;try{input=JSON.parse(text);}catch{return json({error:'SEND_REVIEW_INVALID'},422);}
+      try{return json(await productionSendPreflight(env,input,fetch));}
+      catch(e){const code=e instanceof Error?e.message:'';return json({error:/^(SEND_|PREFLIGHT_|FILE_)/.test(code)?code:'SEND_PREFLIGHT_UNAVAILABLE'},422);}
+    }
     if(url.pathname==='/api/production/preflight'){
       if(request.method!=='GET')return json({error:'METHOD_NOT_ALLOWED'},405);
       if(url.search)return json({error:'PREFLIGHT_QUERY_NOT_ALLOWED'},422);

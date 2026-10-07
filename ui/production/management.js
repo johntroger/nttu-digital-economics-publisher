@@ -1,5 +1,5 @@
 const panel=document.querySelector('#panel'),error=document.querySelector('#error');
-let data,identity,preview,preflight,view='overview';
+let data,identity,preview,preflight,sendReview,view='overview';
 function el(tag,text){const x=document.createElement(tag);if(text!==undefined)x.textContent=String(text);return x;}
 function empty(title,body){const box=el('div');box.className='empty';box.append(el('strong',title),el('p',body));return box;}
 function table(head,rows){const t=el('table'),h=el('thead'),tr=el('tr');head.forEach(x=>tr.append(el('th',x)));h.append(tr);t.append(h);const b=el('tbody');rows.forEach(row=>{const r=el('tr');row.forEach(x=>r.append(el('td',x??'—')));b.append(r);});t.append(b);return t;}
@@ -25,6 +25,15 @@ function render(){
    data.libraryFiles.filter(f=>f.kind!=='image').forEach(f=>{const p=el('p'),a=el('a',f.filename);a.href='/api/library/files/'+f.id;a.target='_blank';a.rel='noopener noreferrer';p.append(a);panel.append(p);});
   }
  }else if(view==='schedule'){
+  const reviewBox=el('div');reviewBox.className='send-review';reviewBox.append(el('h3','Chuẩn bị bài thử'),el('p','Chọn bài để kiểm tra caption, ảnh và kết nối fanpage. Thao tác này chưa cấp quyền đăng Facebook.'));
+  const label=el('label','Bài thử '),select=el('select');select.id='send-review-post';
+  [...(preview?.calendar??[]),...(preview?.reserves??[])].forEach(p=>{const option=el('option',p.key+' · '+p.title);option.value=p.versionId;option.disabled=!p.approvalValid;select.append(option);});label.append(select);
+  if(sendReview)select.value=sendReview.dossier.versionId;
+  const check=el('button','Kiểm tra chuẩn bị gửi');check.disabled=!select.options.length;
+  check.addEventListener('click',async()=>{check.disabled=true;error.hidden=true;try{const r=await fetch('/api/production/send-preflight',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':identity.csrf},body:JSON.stringify({versionId:select.value}),redirect:'error'});const result=await r.json();if(!r.ok)throw Error('Chưa kiểm tra được bài thử: '+(result.error??'Hãy thử lại.'));sendReview=result;render();}catch(e){sendReview=null;error.textContent=e.message;error.hidden=false;check.disabled=false;}});
+  reviewBox.append(label,check);
+  if(sendReview){const d=sendReview.dossier,format=n=>new Date(n).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh'});reviewBox.append(el('h3',d.key+' · '+d.title),el('p',sendReview.note),table(['Hồ sơ thử','Giá trị'],[['Fanpage',d.pageName+' · '+d.pageId],['Thời điểm thử đề xuất',format(d.dueAt)+' · Việt Nam'],['Hồ sơ hết hiệu lực',format(Math.min(d.reviewExpiresAt,d.dueAt))],['Trạng thái','Chuẩn bị đã kiểm tra · chưa được phép đăng'],['Phiên bản',d.versionId],['Mã ảnh đã duyệt',d.imageChecksum],['Mã hồ sơ',sendReview.dossierHash]]));const img=el('img');img.src=d.imageUrl;img.alt='Ảnh đã duyệt của bài thử '+d.key;img.className='post-artwork';reviewBox.append(img,el('pre',d.caption),el('p','Sau khi bạn duyệt riêng hồ sơ còn hiệu lực, hệ thống mới được chuẩn bị quyền đăng một lần. Lịch thường vẫn giữ tắt.'));}
+  panel.append(reviewBox);
   panel.append(table(['Thiết lập','Giá trị'],[['Trạng thái','Chưa bật'],['Giờ đăng','10:00 · Việt Nam'],['Tần suất','1 bài tự động/ngày'],['Fanpage','Ngành Kinh tế số – NTTU']]));
   panel.append(data.schedule.length?table(['Ngày','Trạng thái'],data.schedule.map(x=>[x.business_date,x.status])):empty('Chưa có bài được lên lịch','Sau khi kho chính thức và kết nối được nghiệm thu, lịch sẽ được cấu hình với ngày bắt đầu do bạn phê duyệt.'));
   if(preview){
