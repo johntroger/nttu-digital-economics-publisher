@@ -19,6 +19,16 @@ export async function productionPreview(env:ManagementBindings,startDate?:string
  const start=startDate??tomorrow;
  try{scheduledInstant(start);}catch{throw Error('PREVIEW_DATE_INVALID');}
  if(start<businessDate(new Date(now))||scheduledInstant(start).getTime()>now+366*86400000)throw Error('PREVIEW_DATE_INVALID');
+ const items=await approvedProductionItems(env,now);
+ const main=items.filter(p=>p.pool==='scheduled'),reserve=items.filter(p=>p.pool==='reserve');
+ const calendar=main.map((p,i)=>{const day=new Date(Date.parse(start+'T00:00:00Z')+i*86400000).toISOString().slice(0,10);return {...p,day,publishAt:scheduledInstant(day).toISOString(),prerequisitePreviewSatisfied:p.prerequisites.every(id=>main.slice(0,i).some(q=>q.postId===id&&q.approvalValid))};});
+ return {environment:'production',previewOnly:true,publishingEnabled:false,realPublication:'NOT_RUN',checkedAt:new Date(now).toISOString(),startDate:start,timeZone:POLICY.timeZone,publishTime:POLICY.publishTime,
+  resources:PUBLISHER_RESOURCES.production,total:items.length,valid:items.filter(p=>p.approvalValid).length,main:main.length,reserve:reserve.length,warehouseComplete:items.length===40&&main.length===30&&reserve.length===10,
+  calendar,reserves:reserve,gates:{deployment:false,database:false,ownerPublicationApproval:false,liveTransport:false,httpPublisher:false},
+  note:'Bản xem trước không lưu lịch và không cấp quyền đăng bài. Ngày bắt đầu cần được duyệt riêng.'};
+}
+
+export async function approvedProductionItems(env:ManagementBindings,now:number){
  const [posts,sources,facts,documents,prerequisites]=await Promise.all([
  rows(env,`SELECT p.id,p.content_key,p.topic_group,p.pool,e.stable_order,e.stage,v.id version_id,v.body,v.caption_title,v.status,v.check_version,v.review_due_at,v.metadata_json,
  a.id asset_id,a.checksum,a.width,a.height,a.content_type,a.size_bytes,a.status asset_status,b.asset_id binding_id,b.checksum binding_checksum,b.check_version binding_version,
@@ -57,12 +67,7 @@ export async function productionPreview(env:ManagementBindings,startDate?:string
   if(linkedFacts.some(f=>f.status!=='verified'||!future(f.review_due_at,now)||f.cohort!=null&&f.cohort!==2026||!linked.some(s=>s.id===f.source_id&&s.status==='verified')))reasons.push('FACT_INVALID');
   if(p.topic_group==='I'&&[['training_duration_years','3.5'],['cohort','2026']].some(([key,value])=>!linkedFacts.some(f=>f.fact_key===key&&f.value_json===value&&linked.some(s=>s.id===f.source_id&&parse(s.ref_json)?.id==='OWNER-2026'))))reasons.push('PROGRAM_FACTS_INVALID');
   return {postId:p.id,key:p.content_key,versionId:p.version_id,title:p.caption_title,pool:p.pool,order:p.stable_order,caption,imageUrl:p.image_id?'/api/library/files/'+p.image_id:null,
-   imageChecksum:p.checksum,sourceRefs:refs??[],approvalValid:reasons.length===0,reasons:[...new Set(reasons)],prerequisites:prerequisites.filter(q=>q.post_id===p.id).map(q=>q.prerequisite_id)};
+   imageChecksum:p.checksum,checkVersion:p.check_version,receiptDigest:await hash(JSON.stringify([p,linked,linkedFacts,documents])),sourceRefs:refs??[],approvalValid:reasons.length===0,reasons:[...new Set(reasons)],prerequisites:prerequisites.filter(q=>q.post_id===p.id).map(q=>q.prerequisite_id)};
  }));
- const main=items.filter(p=>p.pool==='scheduled'),reserve=items.filter(p=>p.pool==='reserve');
- const calendar=main.map((p,i)=>{const day=new Date(Date.parse(start+'T00:00:00Z')+i*86400000).toISOString().slice(0,10);return {...p,day,publishAt:scheduledInstant(day).toISOString(),prerequisitePreviewSatisfied:p.prerequisites.every(id=>main.slice(0,i).some(q=>q.postId===id&&q.approvalValid))};});
- return {environment:'production',previewOnly:true,publishingEnabled:false,realPublication:'NOT_RUN',checkedAt:new Date(now).toISOString(),startDate:start,timeZone:POLICY.timeZone,publishTime:POLICY.publishTime,
-  resources:PUBLISHER_RESOURCES.production,total:items.length,valid:items.filter(p=>p.approvalValid).length,main:main.length,reserve:reserve.length,warehouseComplete:items.length===40&&main.length===30&&reserve.length===10,
-  calendar,reserves:reserve,gates:{deployment:false,database:false,ownerPublicationApproval:false,liveTransport:false,httpPublisher:false},
-  note:'Bản xem trước không lưu lịch và không cấp quyền đăng bài. Ngày bắt đầu cần được duyệt riêng.'};
+ return items;
 }

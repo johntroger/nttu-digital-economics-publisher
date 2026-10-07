@@ -16,7 +16,8 @@ export function productionMigrations(databaseId) {
     {name:'0010_source_review.sql',sql:readFileSync('cloud/source-review.sql','utf8')},
     {name:'0011_production_meta.sql',sql:readFileSync('cloud/meta.sql','utf8')},
     {name:'0012_production_operations.sql',sql:readFileSync('cloud/telegram.sql','utf8')+readFileSync('cloud/production-operations.sql','utf8')},
-    {name:'0013_production_http_trigger.sql',sql:readFileSync('cloud/production-http-trigger.sql','utf8')});
+    {name:'0013_production_http_trigger.sql',sql:readFileSync('cloud/production-http-trigger.sql','utf8')},
+    {name:'0014_production_publisher.sql',sql:readFileSync('cloud/production-publisher.sql','utf8')});
   return files.map((file,i)=>{const checksum=createHash('sha256').update(file.sql).digest('hex');return {...file,checksum,
     sql:(i===0?'CREATE TABLE schema_migrations(name TEXT PRIMARY KEY,checksum TEXT NOT NULL);\n':'')+file.sql+`\nINSERT INTO schema_migrations VALUES('${file.name}','${checksum}');\n`};});
 }
@@ -25,7 +26,7 @@ export function prepareProductionManagement(settings,{output='tmp/production-man
   const result=prepareProduction(settings,{output});const {directory,config}=result;
   config.main=relative(directory,resolve('src/production/worker.ts')).split(sep).join('/');
   config.vars={...config.vars,INTEGRATION_MODE:'management',AUTH_ORIGIN:new URL(settings.origin).origin,
-    PRODUCTION_DATABASE_ID:settings.databaseId,PRODUCTION_ASSET_BUCKET:'nttu-publisher-production-assets',GOOGLE_CLIENT_ID:clientId,
+    PRODUCTION_PUBLISHER_ENABLED:'false',PRODUCTION_DATABASE_ID:settings.databaseId,PRODUCTION_ASSET_BUCKET:'nttu-publisher-production-assets',GOOGLE_CLIENT_ID:clientId,
     META_APP_ID:'1125636386458970',META_PAGE_ID:'817593604765443',META_API_VERSION:'v26.0',META_CONNECTION_PURPOSE:'production_verify',
     TELEGRAM_CHAT_ID:'1548618770',TELEGRAM_ENABLED:'true'};
   config.triggers={crons:['*/5 * * * *']};

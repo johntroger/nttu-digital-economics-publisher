@@ -1,3 +1,4 @@
+import {publisherPreflight} from './publisher-live.ts';
 import type {ManagementBindings} from './management.ts';
 import {productionState} from './management.ts';
 import {productionMetaStatus} from './meta.ts';
@@ -67,7 +68,7 @@ export async function productionMonitorStatus(env:ManagementBindings){
  const ops=await operationsStatus(env),meta=await productionMetaStatus(env);
  const live=meta.configured?await inspectMetaConnection(env):null;
  return{environment:'production',databaseChecked:true,publishingEnabled:false,paused:true,schemaReady:ops.schemaReady,telegramConfigured:ops.configured,runtime:ops.runtime,http:ops.http,triggerSource:ops.triggerSource,
-  metaConfigured:meta.configured,metaVerified:live?.state==='verified_read_only',metaExpiresAt:live?.expires??null,
+  publisher:await publisherPreflight(env),metaConfigured:meta.configured,metaVerified:live?.state==='verified_read_only',metaExpiresAt:live?.expires??null,
   dataAccessExpiresAt:live?.dataExpires??null,
   notificationsPending:ops.events.filter((e:any)=>!['delivered'].includes(e.state)).length,
   notificationsBlocked:ops.events.filter((e:any)=>['needs_action','delivery_unknown'].includes(e.state)).length};

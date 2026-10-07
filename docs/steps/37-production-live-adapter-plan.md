@@ -1,6 +1,6 @@
 # Bước 37 — Adapter production thật, triển khai với cửa đăng đóng
 
-Trạng thái: đề xuất để người quản lý phê duyệt. Chưa code hoặc triển khai Bước 37.
+Trạng thái: người quản lý đã phê duyệt ngày 07/10/2026. Triển khai trên nhánh codex/step37-production-live-adapter; báo cáo nghiệm thu ở 37-production-live-adapter.md.
 
 Bước 36 đã kiểm chứng kho, trạng thái và giả lập; bộ gửi Meta thật và schema vận hành production chưa được tích hợp. Không được chuyển fixture thành dữ liệu cloud hoặc đổi target của fake provider.
 

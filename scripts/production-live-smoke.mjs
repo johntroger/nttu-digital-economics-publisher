@@ -1,0 +1,46 @@
+import {DatabaseSync} from 'node:sqlite';
+import {productionMigrations} from './production-management-prepare.mjs';
+import {productionWarehouseStatements} from './production-warehouse-import.mjs';
+import assert from 'node:assert/strict';
+import {mkdirSync,writeFileSync,readFileSync} from 'node:fs';
+import {resolve,relative} from 'node:path';
+import {spawnSync} from 'node:child_process';
+import {Miniflare,convertV4MiniflareOptions} from 'miniflare';
+import {liveFixture,LIVE_TEST_TIME as now} from '../tests/helpers/production-live-fixture.mjs';
+const dir=resolve('tmp/step37/native');mkdirSync(dir,{recursive:true});
+writeFileSync(resolve(dir,'wrangler.json'),JSON.stringify({name:'production-live-isolated-test',main:relative(dir,resolve('tests/helpers/production-live-worker.ts')).replaceAll('\\','/'),compatibility_date:'2026-10-07'}));
+const build=spawnSync(process.execPath,[resolve('node_modules/wrangler/bin/wrangler.js'),'deploy','--dry-run','--config',resolve(dir,'wrangler.json'),'--outdir',resolve(dir,'bundle')],{encoding:'utf8',timeout:120000,env:{...process.env,CI:'true',WRANGLER_SEND_METRICS:'false'}});
+if(build.status!==0)throw Error('Live publisher native build failed');
+const f=await liveFixture({open:true});let sends=0,outcome='confirmed',caption=f.item.caption,db,delay=0;
+const bindings=Object.fromEntries(Object.entries(f.env).filter(([key])=>!['DB','MEDIA'].includes(key)));
+const mf=new Miniflare(convertV4MiniflareOptions({workers:[{name:'production-live-isolated-test',modules:true,scriptPath:resolve(dir,'bundle/production-live-worker.js'),compatibilityDate:'2026-10-07',d1Databases:['DB'],r2Buckets:['MEDIA'],bindings,
+ outboundService:async r=>{const url=new URL(r.url);assert.equal(url.origin,'https://graph.facebook.com');
+  if(url.pathname.endsWith('debug_token'))return Response.json({data:{is_valid:true,type:'PAGE',app_id:f.env.META_APP_ID,expires_at:Math.floor(now/1000)+86400,data_access_expires_at:0,scopes:['pages_read_engagement','pages_manage_posts']}});
+  if(url.pathname.endsWith('/me'))return Response.json({id:f.env.META_PAGE_ID,name:'Ngành Kinh tế số - NTTU'});
+  if(r.method==='POST'){assert.equal(url.pathname,'/v26.0/'+f.env.META_PAGE_ID+'/photos');sends++;const form=await r.formData();assert.equal(form.get('caption'),caption);assert.equal(form.get('published'),'true');assert.equal(Buffer.from(await form.get('source').arrayBuffer()).equals(f.imageBytes.get('P01')),true);if(delay)await new Promise(r=>setTimeout(r,delay));if(outcome==='unknown')return new Response('',{status:503});if(outcome==='retryable')return Response.json({error:{code:4}},{status:429});return Response.json({id:'1234567890123456',post_id:f.remote});}
+  return Response.json({id:f.remote,message:caption,created_time:new Date(now).toISOString()});
+ }
+}]}));
+const cases=[],call=async(at=now)=>{const r=await mf.dispatchFetch('https://isolated.invalid/',{method:'POST',body:JSON.stringify({at})});return {http:r.status,...await r.json()};};
+try{
+ db=await mf.getD1Database('DB');
+ const initial=new DatabaseSync(':memory:');for(const m of productionMigrations(f.env.PRODUCTION_DATABASE_ID))initial.exec(m.sql);
+ for(const row of initial.prepare("SELECT sql FROM sqlite_master WHERE sql IS NOT NULL AND name NOT LIKE 'sqlite_%' ORDER BY rowid").all())await db.prepare(row.sql).run();
+ for(const {name} of initial.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").all())for(const row of initial.prepare('SELECT * FROM '+name).all()){const cols=Object.keys(row);await db.prepare('INSERT INTO '+name+'('+cols.join(',')+') VALUES('+cols.map(()=>'?').join(',')+')').bind(...Object.values(row)).run();}
+ for(const name of ['cloud_library','assets'])for(const row of f.db.prepare('SELECT * FROM '+name).all()){const cols=Object.keys(row);await db.prepare('INSERT INTO '+name+'('+cols.join(',')+') VALUES('+cols.map(()=>'?').join(',')+')').bind(...Object.values(row)).run();}
+ await db.batch(productionWarehouseStatements(f.approved,f.library,'f'.repeat(64),'2026-10-07T03:00:00Z').map(s=>db.prepare(s)));
+ const cfg=f.db.prepare('SELECT * FROM production_publisher_config').get();await db.prepare('UPDATE production_publisher_config SET enabled=1,start_date=?,connection_hash=? WHERE id=1').bind(cfg.start_date,cfg.connection_hash).run();
+ await db.prepare("UPDATE application_state SET paused_by_user=0 WHERE environment='production'").run();
+ const permit=f.db.prepare('SELECT * FROM production_send_permits').get();await db.prepare('INSERT INTO production_send_permits('+Object.keys(permit).join(',')+') VALUES('+Object.keys(permit).map(()=>'?').join(',')+')').bind(...Object.values(permit)).run();initial.close();
+ const bucket=await mf.getR2Bucket('MEDIA');await bucket.put('private/P01',f.imageBytes.get('P01'));
+ const reset=async()=>{await db.batch(['DELETE FROM production_publisher_evidence','DELETE FROM production_publisher_attempts','DELETE FROM notification_outbox','DELETE FROM production_publisher_jobs',"UPDATE production_publisher_config SET active_job=NULL,enabled=1,blocked=NULL,stock_pending=0","UPDATE application_state SET paused_by_user=0 WHERE environment='production'",'UPDATE production_publisher_runtime SET lease_id=NULL,lease_until=NULL,last_bucket=NULL'].map(s=>db.prepare(s)));};
+ const diag=await mf.dispatchFetch('https://isolated.invalid/',{method:'POST',body:JSON.stringify({at:now,diagnostic:true})});writeFileSync(resolve(dir,'items.json'),JSON.stringify(await diag.json(),null,2));
+ const first=await call();assert.equal(first.state,'confirmed',JSON.stringify(first));assert.ok(first.queries<=50);assert.equal(sends,1);assert.equal((await call(now+60000)).state,'day_complete');cases.push({name:'compiled live adapter: native D1/R2 bytes, correlated Graph mock and daily uniqueness',queries:first.queries});
+ // Usage is immutable in production; remove only the isolated fixture trigger for reset.
+ await db.prepare('DROP TRIGGER production_usage_no_delete').run();await db.prepare('DELETE FROM production_publisher_usage').run();await reset();delay=100;const start=sends;const race=await Promise.all([call(),call()]);assert.equal(sends-start,1);assert.equal(race.filter(r=>r.state==='confirmed').length,1);cases.push({name:'native D1 concurrent invocation fences POST'});
+ await db.prepare('DELETE FROM production_publisher_usage').run();await reset();delay=0;outcome='unknown';assert.equal((await call()).state,'unknown');const count=sends;assert.equal((await call(now+86400000)).state,'unknown');assert.equal(sends,count);cases.push({name:'5xx unknown retains Page lock next day'});
+ await reset();outcome='confirmed';await db.prepare("CREATE TRIGGER fail_live_native BEFORE INSERT ON production_publisher_usage BEGIN SELECT RAISE(ABORT,'native rollback'); END").run();assert.equal((await call()).http,500);assert.equal((await db.prepare('SELECT count(*) n FROM production_publisher_evidence').first()).n,1);const sent=sends;await db.prepare('DROP TRIGGER fail_live_native').run();await db.prepare("UPDATE application_state SET paused_by_user=1 WHERE environment='production'").run();assert.equal((await call(now+60000)).state,'confirmed');assert.equal(sends,sent);cases.push({name:'durable evidence recovers finalization while paused without POST'});
+ await db.prepare('DELETE FROM production_publisher_usage').run();await reset();outcome='confirmed';delay=11000;const timed=await call();assert.equal(timed.state,'unknown');assert.equal((await call(now+86400000)).state,'unknown');cases.push({name:'ten-second transport budget holds unknown without resend'});
+ await reset();delay=0;await db.prepare('UPDATE production_publisher_config SET enabled=0').run();const closedSends=sends;const closed=await call();assert.equal(closed.state,'closed');assert.equal(sends,closedSends);cases.push({name:'closed production gates: no provider operation',queries:closed.queries});
+ const report={runtime:'compiled workerd + native local D1/R2',imageMode:f.imageMode,cases,mockPosts:sends,realMetaPosts:0,realPublication:'NOT_RUN'};writeFileSync(resolve(dir,'results.json'),JSON.stringify(report,null,2));console.log('Live production native smoke passed: '+cases.length+' scenarios; all outbound calls mocked.');
+}finally{f.db.close();await mf.dispose();}

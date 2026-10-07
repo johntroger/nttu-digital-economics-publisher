@@ -1,3 +1,6 @@
+import {publisherPreflight,publisherAuthorized,runProductionPublisher} from './publisher-live.ts';
+import type {PublisherBindings} from './publisher-live.ts';
+import {ProductionMetaPublisher} from './publisher-provider.ts';
 import type {ManagementBindings} from './management.ts';
 import {productionState,managementData,productionFile} from './management.ts';
 import {productionPreview} from './preview.ts';
@@ -14,10 +17,16 @@ function login(env:ManagementBindings,url:URL) {
   return new Response(`<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Phòng nội dung · NTTU</title><link rel="stylesheet" href="/management.css"><main class="login"><p class="brand">Ngành Kinh tế số · NTTU</p><h1>Phòng nội dung</h1><p class="environment">Môi trường chính thức</p><p>${message}</p>${configured?'<a class="button" href="/auth/google/start">Đăng nhập bằng Google</a>':''}<p class="note">Chưa bật đăng bài tự động.</p></main></html>`,{headers:{...headers,'Content-Type':'text/html; charset=utf-8','Content-Security-Policy':"default-src 'none'; style-src 'self'; font-src 'self'; base-uri 'none'; frame-ancestors 'none'"}});
 }
 export default {
- async fetch(request:Request,env:ManagementBindings):Promise<Response>{
+ async fetch(request:Request,env:PublisherBindings):Promise<Response>{
   try {
     const url=new URL(request.url);
     if(url.origin!==env.AUTH_ORIGIN)return json({error:'PRODUCTION_ORIGIN_INVALID'},403);
+    if(url.pathname==='/api/production/publisher/tick'){
+      if(request.method!=='POST')return json({error:'METHOD_NOT_ALLOWED'},405);
+      if(url.search||!await publisherAuthorized(request,env))return json({error:'PUBLISHER_AUTH_REQUIRED'},401);
+      if(await request.text()!=='')return json({error:'PUBLISHER_BODY_NOT_ALLOWED'},422);
+      return json(await runProductionPublisher(env,new ProductionMetaPublisher(env,fetch)));
+    }
     await productionState(env);
     if(url.pathname==='/api/production/tick'){
       if(request.method!=='POST')return json({error:'METHOD_NOT_ALLOWED'},405);
@@ -27,7 +36,7 @@ export default {
       try{return json(await runProductionHttpTick(env));}catch{return json({error:'TRIGGER_UNAVAILABLE'},503);}
     }
     if(url.pathname==='/health'&&request.method==='GET')return json({environment:'production',phase:'management',release:env.RELEASE_SHA,
-      databaseChecked:true,publishingImplemented:false,publishingEnabled:false,schedulerImplemented:false,operationsSchedulerImplemented:true,ownerLoginConfigured:authConfigured(env)});
+      databaseChecked:true,publisherAdapterImplemented:true,publishingImplemented:false,publishingEnabled:false,schedulerImplemented:false,operationsSchedulerImplemented:true,ownerLoginConfigured:authConfigured(env)});
     if(url.pathname==='/api/production/monitor'&&request.method==='GET'){
       if(!await monitorAuthorized(request,env))return json({error:'MONITOR_AUTH_REQUIRED'},401);
       return json(await productionMonitorStatus(env));
@@ -65,6 +74,11 @@ export default {
       try{return json(await verifyProductionMeta(env,owner,input));}catch(e){const code=e instanceof Error?e.message:'';return json({error:['META_NOT_CONFIGURED','META_REQUEST_INVALID','REQUEST_REUSED','META_BUSY'].includes(code)?code:'META_CHECK_UNAVAILABLE'},code==='REQUEST_REUSED'?409:422);}
     }
     if(request.method==='GET'&&url.pathname==='/api/management')return json(await managementData(env));
+    if(url.pathname==='/api/production/preflight'){
+      if(request.method!=='GET')return json({error:'METHOD_NOT_ALLOWED'},405);
+      if(url.search)return json({error:'PREFLIGHT_QUERY_NOT_ALLOWED'},422);
+      return json(await publisherPreflight(env));
+    }
     if(url.pathname==='/api/production/preview'){
       if(request.method!=='GET')return json({error:'METHOD_NOT_ALLOWED'},405);
       if([...url.searchParams.keys()].some(k=>k!=='startDate')||url.searchParams.getAll('startDate').length>1)return json({error:'PREVIEW_DATE_INVALID'},422);
