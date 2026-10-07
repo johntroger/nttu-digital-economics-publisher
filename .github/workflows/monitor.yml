@@ -2,12 +2,22 @@ name: Independent staging monitor
 on:
   schedule:
     - cron: '17,47 * * * *'
+    - cron: '23 2,14 * * *'
   workflow_dispatch:
     inputs:
       send_test:
         description: Send one clearly labeled Telegram monitor test
         type: boolean
         default: false
+      trigger_source:
+        description: Source of the monitor request
+        type: choice
+        options: [manual, cron-job.org]
+        default: manual
+      triggered_at:
+        description: Unix seconds when the external scheduler sent this request
+        type: string
+        default: ''
 permissions:
   contents: read
   issues: write
@@ -16,7 +26,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   monitor:
-    if: github.ref == 'refs/heads/main' && vars.MONITOR_ENABLED == 'true'
+    if: github.ref == 'refs/heads/main' && vars.MONITOR_ENABLED == 'true' && (github.event_name != 'schedule' || vars.MONITOR_EXTERNAL_PRIMARY != 'true' || github.event.schedule == '23 2,14 * * *')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -39,3 +49,5 @@ jobs:
           MONITOR_TELEGRAM_CHAT_ID: ${{ vars.MONITOR_TELEGRAM_CHAT_ID }}
           MONITOR_TELEGRAM_BOT_TOKEN: ${{ secrets.MONITOR_TELEGRAM_BOT_TOKEN }}
           MONITOR_TEST: ${{ github.event_name == 'workflow_dispatch' && inputs.send_test }}
+          MONITOR_TRIGGER_SOURCE: ${{ github.event_name == 'schedule' && 'github-schedule' || inputs.trigger_source || 'manual' }}
+          MONITOR_TRIGGER_AT: ${{ inputs.triggered_at }}

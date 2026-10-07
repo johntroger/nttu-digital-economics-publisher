@@ -6,12 +6,24 @@ export const MONITOR_SQL=`SELECT r.environment,r.last_scheduled_at,a.paused_by_u
  (SELECT count(*) FROM publish_jobs j JOIN schedule_slots s ON s.id=j.slot_id WHERE j.page_connection_id=c.page_connection_id AND s.business_date<=? AND j.state IN ('unknown','publish_requested','evidence_pending')) AS unresolved_today
  FROM cloud_runtime r JOIN application_state a ON a.environment=r.environment JOIN cloud_daily_config c ON c.id=1 WHERE r.id=1`;
 const ORIGIN='https://nttu-publisher-staging.nttu-kts-johntroger.workers.dev';
+export function externalTriggerTemplate(){return {
+ url:'https://api.github.com/repos/johntroger/nttu-digital-economics-publisher/actions/workflows/monitor.yml/dispatches',
+ method:'POST',headers:{Accept:'application/vnd.github+json','Content-Type':'application/json','X-GitHub-Api-Version':'2022-11-28'},
+ body:{ref:'main',inputs:{send_test:'false',trigger_source:'cron-job.org',triggered_at:'%cjo:unixtime%'}}
+};}
 export function settings(env){
  if(env.STAGING_WORKER_URL?.replace(/\/$/,'')!==ORIGIN||env.GITHUB_REPOSITORY!=='johntroger/nttu-digital-economics-publisher'||!/^\d+$/.test(env.MONITOR_STATE_ISSUE??'')||env.MONITOR_TELEGRAM_CHAT_ID!=='1548618770'||!env.GITHUB_TOKEN||!/^\d+:[A-Za-z0-9_-]+$/.test(env.MONITOR_TELEGRAM_BOT_TOKEN??'')||!env.CLOUDFLARE_API_TOKEN||env.CLOUDFLARE_ACCOUNT_ID!=='4d46e32e5c27ff522ee857308a53e729'||env.STAGING_D1_DATABASE_ID!=='83881fd7-88e6-4835-b616-6f4f8f2d25cd'||!env.STAGING_HEALTH_TOKEN)throw Error('Monitor configuration missing or invalid; secret values suppressed');
  return {...env,origin:ORIGIN};
 }
 export function businessDay(now){return new Date(now+7*3600000).toISOString().slice(0,10);}
-const names={worker:'Cloud chưa phản hồi hoặc nhận dạng không đúng.',status:'Không đọc được trạng thái riêng của cloud.',database:'Không đọc được dữ liệu vận hành D1.',heartbeat:'Cron cloud chưa ghi heartbeat mới trong hơn 20 phút.',config:'Cấu hình lịch và quyền bật lịch không khớp.',late:'Đã quá giờ đăng 20 phút nhưng chưa có bài được xác minh.',unknown:'Kết quả đăng hôm nay chưa rõ; cần đối soát, không đăng lại.',test:'Tin kiểm thử giám sát độc lập. Không thay đổi lịch hoặc đăng Facebook.'};
+const names={worker:'Cloud chưa phản hồi hoặc nhận dạng không đúng.',status:'Không đọc được trạng thái riêng của cloud.',database:'Không đọc được dữ liệu vận hành D1.',heartbeat:'Cron cloud chưa ghi heartbeat mới trong hơn 20 phút.',config:'Cấu hình lịch và quyền bật lịch không khớp.',late:'Đã quá giờ đăng 20 phút nhưng chưa có bài được xác minh.',unknown:'Kết quả đăng hôm nay chưa rõ; cần đối soát, không đăng lại.',trigger_delay:'Yêu cầu từ lịch bên ngoài mất hơn 10 phút mới bắt đầu kiểm tra.',monitor_gap:'Bộ giám sát có khoảng trống kiểm tra trên 75 phút.',test:'Tin kiểm thử giám sát độc lập. Không thay đổi lịch hoặc đăng Facebook.'};
+export function triggerInfo(config,now){
+ const source=config.MONITOR_TRIGGER_SOURCE||'manual';if(!['manual','github-schedule','cron-job.org'].includes(source))throw Error('Monitor trigger source invalid');
+ const stamp=config.MONITOR_TRIGGER_AT||'';if(source==='cron-job.org'&&!/^\d{10}$/.test(stamp))throw Error('External trigger timestamp required');
+ if(stamp&&!/^\d{10}$/.test(stamp))throw Error('Monitor trigger timestamp invalid');
+ const requestedAt=stamp?Number(stamp)*1000:null;if(requestedAt!==null&&(requestedAt>now+120000||requestedAt<now-86400000))throw Error('Monitor trigger timestamp out of bounds');
+ return {source,requestedAt,startedAt:now,lagSeconds:requestedAt===null?null:Math.max(0,Math.floor((now-requestedAt)/1000))};
+}
 export function assess({health,status,snapshot},now){
  const day=businessDay(now),codes=[],observed=['worker','status','database'];
  if(!health||health.service!=='nttu-publisher'||health.environment!=='staging'||! /^[a-f0-9]{40}$/.test(health.release??''))codes.push('worker');
@@ -40,7 +52,7 @@ export function transition(previous,result,now){
  const state=structuredClone(previous);state.lastCheckedAt=now;
  for(const code of result.observed)if(!result.codes.includes(code))delete state.incidents[code];
  for(const code of result.codes){let item=state.incidents[code];if(!item){item={firstSeen:now,lastSeen:now,count:1,notification:'pending'};state.incidents[code]=item;}else if(now-item.lastSeen>=5*60000){item.count++;item.lastSeen=now;}}
- const ready=Object.keys(state.incidents).filter(code=>result.codes.includes(code)&&state.incidents[code].notification==='pending'&&(state.incidents[code].count>=2||['late','unknown','test'].includes(code)));
+ const ready=Object.keys(state.incidents).filter(code=>result.codes.includes(code)&&state.incidents[code].notification==='pending'&&(state.incidents[code].count>=2||['late','unknown','trigger_delay','monitor_gap','test'].includes(code)));
  return {state,ready};
 }
 async function jsonFetch(fetcher,url,options={}){const response=await fetcher(url,{...options,redirect:'error',signal:AbortSignal.timeout(15000)});if(!response.ok)throw Error('Provider request failed');return response.json();}
@@ -58,9 +70,11 @@ export async function runMonitor(config,{fetcher=fetch,probe=probes,test=false}=
  const issue='https://api.github.com/repos/'+config.GITHUB_REPOSITORY+'/issues/'+config.MONITOR_STATE_ISSUE;
  const headers={Authorization:'Bearer '+config.GITHUB_TOKEN,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28','Content-Type':'application/json'};
  const read=await jsonFetch(fetcher,issue,{headers});if(read.title!==STATE_TITLE||read.pull_request)throw Error('Monitor checkpoint identity invalid');
- const previous=parseState(read.body),data=await probe(config,fetcher),result=assess(data,data.now);
+ const previous=parseState(read.body),data=await probe(config,fetcher),result=assess(data,data.now),trigger=triggerInfo(config,data.now);
+ result.observed.push('trigger_delay','monitor_gap');if(trigger.lagSeconds>600)result.codes.push('trigger_delay');
+ if(Number.isSafeInteger(previous.lastCheckedAt)&&data.now-previous.lastCheckedAt>75*60000)result.codes.push('monitor_gap');
  if(test){result.codes.push('test');result.observed.push('test');}else{result.observed.push('test');}
- const {state,ready}=transition(previous,result,data.now);
+ const {state,ready}=transition(previous,result,data.now);state.lastTrigger=trigger;
  const save=()=>jsonFetch(fetcher,issue,{method:'PATCH',headers,body:JSON.stringify({body:stateBody(state)})});
  // Persist intent before any Telegram send. A crash or missing response cannot trigger an automatic repeat.
  for(const code of ready)state.incidents[code].notification='intent';
@@ -77,7 +91,7 @@ export async function runMonitor(config,{fetcher=fetch,probe=probes,test=false}=
   await save();
  }
  // Only fixed codes are logged. Never log provider bodies, error URLs, credentials or captions.
- const summary={checkedAt:new Date(data.now).toISOString(),issues:result.codes,notified:ready,notificationFailed:notificationFailed||Object.values(state.incidents).some(item=>['intent','unknown','rejected'].includes(item.notification))};
+ const summary={checkedAt:new Date(data.now).toISOString(),trigger,issues:result.codes,notified:ready,notificationFailed:notificationFailed||Object.values(state.incidents).some(item=>['intent','unknown','rejected'].includes(item.notification))};
  return summary;
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
