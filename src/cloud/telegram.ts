@@ -26,13 +26,13 @@ export async function discoverTelegram(env:CloudBindings,transport:Transport=fet
   }catch(error){if(error instanceof CatalogError)throw error;fail('TELEGRAM_DISCOVERY_FAILED',503);}finally{clearTimeout(timer);}
 }
 // No payload-supplied recipients, arbitrary text, parse_mode, redirects or raw provider errors.
-export function notificationText(eventId:string,payload:unknown):string {
+export function notificationText(eventId:string,payload:unknown,environment:'staging'|'production'='staging'):string {
   if(!/^[a-zA-Z0-9:_-]{1,150}$/.test(eventId)||!payload||typeof payload!=='object')fail('TELEGRAM_PAYLOAD_INVALID');
   const p=payload as Row;
   const kinds:Record<string,string>={connection_test:'Tin kiểm thử kết nối Telegram.',published:'Đã đăng bài thành công.',post_failed:'Bài đăng thất bại sau các lần thử đủ điều kiện.',needs_reconciliation:'Cần đối chiếu kết quả đăng bài.',stock_low:'Kho còn không quá 3 bài đủ điều kiện.',stock_empty:'Kho đã hết bài đủ điều kiện.',connection_error:'Kết nối đăng bài cần được xử lý.',reserve_empty:'Không còn bài dự phòng phù hợp.'};
-  const kind=String(p.kind);if(!kinds[kind]||p.environment!=='staging')fail('TELEGRAM_PAYLOAD_INVALID');
+  const kind=String(p.kind);if(!kinds[kind]||p.environment!==environment)fail('TELEGRAM_PAYLOAD_INVALID');
   const clean=(value:unknown,max:number)=>typeof value==='string'?value.replace(/[\u0000-\u001f\u007f]/g,' ').slice(0,max):'';
-  const lines=['Ngành Kinh tế số · NTTU [STAGING]',kinds[kind]!,'Mã sự kiện: '+eventId];
+  const lines=['Ngành Kinh tế số · NTTU ['+environment.toUpperCase()+']',kinds[kind]!,'Mã sự kiện: '+eventId];
   for(const [key,label,max] of [['title','Bài',300],['page','Fanpage',100],['time','Thời điểm',80]] as const){const text=clean(p[key],max);if(text)lines.push(label+': '+text);}
   if(typeof p.url==='string'&&p.url.length<500){try{const url=new URL(p.url);if(url.protocol==='https:'&&['www.facebook.com','facebook.com'].includes(url.hostname)&&!url.username&&!url.password&&!url.search&&!url.hash)lines.push(url.href);}catch{}}
   if(kind==='connection_test')lines.push('Lịch đăng Facebook vẫn đang dừng.');
@@ -43,7 +43,12 @@ export async function telegramStatus(env:CloudBindings){await readStatus(env);re
 export async function enqueueTelegramTest(env:CloudBindings,input:unknown){await readStatus(env);if(!telegramConfigured(env))fail('TELEGRAM_NOT_CONFIGURED',409);const id=(input as {requestId?:unknown}|null)?.requestId;if(!uuid(id))fail('TELEGRAM_REQUEST_INVALID');const eventId='telegram-test:'+id;const payload=JSON.stringify({kind:'connection_test',environment:'staging'});await env.DB!.prepare('INSERT INTO notification_outbox(event_id,payload_json) VALUES(?,?) ON CONFLICT(event_id) DO NOTHING').bind(eventId,payload).run();return{eventId,queued:true};}
 export async function retryTelegram(env:CloudBindings,input:unknown){await readStatus(env);if(!telegramConfigured(env))fail('TELEGRAM_NOT_CONFIGURED',409);const p=input as {eventId?:unknown;expectedTries?:unknown}|null;if(typeof p?.eventId!=='string'||!Number.isSafeInteger(p.expectedTries))fail('TELEGRAM_REQUEST_INVALID');await env.DB!.prepare("UPDATE notification_outbox SET state='pending',next_at=NULL,last_error=NULL WHERE event_id=? AND tries=? AND state='needs_action' AND NOT EXISTS(SELECT 1 FROM cloud_telegram_attempts WHERE event_id=? AND state='intent')").bind(p.eventId,p.expectedTries as number,p.eventId).run();return{eventId:p.eventId};}
 export async function dispatchTelegram(env:CloudBindings,options:{now?:number;transport?:Transport}={}){
-  await readStatus(env);if(!telegramConfigured(env))return{state:'unconfigured'};
+  await readStatus(env);return dispatchTelegramQueue(env,'staging',options);
+}
+// Environment/owner boundary is enforced by the caller before entering the transport queue.
+export async function dispatchTelegramQueue(env:CloudBindings,environment:'staging'|'production',options:{now?:number;transport?:Transport}={}){
+  if(env.APP_ENV!==environment)fail('TELEGRAM_ENVIRONMENT_INVALID');
+  if(!telegramConfigured(env))return{state:'unconfigured'};
   if(!env.DB!.batch)fail('CLOUD_DATABASE_UNAVAILABLE',503);
   const now=options.now??Date.now();if(!Number.isSafeInteger(now)||now<0)fail('TELEGRAM_CLOCK_INVALID');
   const transport=options.transport??fetch;
@@ -56,7 +61,7 @@ export async function dispatchTelegram(env:CloudBindings,options:{now?:number;tr
   }
   const candidates=await rows(env,"SELECT * FROM notification_outbox WHERE state IN ('pending','retry_wait','delivery_unknown') AND (next_at IS NULL OR next_at<=?) ORDER BY rowid LIMIT 1",iso(now));const event=candidates[0];if(!event)return{state:'idle'};
   const eventId=String(event.event_id);let text:string;
-  try{text=notificationText(eventId,JSON.parse(String(event.payload_json)));}catch{await env.DB!.prepare("UPDATE notification_outbox SET state='needs_action',last_error='TELEGRAM_PAYLOAD_INVALID' WHERE event_id=? AND tries=? AND state IN ('pending','retry_wait','delivery_unknown')").bind(eventId,Number(event.tries)).run();return{state:'needs_action'};}
+  try{text=notificationText(eventId,JSON.parse(String(event.payload_json)),environment);}catch{await env.DB!.prepare("UPDATE notification_outbox SET state='needs_action',last_error='TELEGRAM_PAYLOAD_INVALID' WHERE event_id=? AND tries=? AND state IN ('pending','retry_wait','delivery_unknown')").bind(eventId,Number(event.tries)).run();return{state:'needs_action'};}
   // Do not silently move queued messages to a different bot/chat after credentials change.
   const previous=(await rows(env,'SELECT target_hash FROM cloud_telegram_attempts WHERE event_id=? ORDER BY rowid DESC LIMIT 1',eventId))[0];
   if(previous&&previous.target_hash!==fingerprint){await env.DB!.prepare("UPDATE notification_outbox SET state='needs_action',last_error='TELEGRAM_TARGET_CHANGED' WHERE event_id=? AND state IN ('pending','retry_wait','delivery_unknown')").bind(eventId).run();return{state:'needs_action'};}

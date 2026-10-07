@@ -84,10 +84,10 @@ test('production OAuth uses separate issuer/PKCE, validates Google owner and rej
   assert.equal((await complete('other@example.com')).headers.get('Location'),'/?login=failed&reason=owner');
  }finally{db.close();}
 });
-test('production preparation packages management only, no credentials, seed posts or cron',()=>{
+test('production preparation packages management and notification cron without enabling publication',()=>{
  mkdirSync('tmp',{recursive:true});const output=mkdtempSync(resolve('tmp','production-management-test-'));
  try{const r=prepareProductionManagement({databaseId,releaseSha:base.RELEASE_SHA,origin},{output,clientId:base.GOOGLE_CLIENT_ID});
-  assert.deepEqual(r.config.triggers.crons,[]);assert.equal(r.config.vars.DAILY_PUBLISHING_ENABLED,'false');assert.equal(r.config.vars.INTEGRATION_MODE,'management');assert.equal(r.config.keep_vars,false);
+  assert.deepEqual(r.config.triggers.crons,['*/5 * * * *']);assert.equal(r.config.vars.DAILY_PUBLISHING_ENABLED,'false');assert.equal(r.config.vars.INTEGRATION_MODE,'management');assert.equal(r.config.keep_vars,false);
   assert.equal(r.config.vars.SESSION_SIGNING_KEY,undefined);assert.equal(r.config.vars.GOOGLE_CLIENT_SECRET,undefined);assert.equal(r.config.vars.META_PAGE_ACCESS_TOKEN,undefined);
   assert.ok(!productionMigrations(databaseId).some(x=>x.name.includes('staging_briefs')));
  }finally{rmSync(output,{recursive:true,force:true});}
