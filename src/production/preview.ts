@@ -40,7 +40,7 @@ export async function approvedProductionItems(env:ManagementBindings,now:number,
  LEFT JOIN cloud_reviews r ON r.version_id=v.id AND r.check_version=v.check_version ${versionId?'WHERE v.id=?':''} ORDER BY e.stable_order,p.id`,versionId?[versionId]:[]),
  rows(env,'SELECT x.version_id,x.location ref_json,s.* FROM version_sources x JOIN sources s ON s.id=x.source_id'+(versionId?' WHERE x.version_id=?':''),versionId?[versionId]:[]),
  rows(env,'SELECT x.version_id,f.* FROM version_facts x JOIN facts f ON f.id=x.fact_id'+(versionId?' WHERE x.version_id=?':''),versionId?[versionId]:[]),
- rows(env,"SELECT source_key,checksum FROM cloud_library WHERE kind='document' AND state='complete'"),
+ rows(env,"SELECT source_key,checksum FROM cloud_library WHERE kind='document' AND state='complete' ORDER BY source_key,checksum"),
  rows(env,'SELECT post_id,prerequisite_id FROM post_prerequisites'+(versionId?' WHERE post_id=(SELECT post_id FROM post_versions WHERE id=?)':''),versionId?[versionId]:[]),
  ]);
  const items=await Promise.all(posts.map(async p=>{
@@ -53,7 +53,7 @@ export async function approvedProductionItems(env:ManagementBindings,now:number,
   const rubric=parse(p.rubric_json);if(!rubric||['accuracy','usefulness','clarity','originality','visual_quality'].some(k=>rubric[k]!==true))reasons.push('REVIEW_RUBRIC_INVALID');
   if(p.asset_status!=='complete'||p.library_state!=='complete'||p.library_checksum!==p.checksum||p.binding_id!==p.asset_id||p.binding_checksum!==p.checksum||p.asset_checksum!==p.checksum||p.binding_version!==p.check_version
     ||p.width!==1080||p.height!==1080||p.content_type!=='image/png'||p.size_bytes<=0||p.size_bytes>5242880)reasons.push('IMAGE_BINDING_INVALID');
-  const linked=sources.filter(s=>s.version_id===p.version_id);
+  const linked=sources.filter(s=>s.version_id===p.version_id).sort((a,b)=>String(a.id).localeCompare(String(b.id))||String(a.ref_json).localeCompare(String(b.ref_json)));
   if(!Array.isArray(refs)||!refs.length||!Array.isArray(receipt)||linked.length!==refs.length||receipt.length!==refs.length)reasons.push('SOURCES_MISSING');
   else for(const ref of refs){
    const def=SOURCE_REGISTRY.find(s=>s.id===ref.id),source=linked.find(s=>same(parse(s.ref_json),ref)),r=receipt.find((s:Row)=>s.id===ref.id);
@@ -63,7 +63,7 @@ export async function approvedProductionItems(env:ManagementBindings,now:number,
      ||def.authority==='document'&&!documents.some(d=>d.source_key===def.id&&d.checksum===def.sha256))reasons.push('SOURCE_RECEIPT_INVALID');
    if(!Array.isArray(ref.pages)||ref.pages.some((n:unknown)=>!Number.isInteger(n)||Number(n)<1||Number(n)>(def?.pages??0)))reasons.push('SOURCE_PAGE_INVALID');
   }
-  const linkedFacts=facts.filter(f=>f.version_id===p.version_id);
+  const linkedFacts=facts.filter(f=>f.version_id===p.version_id).sort((a,b)=>String(a.id).localeCompare(String(b.id)));
   if(linkedFacts.some(f=>f.status!=='verified'||!future(f.review_due_at,now)||f.cohort!=null&&f.cohort!==2026||!linked.some(s=>s.id===f.source_id&&s.status==='verified')))reasons.push('FACT_INVALID');
   if(p.topic_group==='I'&&[['training_duration_years','3.5'],['cohort','2026']].some(([key,value])=>!linkedFacts.some(f=>f.fact_key===key&&f.value_json===value&&linked.some(s=>s.id===f.source_id&&parse(s.ref_json)?.id==='OWNER-2026'))))reasons.push('PROGRAM_FACTS_INVALID');
   return {postId:p.id,key:p.content_key,versionId:p.version_id,title:p.caption_title,pool:p.pool,order:p.stable_order,caption,imageUrl:p.image_id?'/api/library/files/'+p.image_id:null,
