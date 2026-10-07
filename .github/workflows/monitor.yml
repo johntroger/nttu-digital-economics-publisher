@@ -5,6 +5,11 @@ on:
     - cron: '23 2,14 * * *'
   workflow_dispatch:
     inputs:
+      monitor_target:
+        description: Environment to check for a manual request
+        type: choice
+        options: [both, staging, production]
+        default: both
       send_test:
         description: Send one clearly labeled Telegram monitor test
         type: boolean
@@ -26,7 +31,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   production-monitor:
-    if: github.ref == 'refs/heads/main' && vars.PRODUCTION_MONITOR_ENABLED == 'true' && (github.event_name != 'schedule' || vars.MONITOR_EXTERNAL_PRIMARY != 'true' || github.event.schedule == '23 2,14 * * *')
+    if: github.ref == 'refs/heads/main' && vars.PRODUCTION_MONITOR_ENABLED == 'true' && (github.event_name != 'workflow_dispatch' || inputs.monitor_target != 'staging') && (github.event_name != 'schedule' || vars.MONITOR_EXTERNAL_PRIMARY != 'true' || github.event.schedule == '23 2,14 * * *')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -53,7 +58,7 @@ jobs:
           MONITOR_TRIGGER_SOURCE: ${{ github.event_name == 'schedule' && 'github-schedule' || inputs.trigger_source || 'manual' }}
           MONITOR_TRIGGER_AT: ${{ inputs.triggered_at }}
   monitor:
-    if: github.ref == 'refs/heads/main' && vars.MONITOR_ENABLED == 'true' && (github.event_name != 'schedule' || vars.MONITOR_EXTERNAL_PRIMARY != 'true' || github.event.schedule == '23 2,14 * * *')
+    if: github.ref == 'refs/heads/main' && vars.MONITOR_ENABLED == 'true' && (github.event_name != 'workflow_dispatch' || inputs.monitor_target != 'production') && (github.event_name != 'schedule' || vars.MONITOR_EXTERNAL_PRIMARY != 'true' || github.event.schedule == '23 2,14 * * *')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
