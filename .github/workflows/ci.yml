@@ -35,7 +35,9 @@ jobs:
         run: npm run check:ci
       - name: Build Workers and test local D1 runtime
         if: matrix.os == 'ubuntu-latest'
-        run: npm run test:cloud
+        run: |
+          npm run test:cloud
+          node scripts/production-management-smoke.mjs
   deploy-staging:
     name: Deploy staging foundation
     needs: portable-checks
