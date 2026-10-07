@@ -13,7 +13,11 @@ class ExchangeError extends AuthError {
   constructor(reason: string, status: number | null = null) { super('GOOGLE_EXCHANGE_FAILED'); this.reason = reason; this.status = status; }
 }
 function config(env: CloudBindings) {
-  if (!env.AUTH_ORIGIN || !/^https:\/\/nttu-publisher-staging\.[a-z0-9-]+\.workers\.dev$/.test(env.AUTH_ORIGIN)
+  const production = env.APP_ENV === 'production';
+  const originPattern = production ? /^https:\/\/nttu-publisher-production\.[a-z0-9-]+\.workers\.dev$/
+    : /^https:\/\/nttu-publisher-staging\.[a-z0-9-]+\.workers\.dev$/;
+  if ((production && (env.INTEGRATION_MODE !== 'management' || env.DAILY_PUBLISHING_ENABLED !== 'false'))
+    || !env.AUTH_ORIGIN || !originPattern.test(env.AUTH_ORIGIN)
     || !env.GOOGLE_CLIENT_ID || !/^[\w-]+\.apps\.googleusercontent\.com$/.test(env.GOOGLE_CLIENT_ID)
     || !env.GOOGLE_CLIENT_SECRET || env.GOOGLE_CLIENT_SECRET.length < 10
     || !env.SESSION_SIGNING_KEY || !/^[a-f0-9]{64}$/i.test(env.SESSION_SIGNING_KEY)) throw new AuthError('AUTH_NOT_CONFIGURED');
