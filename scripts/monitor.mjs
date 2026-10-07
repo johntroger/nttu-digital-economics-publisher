@@ -3,11 +3,12 @@ import {pathToFileURL} from 'node:url';
 export const STATE_TITLE='[Operations] Independent staging monitor state';
 export const PRODUCTION_STATE_TITLE='[Operations] Independent production monitor state';
 export const PRODUCTION_MONITOR_SQL=`SELECT i.environment,a.paused_by_user,c.enabled,o.last_scheduled_at,
+ h.enabled http_enabled,h.last_http_at,h.last_complete_at,
  (SELECT count(*) FROM schema_migrations) migration_count,
  (SELECT count(*) FROM publish_jobs) jobs,
  (SELECT count(*) FROM publications) publications
  FROM production_identity i JOIN application_state a ON a.environment=i.environment
- JOIN production_control c ON c.id=i.id JOIN production_operations o ON o.id=i.id WHERE i.id=1`;
+ JOIN production_control c ON c.id=i.id JOIN production_operations o ON o.id=i.id JOIN production_http_trigger h ON h.id=i.id WHERE i.id=1`;
 export const MONITOR_SQL=`SELECT r.environment,r.last_scheduled_at,a.paused_by_user,c.enabled,c.start_date,c.test_publish_at,
  (SELECT count(*) FROM publications p JOIN publish_jobs j ON j.id=p.job_id WHERE j.page_connection_id=c.page_connection_id AND j.slot_id IS NOT NULL AND p.remote_business_date=?) AS published_today,
  (SELECT count(*) FROM publish_jobs j JOIN schedule_slots s ON s.id=j.slot_id WHERE j.page_connection_id=c.page_connection_id AND s.business_date<=? AND j.state IN ('unknown','publish_requested','evidence_pending')) AS unresolved_today
@@ -28,7 +29,7 @@ export function settings(env){
  return {...env,origin:ORIGIN};
 }
 export function businessDay(now){return new Date(now+7*3600000).toISOString().slice(0,10);}
-const names={worker:'Cloud chưa phản hồi hoặc nhận dạng không đúng.',status:'Không đọc được trạng thái riêng của cloud.',database:'Không đọc được dữ liệu vận hành D1.',heartbeat:'Cron cloud chưa ghi heartbeat mới trong hơn 20 phút.',config:'Cấu hình lịch và quyền bật lịch không khớp.',late:'Đã quá giờ đăng 20 phút nhưng chưa có bài được xác minh.',unknown:'Kết quả đăng hôm nay chưa rõ; cần đối soát, không đăng lại.',trigger_delay:'Yêu cầu từ lịch bên ngoài mất hơn 10 phút mới bắt đầu kiểm tra.',monitor_gap:'Bộ giám sát có khoảng trống kiểm tra trên 75 phút.',test:'Tin kiểm thử giám sát độc lập. Không thay đổi lịch hoặc đăng Facebook.'};
+const names={worker:'Cloud chưa phản hồi hoặc nhận dạng không đúng.',status:'Không đọc được trạng thái riêng của cloud.',database:'Không đọc được dữ liệu vận hành D1.',heartbeat:'Nguồn kích hoạt vận hành chưa ghi heartbeat hoặc hoàn tất lượt xử lý mới trong hơn 20 phút.',config:'Cấu hình lịch và quyền bật lịch không khớp.',late:'Đã quá giờ đăng 20 phút nhưng chưa có bài được xác minh.',unknown:'Kết quả đăng hôm nay chưa rõ; cần đối soát, không đăng lại.',trigger_delay:'Yêu cầu từ lịch bên ngoài mất hơn 10 phút mới bắt đầu kiểm tra.',monitor_gap:'Bộ giám sát có khoảng trống kiểm tra trên 75 phút.',test:'Tin kiểm thử giám sát độc lập. Không thay đổi lịch hoặc đăng Facebook.'};
 export function triggerInfo(config,now){
  const source=config.MONITOR_TRIGGER_SOURCE||'manual';if(!['manual','github-schedule','cron-job.org'].includes(source))throw Error('Monitor trigger source invalid');
  const stamp=config.MONITOR_TRIGGER_AT||'';if(source==='cron-job.org'&&!/^\d{10}$/.test(stamp))throw Error('External trigger timestamp required');
@@ -41,15 +42,21 @@ export function assessProduction({health,status,snapshot},now){
  const codes=[],observed=['worker','status','database'];
  if(!health||health.environment!=='production'||health.phase!=='management'||! /^[a-f0-9]{40}$/.test(health.release??'')||health.publishingEnabled!==false||health.schedulerImplemented!==false||health.operationsSchedulerImplemented!==true)codes.push('worker');
  if(!status||status.environment!=='production'||status.databaseChecked!==true||status.schemaReady!==true||status.publishingEnabled!==false||status.paused!==true)codes.push('status');
- if(!snapshot||snapshot.environment!=='production'||snapshot.enabled!==0||snapshot.paused_by_user!==1||snapshot.migration_count!==12||!Number.isSafeInteger(snapshot.jobs)||!Number.isSafeInteger(snapshot.publications))codes.push('database');
- else{observed.push('heartbeat','config');if(!Number.isSafeInteger(snapshot.last_scheduled_at)||snapshot.last_scheduled_at>now+60000||now-snapshot.last_scheduled_at>20*60000)codes.push('heartbeat');if(snapshot.jobs!==0||snapshot.publications!==0)codes.push('config');}
+ if(!snapshot||snapshot.environment!=='production'||snapshot.enabled!==0||snapshot.paused_by_user!==1||snapshot.migration_count!==13||![0,1].includes(snapshot.http_enabled)||!Number.isSafeInteger(snapshot.jobs)||!Number.isSafeInteger(snapshot.publications))codes.push('database');
+ else{
+  observed.push('heartbeat','config');const http=snapshot.http_enabled===1;
+  const times=http?[snapshot.last_http_at,snapshot.last_complete_at]:[snapshot.last_scheduled_at];
+  if(times.some(t=>!Number.isSafeInteger(t)||t>now+60000||now-t>20*60000))codes.push('heartbeat');
+  if(snapshot.jobs!==0||snapshot.publications!==0||status?.triggerSource!==(http?'http':'cron'))codes.push('config');
+ }
  if(status&&status.environment==='production'&&status.databaseChecked===true){
   observed.push('meta','meta_expiring','meta_expired','telegram');
   if(status.metaConfigured!==true||status.metaVerified!==true)codes.push('meta');
   const expiry=[status.metaExpiresAt,status.dataAccessExpiresAt].filter(x=>x!==null);
   if(expiry.some(x=>!Number.isSafeInteger(x)||x<=now))codes.push('meta_expired');
   else if(expiry.some(x=>x<=now+3*86400000))codes.push('meta_expiring');
-  if(status.telegramConfigured!==true||status.notificationsBlocked>0||['needs_action','delivery_unknown'].includes(status.runtime?.last_dispatch_state))codes.push('telegram');
+  const dispatch=status.triggerSource==='http'?status.http?.last_dispatch_state:status.runtime?.last_dispatch_state;
+  if(status.telegramConfigured!==true||status.notificationsBlocked>0||['needs_action','delivery_unknown','failed'].includes(dispatch))codes.push('telegram');
  }
  return{day:businessDay(now),codes,observed};
 }
