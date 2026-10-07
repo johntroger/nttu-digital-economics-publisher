@@ -18,4 +18,10 @@ Thêm migration 0011_production_meta.sql dùng schema biên nhận Meta hiện c
 
 25 kiểm thử tập trung đạt: kết nối production và staging, schema cũ/mới, quyền owner/CSRF, sai Page/App/type/quyền/expiry, replay và thay secret, không kích hoạt đăng. Native workerd/D1 smoke đạt với Graph và Google giả lập; chỉ hai yêu cầu đọc Graph, toàn bộ bảng vận hành vẫn trống và production_control.enabled=0. Các cookie/token fixture không được gửi lên cloud.
 
-Nghiệm thu thật còn chờ hai secret production, CI, triển khai/migration và kiểm tra Graph bằng phiên Google owner thật. Chỉ kết luận hoàn tất khi có biên nhận thực tế; staging giữ lịch hiện tại.
+## Nghiệm thu thật — 07/10/2026
+
+CI 37567697047 đạt trên Ubuntu và Windows cho commit 8d7cd5e275bcb229c738ef77d12a5582b4aa62c4. Kiểm thử trước push: 346/346 Node, 13 kiểm tra ảnh, TypeScript đạt. Worker production version 361cb91a-43ed-4a76-8f1c-1404f85eb17c được triển khai trước khi migration 0011 thành công. Hai secret Meta đã được xác nhận theo tên, không đọc giá trị.
+
+Phiên Google owner thật xác minh thành công lúc 10:42:57 giờ Việt Nam: Page 817593604765443, tên Ngành Kinh tế số - NTTU, đúng App 1125636386458970, đủ pages_read_engagement và pages_manage_posts, mã META_READ_ONLY_VERIFIED. Token hiện tại hết hạn 12:00 cùng ngày; quyền dữ liệu hết hạn 10:32:12 ngày 05/01/2027. Kết quả đọc thành công chưa đủ để vận hành dài hạn: người quản lý cần thay token dài hạn và xác minh lại trước bật đăng.
+
+Đối chiếu sau kiểm tra: 11 migration, 40 bài, 56 tệp complete; production_control vẫn enabled=0, page_id=NULL, connection_verified=0; job, slot, publication và notification đều 0. API trả publishingEnabled=false và schedulerImplemented=false. 16 kiểm tra khách/bearer bị từ chối; staging giữ release 556db22c45e1dcdc76b9628a51415730d007da42. Bằng chứng riêng ở tmp/step34/after.json, web-evidence.json và verified.png; không chứa token hoặc App Secret.
