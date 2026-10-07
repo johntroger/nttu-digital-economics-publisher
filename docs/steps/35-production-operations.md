@@ -28,6 +28,19 @@ Schema 0013 thêm trạng thái HTTP riêng, mặc định tắt. Endpoint POST 
 
 Khi bật HTTP, Cron vẫn ghi bằng chứng riêng nếu được gọi nhưng không dispatch hàng chờ. HTTP có heartbeat nhận và hoàn tất riêng. Monitor đọc hai dấu thời gian HTTP khi nguồn được chọn là HTTP; không dùng HTTP để giả ghi heartbeat Cron. UI hiển thị nguồn đang chọn và lượt hoàn tất. Job cron-job.org mới gọi trực tiếp mỗi phút; job giám sát 30 phút giữ nguyên. Chưa nghiệm thu cho đến khi có ít nhất ba lượt tự động thật và biên nhận tin production đang chờ.
 
+### Kết quả chuyển đổi ngày 07/10/2026
+
+- Mã runtime ad94c090d5781e26afae57b171c2e56188e5ef10: 357 kiểm thử đơn vị/tích hợp, 13 kiểm tra ảnh và native workerd/D1 đạt; CI 37576926038 đạt trên Windows/Ubuntu trước triển khai. Schema 13 đã áp dụng.
+- Người quản lý phê duyệt tạo/lưu token riêng vào Worker và tác vụ cron-job.org. Credential không dùng để đọc kho bài, owner API, monitor hoặc đăng Facebook. Tệp chuyển tạm đã xóa và giá trị không được ghi vào tài liệu/Git.
+- Job 8595718 «NTTU – Vận hành production» bật, POST body rỗng, mỗi phút, timeout 30 giây, không lưu nội dung request/response trong job history; email báo lỗi, phục hồi và tự tắt đã chọn. Job giám sát 8594899 giữ mỗi 30 phút.
+- Các lượt lịch thật 12:39:05, 12:40:17, 12:41:04 và 12:42:06 giờ Việt Nam đều 200 OK; thời gian phản hồi 3,48 / 1,95 / 2,07 / 2,12 giây. Không gọi tick thủ công để giả nghiệm thu.
+- Tin đang pending từ trước đã delivered, tries=1, message ID 12. Những lượt sau idle, không gửi lại tin. Đã hỏi người quản lý xác nhận nhìn thấy tin; tại lúc ghi hồ sơ chưa có phản hồi trực tiếp cho tin PRODUCTION này.
+- Heartbeat HTTP nhận/hoàn tất đã tăng; Cron cũ vẫn last_scheduled_at=NULL, heartbeat_count=0. Đã loại bỏ phụ thuộc vào Cron lỗi, chưa xác định hoặc sửa nguyên nhân gốc của Cron.
+- Main chỉ cập nhật ba tệp giám sát tại 8d02345a563f7132a308d9f792e195fa174dc058. CI 37577319970 đạt, staging deployment preference đã trả lại giá trị trước. Lượt giám sát production 37577518318 đạt, incidents rỗng, không gửi thêm tin thử.
+- 22 kiểm tra quyền truy cập HTTP đạt; endpoint tick trực tiếp trả GET/PUT 405 và POST thiếu token 401. Kho giữ 40 bài/56 assets; production paused=1, enabled=0, jobs=0, publications=0. Staging giữ release 556db22c45e1dcdc76b9628a51415730d007da42.
+
+Phần kỹ thuật của nguồn kích hoạt HTTP đã được kiểm thử trên cloud. Chưa bật đăng Facebook production và chưa triển khai bước tiếp theo. Còn xác nhận người quản lý nhìn thấy message ID 12 để hoàn tất mục xác nhận người nhận trong hồ sơ.
+
 
 Cập nhật triển khai ngày 07/10/2026: main nhận đúng ba tệp giám sát tại commit 9bf8f1fed9f3cc8965971ca693ed237a15b20a7b; CI 37570216864 thành công và STAGING_DEPLOY_ENABLED đã khôi phục. Worker production tại release 2e50f2746087921156123458ab1cf232faae1a02, migration 12 đã áp dụng; 22 kiểm tra truy cập HTTP đạt. Staging giữ release 556db22c45e1dcdc76b9628a51415730d007da42. Giám sát production đã bật: lượt 37571901841 đọc được health, D1 và Meta, gửi tin kiểm thử có nhãn thành công (message ID 10); chỉ phát hiện heartbeat còn thiếu. Đến 11:35 giờ Việt Nam, cron production chưa ghi heartbeat và tin Cloudflare vẫn pending, chưa gửi. Đã áp dụng lại riêng trigger */5 * * * * lúc 11:36; chưa nghiệm thu cron hoặc kết luận ổn định. Người quản lý đã xác nhận nhận tin giám sát. Lượt tự động cron-job.org 37574172658 lúc 12:00 ngày 07/10/2026 đã đọc production và gửi đúng cảnh báo heartbeat (message ID 11); source cron-job.org, lag 85 giây. Staging tiếp tục có heartbeat mới. Đến 12:00 production vẫn chưa được scheduled gọi; đã xóa rồi tạo lại duy nhất trigger mỗi 5 phút lúc 12:01:23, Cloudflare xác nhận created_on mới. Chưa kết luận cron production đạt.
 

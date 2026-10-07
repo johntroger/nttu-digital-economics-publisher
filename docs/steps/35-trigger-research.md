@@ -1,6 +1,6 @@
 # Rà soát nguồn kích hoạt production — 07/10/2026
 
-Trạng thái: đề xuất kỹ thuật sau nghiên cứu; chưa triển khai endpoint mới, tạo credential mới hoặc bật đăng Facebook.
+Trạng thái cập nhật: người quản lý đã cho triển khai và phê duyệt token riêng. HTTP đã chạy thật mỗi phút, Telegram có biên nhận, giám sát đạt; Facebook vẫn tắt. Kết quả chi tiết ở [hồ sơ Bước 35](35-production-operations.md). Phần dưới giữ phương án và cơ sở quyết định trước triển khai.
 
 ## Kết luận
 
