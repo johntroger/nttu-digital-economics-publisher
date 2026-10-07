@@ -13,6 +13,9 @@ const transport=f=>async(input,init)=>{
 };
 const review=f=>productionSendPreflight(f.env,{versionId:f.item.versionId},transport(f),f.now);
 const noWrites=f=>{for(const t of ['production_send_permits','production_publisher_jobs','production_publisher_attempts','production_publisher_evidence','production_publisher_usage','publish_jobs','publications','schedule_slots'])assert.equal(f.db.prepare('SELECT count(*) n FROM '+t).get().n,0,t);};
+test('selected source/fact projection preserves every approved item and receipt digest across all 40 posts',async()=>{
+ const f=await liveFixture();try{const all=await approvedProductionItems(f.env,now);assert.equal(all.length,40);for(const p of all)assert.deepEqual((await approvedProductionItems(f.env,now,p.versionId))[0],p);}finally{f.db.close();}
+});
 test('send dry-run uses selected approved bytes, server Vietnam time, GET-only connection and zero database writes',async()=>{
  const f=await liveFixture();try{const before=f.db.prepare('SELECT total_changes() n').get().n,r=await review(f);assert.equal(r.preparationVerified,true);assert.equal(r.sendReady,false);assert.equal(r.realPublication,'NOT_RUN');assert.ok(r.queries<=24);assert.equal(r.dossier.pageId,'817593604765443');assert.ok(r.dossier.caption.includes('============'));assert.equal(r.dossier.imageChecksum,f.item.imageChecksum);assert.equal(r.dossier.dueAt,now+120000);assert.equal(r.dossier.businessDate,'2026-10-08');assert.equal(f.calls.length,2);noWrites(f);assert.equal(f.db.prepare('SELECT total_changes() n').get().n,before);const selected=(await approvedProductionItems(f.env,now,f.item.versionId))[0];assert.deepEqual(selected,f.item);}finally{f.db.close();}
 });

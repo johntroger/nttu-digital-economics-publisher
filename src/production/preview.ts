@@ -38,10 +38,10 @@ export async function approvedProductionItems(env:ManagementBindings,now:number,
  LEFT JOIN assets a ON a.id=v.asset_id LEFT JOIN asset_bindings b ON b.version_id=v.id
  LEFT JOIN cloud_library l ON v.asset_id='library-'||l.id
  LEFT JOIN cloud_reviews r ON r.version_id=v.id AND r.check_version=v.check_version ${versionId?'WHERE v.id=?':''} ORDER BY e.stable_order,p.id`,versionId?[versionId]:[]),
- rows(env,'SELECT x.version_id,x.location ref_json,s.* FROM version_sources x JOIN sources s ON s.id=x.source_id'),
- rows(env,'SELECT x.version_id,f.* FROM version_facts x JOIN facts f ON f.id=x.fact_id'),
+ rows(env,'SELECT x.version_id,x.location ref_json,s.* FROM version_sources x JOIN sources s ON s.id=x.source_id'+(versionId?' WHERE x.version_id=?':''),versionId?[versionId]:[]),
+ rows(env,'SELECT x.version_id,f.* FROM version_facts x JOIN facts f ON f.id=x.fact_id'+(versionId?' WHERE x.version_id=?':''),versionId?[versionId]:[]),
  rows(env,"SELECT source_key,checksum FROM cloud_library WHERE kind='document' AND state='complete'"),
- rows(env,'SELECT post_id,prerequisite_id FROM post_prerequisites'),
+ rows(env,'SELECT post_id,prerequisite_id FROM post_prerequisites'+(versionId?' WHERE post_id=(SELECT post_id FROM post_versions WHERE id=?)':''),versionId?[versionId]:[]),
  ]);
  const items=await Promise.all(posts.map(async p=>{
   const reasons:string[]=[],meta=parse(p.metadata_json),approval=meta?.ownerApproval,receipt=parse(p.source_snapshot),refs=meta?.sourceRefs;
