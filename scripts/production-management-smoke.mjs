@@ -19,13 +19,14 @@ const output='tmp/production-smoke-'+randomUUID();
 const {directory}=prepareProductionManagement({databaseId,releaseSha:'a'.repeat(40),origin},{output,clientId:'fixture.apps.googleusercontent.com'});
 const built=spawnSync(process.execPath,[resolve('node_modules/wrangler/bin/wrangler.js'),'deploy','--dry-run','--config',resolve(directory,'wrangler.json'),'--outdir',resolve(directory,'bundle')],{encoding:'utf8',timeout:120000,env:{...process.env,WRANGLER_SEND_METRICS:'false',CI:'true'}});
 if(built.status!==0)throw Error('Production Worker build failed');
-let exchanges=0;
+let exchanges=0,metaReads=0;
 const mf=new Miniflare(convertV4MiniflareOptions({workers:[{name:'production-management-fixture',modules:true,
  scriptPath:resolve(directory,'bundle/worker.js'),compatibilityDate:'2026-10-05',d1Databases:['DB'],
  bindings:{APP_ENV:'production',INTEGRATION_MODE:'management',DAILY_PUBLISHING_ENABLED:'false',PRODUCTION_DATABASE_ID:databaseId,
- RELEASE_SHA:'a'.repeat(40),AUTH_ORIGIN:origin,GOOGLE_CLIENT_ID:'fixture.apps.googleusercontent.com',GOOGLE_CLIENT_SECRET:'fixture-secret-only',SESSION_SIGNING_KEY:signing},
+ RELEASE_SHA:'a'.repeat(40),AUTH_ORIGIN:origin,GOOGLE_CLIENT_ID:'fixture.apps.googleusercontent.com',GOOGLE_CLIENT_SECRET:'fixture-secret-only',SESSION_SIGNING_KEY:signing,
+ META_APP_ID:'1125636386458970',META_PAGE_ID:'817593604765443',META_API_VERSION:'v26.0',META_CONNECTION_PURPOSE:'production_verify',META_PAGE_ACCESS_TOKEN:'fixture-page-token-'+ 'x'.repeat(60),META_APP_SECRET:'fixture-app-secret-'+ 's'.repeat(30)},
  serviceBindings:{ASSETS:async r=>{const name=new URL(r.url).pathname.slice(1);if(!['manager.html','management.js','management.css'].includes(name))return new Response('',{status:404});return new Response(readFileSync(resolve('ui/production',name)),{headers:{'Content-Type':name.endsWith('.html')?'text/html':name.endsWith('.js')?'text/javascript':'text/css'}});}},
- outboundService:async r=>{assert.equal(r.url,'https://oauth2.googleapis.com/token');assert.equal(r.method,'POST');const form=new URLSearchParams(await r.text());assert.equal(form.get('redirect_uri'),origin+'/auth/google/callback');exchanges++;return Response.json({error:'invalid_grant'},{status:400});}
+ outboundService:async r=>{const url=new URL(r.url);if(url.hostname==='graph.facebook.com'){assert.equal(r.method,'GET');assert.ok(['/v26.0/debug_token','/v26.0/me'].includes(url.pathname));metaReads++;return Response.json(url.pathname.endsWith('debug_token')?{data:{is_valid:true,type:'PAGE',app_id:'1125636386458970',expires_at:Math.floor(Date.now()/1000)+86400,data_access_expires_at:0,scopes:['pages_read_engagement','pages_manage_posts']}}:{id:'817593604765443',name:'Ngành Kinh tế số - NTTU'});}assert.equal(r.url,'https://oauth2.googleapis.com/token');assert.equal(r.method,'POST');const form=new URLSearchParams(await r.text());assert.equal(form.get('redirect_uri'),origin+'/auth/google/callback');exchanges++;return Response.json({error:'invalid_grant'},{status:400});}
 }]}));
 const sqlite=new DatabaseSync(':memory:');
 try{
@@ -44,6 +45,10 @@ try{
  for(const path of ['/api/me','/api/management','/management.js','/manager.html'])assert.equal((await mf.dispatchFetch(origin+path)).status,401);
  const manager=await mf.dispatchFetch(origin+'/',{headers:{Cookie:cookie}});assert.equal(manager.status,200);assert.match(await manager.text(),/Kho nội dung/);
  const read=await mf.dispatchFetch(origin+'/api/management',{headers:{Cookie:cookie}});assert.equal(read.status,200);const data=await read.json();assert.deepEqual(data.posts,[]);assert.deepEqual(data.history,[]);assert.equal(data.paused,true);
+ assert.equal((await mf.dispatchFetch(origin+'/api/meta/check',{method:'POST',headers:{Cookie:cookie},body:'{}'})).status,403);
+ const requestId=randomUUID(),verification=await mf.dispatchFetch(origin+'/api/meta/check',{method:'POST',headers:{Cookie:cookie,Origin:origin,'Content-Type':'application/json','X-CSRF-Token':'c'.repeat(64)},body:JSON.stringify({requestId})});assert.equal(verification.status,200);assert.equal((await verification.json()).verifiedReadOnly,true);assert.equal(metaReads,2);
+ for(const table of ['page_connections','publish_jobs','schedule_slots','publications','notification_outbox'])assert.equal((await db.prepare('SELECT count(*) n FROM '+table).first()).n,0);
+ assert.equal((await db.prepare('SELECT enabled FROM production_control').first()).enabled,0);
  for(const path of ['/api/daily/activate','/api/daily/publish'])assert.equal((await mf.dispatchFetch(origin+path,{method:'POST',headers:{Cookie:cookie}})).status,404);
  assert.equal((await mf.dispatchFetch(origin+'/auth/logout',{method:'POST',headers:{Cookie:cookie}})).status,403);
  const start=await mf.dispatchFetch(origin+'/auth/google/start',{redirect:'manual'});assert.equal(start.status,302);const url=new URL(start.headers.get('Location')),flow=start.headers.get('Set-Cookie').split(';')[0];

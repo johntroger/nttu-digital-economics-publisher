@@ -10,15 +10,17 @@ type ObjectValue=Record<string,unknown>;
 function object(value:unknown):value is ObjectValue{return !!value&&typeof value==='object'&&!Array.isArray(value);}
 const id=(value:unknown):value is string=>typeof value==='string'&&/^[1-9][0-9]{4,24}$/.test(value);
 const secret=(value:unknown):value is string=>typeof value==='string'&&/^[a-zA-Z0-9_-]{20,4096}$/.test(value);
-export function metaConfigured(env:CloudBindings){return id(env.META_APP_ID)&&id(env.META_PAGE_ID)&&secret(env.META_APP_SECRET)&&secret(env.META_PAGE_ACCESS_TOKEN)&&/^v[1-9][0-9]\.0$/.test(env.META_API_VERSION??'')&&env.META_CONNECTION_PURPOSE==='test';}
+export function metaCredentialsPresent(env:CloudBindings){return id(env.META_APP_ID)&&id(env.META_PAGE_ID)&&secret(env.META_APP_SECRET)&&secret(env.META_PAGE_ACCESS_TOKEN)&&/^v[1-9][0-9]\.0$/.test(env.META_API_VERSION??'');}
+export function metaConfigured(env:CloudBindings){return metaCredentialsPresent(env)&&env.META_CONNECTION_PURPOSE==='test';}
 async function fingerprint(env:CloudBindings){const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify([env.META_APP_ID,env.META_APP_SECRET,env.META_PAGE_ID,env.META_PAGE_ACCESS_TOKEN,env.META_API_VERSION,env.META_CONNECTION_PURPOSE])));return Array.from(new Uint8Array(bytes),n=>n.toString(16).padStart(2,'0')).join('');}
 async function appProof(env:CloudBindings){const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(env.META_APP_SECRET!),{name:'HMAC',hash:'SHA-256'},false,['sign']);const bytes=await crypto.subtle.sign('HMAC',key,new TextEncoder().encode(env.META_PAGE_ACCESS_TOKEN!));return Array.from(new Uint8Array(bytes),n=>n.toString(16).padStart(2,'0')).join('');}
 async function checks(env:CloudBindings,sql:string,...values:(string|number|null)[]){if(!env.DB!.prepare(sql).all)throw new CatalogError('CLOUD_DATABASE_UNAVAILABLE',503);return(await env.DB!.prepare(sql).bind(...values).all!<Check>()).results;}
-function view(row:Check,current:boolean,now:number){const fresh=row.checked_at<=now&&now-row.checked_at<MAX_AGE;
+export function metaCheckView(row:Check,current:boolean,now:number){const fresh=row.checked_at<=now&&now-row.checked_at<MAX_AGE;
   return {id:row.id,checkedAt:row.checked_at,state:row.state,reason:row.reason,current,fresh,
     pageId:row.page_id,pageName:row.page_name,scopes:JSON.parse(row.scopes_json) as string[],expiresAt:row.expires_at,dataAccessExpiresAt:row.data_access_expires_at,
     verifiedReadOnly:row.state==='verified_read_only'&&current&&fresh&&[row.expires_at,row.data_access_expires_at].every(n=>n===null||n>now),publishingEnabled:false};
 }
+const view=metaCheckView;
 export async function metaStatus(env:CloudBindings,now=Date.now()){
   await readStatus(env);const configured=metaConfigured(env),hash=await fingerprint(env);
   const row=(await checks(env,'SELECT * FROM cloud_meta_checks ORDER BY checked_at DESC,rowid DESC LIMIT 1'))[0];
@@ -67,6 +69,15 @@ export async function checkMeta(env:CloudBindings,owner:OwnerSession,input:unkno
   const hash=await fingerprint(env),prior=(await checks(env,'SELECT * FROM cloud_meta_checks WHERE request_id=?',request))[0];
   if(prior){if(prior.config_hash!==hash)throw new CatalogError('REQUEST_REUSED',409);return {...view(prior,true,now),replayed:true};}
   const busy=await env.DB!.prepare("SELECT 1 FROM application_state WHERE environment='staging' AND maintenance_owner IS NOT NULL").first();if(busy)throw new CatalogError('META_BUSY',409);
+  const {state,reason,pageId,pageName,scopes,expires,dataExpires}=await inspectMetaConnection(env,options);
+  // Only safe categories and permitted metadata are persisted; never provider errors or URLs.
+  const checkId=crypto.randomUUID();await env.DB!.prepare(`INSERT INTO cloud_meta_checks VALUES(?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(request_id) DO NOTHING`).bind(checkId,request,hash,owner.email,now,state,reason,pageId,pageName,JSON.stringify(scopes),expires,dataExpires).run();
+  const row=(await checks(env,'SELECT * FROM cloud_meta_checks WHERE request_id=?',request))[0];if(!row||row.config_hash!==hash)throw new CatalogError('REQUEST_REUSED',409);return {...view(row,true,now),replayed:false};
+}
+
+// Shared GET-only verification; caller enforces environment and owner authorization.
+export async function inspectMetaConnection(env:CloudBindings,options:{now?:number;transport?:typeof fetch}={}) {
+  const now=options.now??Date.now();
   let state='verified_read_only',reason='META_READ_ONLY_VERIFIED',pageId:string|null=null,pageName:string|null=null,scopes:string[]=[],expires:number|null=null,dataExpires:number|null=null;
   try{
     const root='https://graph.facebook.com/'+env.META_API_VERSION+'/',debug=new URL(root+'debug_token');debug.searchParams.set('input_token',env.META_PAGE_ACCESS_TOKEN!);
@@ -87,7 +98,5 @@ export async function checkMeta(env:CloudBindings,owner:OwnerSession,input:unkno
     if(typeof page.name!=='string'||!page.name.trim()||page.name.length>200||/[\x00-\x1f]/.test(page.name)||page.name.includes(env.META_PAGE_ACCESS_TOKEN!)||page.name.includes(env.META_APP_SECRET!))throw new MetaFailure('META_RESPONSE_INVALID');
     pageId=env.META_PAGE_ID!;pageName=page.name;
   }catch(error){reason=error instanceof MetaFailure?error.code:'META_CONNECTION_FAILED';state=['META_CONNECTION_FAILED','META_RATE_LIMIT','META_PROVIDER_UNAVAILABLE','META_RESPONSE_INVALID','META_REDIRECT_BLOCKED'].includes(reason)?'unavailable':'needs_action';}
-  // Only safe categories and permitted metadata are persisted; never provider errors or URLs.
-  const checkId=crypto.randomUUID();await env.DB!.prepare(`INSERT INTO cloud_meta_checks VALUES(?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(request_id) DO NOTHING`).bind(checkId,request,hash,owner.email,now,state,reason,pageId,pageName,JSON.stringify(scopes),expires,dataExpires).run();
-  const row=(await checks(env,'SELECT * FROM cloud_meta_checks WHERE request_id=?',request))[0];if(!row||row.config_hash!==hash)throw new CatalogError('REQUEST_REUSED',409);return {...view(row,true,now),replayed:false};
+  return {state,reason,pageId,pageName,scopes,expires,dataExpires};
 }

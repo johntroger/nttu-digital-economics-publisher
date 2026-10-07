@@ -1,6 +1,7 @@
 import type {ManagementBindings} from './management.ts';
 import {productionState,managementData,productionFile} from './management.ts';
 import {startGoogle,completeGoogle,ownerSession,requireMutation,clearSessionCookie,authConfigured} from '../cloud/auth.ts';
+import {productionMetaStatus,verifyProductionMeta} from './meta.ts';
 const headers={'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer'};
 function json(body:unknown,status=200){return Response.json(body,{status,headers});}
 function login(env:ManagementBindings,url:URL) {
@@ -36,6 +37,14 @@ export default {
       return Response.json({loggedOut:true},{headers:{...headers,'Set-Cookie':clearSessionCookie()}});
     }
     if(request.method==='GET'&&url.pathname==='/api/me')return json({email:owner.email,csrf:owner.csrf,environment:'production'});
+    if(request.method==='GET'&&url.pathname==='/api/meta')return json(await productionMetaStatus(env));
+    if(request.method==='POST'&&url.pathname==='/api/meta/check'){
+      try{requireMutation(request,env,owner);}catch{return json({error:'CSRF_REQUIRED'},403);}
+      const length=Number(request.headers.get('Content-Length'));if(length>1024)return json({error:'META_REQUEST_INVALID'},422);
+      const text=await request.text();if(text.length>1024)return json({error:'META_REQUEST_INVALID'},422);
+      let input;try{input=JSON.parse(text);}catch{return json({error:'META_REQUEST_INVALID'},422);}
+      try{return json(await verifyProductionMeta(env,owner,input));}catch(e){const code=e instanceof Error?e.message:'';return json({error:['META_NOT_CONFIGURED','META_REQUEST_INVALID','REQUEST_REUSED','META_BUSY'].includes(code)?code:'META_CHECK_UNAVAILABLE'},code==='REQUEST_REUSED'?409:422);}
+    }
     if(request.method==='GET'&&url.pathname==='/api/management')return json(await managementData(env));
     if(request.method==='GET'&&/^\/api\/library\/files\/[a-zA-Z0-9-]{1,128}$/.test(url.pathname))return await productionFile(env,url.pathname.split('/').at(-1)!);
     if(request.method==='GET'&&(url.pathname==='/'||url.pathname==='/management.js')) {
