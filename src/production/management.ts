@@ -4,7 +4,7 @@ import {composeCaption,FOOTER,CAPTION_SEPARATOR} from '../domain/footer.ts';
 import {verifiedBytes} from '../cloud/storage.ts';
 import {productionMetaStatus} from './meta.ts';
 import {operationsStatus} from './operations.ts';
-export interface ManagementBindings extends CloudBindings { PRODUCTION_DATABASE_ID?:string; PRODUCTION_MONITOR_TOKEN?:string }
+export interface ManagementBindings extends CloudBindings { PRODUCTION_DATABASE_ID?:string; PRODUCTION_MONITOR_TOKEN?:string; PRODUCTION_TRIGGER_TOKEN?:string }
 type Row=Record<string,unknown>;
 export async function productionState(env:ManagementBindings) {
   if(env.APP_ENV!=='production'||env.INTEGRATION_MODE!=='management'||env.DAILY_PUBLISHING_ENABLED!=='false'
@@ -14,11 +14,11 @@ export async function productionState(env:ManagementBindings) {
   const row=await env.DB.prepare(`SELECT i.environment,i.database_id,i.schema_version,a.paused_by_user,
     c.enabled,c.publish_time,c.timezone,c.target_page_url,c.page_id,c.connection_verified,
     (SELECT count(*) FROM schema_migrations) migration_count,
-    (SELECT count(*) FROM schema_migrations WHERE name NOT IN ('0011_production_meta.sql','0012_production_operations.sql')) base_migration_count
+    (SELECT count(*) FROM schema_migrations WHERE name NOT IN ('0011_production_meta.sql','0012_production_operations.sql','0013_production_http_trigger.sql')) base_migration_count
     FROM production_identity i JOIN application_state a ON a.environment=i.environment
     JOIN production_control c ON c.id=i.id WHERE i.id=1`).first<Row>();
   if(!row||row.environment!=='production'||row.database_id!==env.PRODUCTION_DATABASE_ID||row.schema_version!==1
-    ||![10,11,12].includes(Number(row.migration_count))||row.base_migration_count!==10||row.paused_by_user!==1||row.enabled!==0||row.connection_verified!==0
+    ||![10,11,12,13].includes(Number(row.migration_count))||row.base_migration_count!==10||row.paused_by_user!==1||row.enabled!==0||row.connection_verified!==0
     ||row.page_id!==null||row.publish_time!=='10:00'||row.timezone!=='Asia/Ho_Chi_Minh'
     ||row.target_page_url!=='https://www.facebook.com/NganhKinhTeSoNTTU') throw Error('PRODUCTION_IDENTITY_INVALID');
   return row;

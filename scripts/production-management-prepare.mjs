@@ -15,7 +15,8 @@ export function productionMigrations(databaseId) {
     {name:'0009_private_storage.sql',sql:readFileSync('cloud/private-storage.sql','utf8')},
     {name:'0010_source_review.sql',sql:readFileSync('cloud/source-review.sql','utf8')},
     {name:'0011_production_meta.sql',sql:readFileSync('cloud/meta.sql','utf8')},
-    {name:'0012_production_operations.sql',sql:readFileSync('cloud/telegram.sql','utf8')+readFileSync('cloud/production-operations.sql','utf8')});
+    {name:'0012_production_operations.sql',sql:readFileSync('cloud/telegram.sql','utf8')+readFileSync('cloud/production-operations.sql','utf8')},
+    {name:'0013_production_http_trigger.sql',sql:readFileSync('cloud/production-http-trigger.sql','utf8')});
   return files.map((file,i)=>{const checksum=createHash('sha256').update(file.sql).digest('hex');return {...file,checksum,
     sql:(i===0?'CREATE TABLE schema_migrations(name TEXT PRIMARY KEY,checksum TEXT NOT NULL);\n':'')+file.sql+`\nINSERT INTO schema_migrations VALUES('${file.name}','${checksum}');\n`};});
 }

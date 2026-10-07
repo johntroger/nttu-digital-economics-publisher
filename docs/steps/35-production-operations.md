@@ -22,6 +22,12 @@ Kiểm thử đơn vị, schema cũ/mới, owner/CSRF, monitor bearer không c�
 
 Chưa kết luận hoàn tất trước khi có bằng chứng thực tế.
 
+## Thay nguồn kích hoạt HTTP (đã được người quản lý cho triển khai)
+
+Schema 0013 thêm trạng thái HTTP riêng, mặc định tắt. Endpoint POST /api/production/tick dùng PRODUCTION_TRIGGER_TOKEN riêng với token giám sát; không nhận body, query, giờ, recipient hoặc loại tác vụ từ bên gọi. Chỉ chạy khi cấu hình production vẫn management/paused và Facebook tắt. D1 claim nguyên tử coalesce theo phút server, lease 60 giây; mỗi request chờ tối đa một lần gửi Telegram (provider timeout 10 giây). Request bị ngắt giữ intent trong hàng chờ; lượt sau phục hồi theo cơ chế Telegram hiện có. Tin Telegram mất phản hồi vẫn có thể trùng khi thử lại; không cấp quyền đăng Facebook.
+
+Khi bật HTTP, Cron vẫn ghi bằng chứng riêng nếu được gọi nhưng không dispatch hàng chờ. HTTP có heartbeat nhận và hoàn tất riêng. Monitor đọc hai dấu thời gian HTTP khi nguồn được chọn là HTTP; không dùng HTTP để giả ghi heartbeat Cron. UI hiển thị nguồn đang chọn và lượt hoàn tất. Job cron-job.org mới gọi trực tiếp mỗi phút; job giám sát 30 phút giữ nguyên. Chưa nghiệm thu cho đến khi có ít nhất ba lượt tự động thật và biên nhận tin production đang chờ.
+
 
 Cập nhật triển khai ngày 07/10/2026: main nhận đúng ba tệp giám sát tại commit 9bf8f1fed9f3cc8965971ca693ed237a15b20a7b; CI 37570216864 thành công và STAGING_DEPLOY_ENABLED đã khôi phục. Worker production tại release 2e50f2746087921156123458ab1cf232faae1a02, migration 12 đã áp dụng; 22 kiểm tra truy cập HTTP đạt. Staging giữ release 556db22c45e1dcdc76b9628a51415730d007da42. Giám sát production đã bật: lượt 37571901841 đọc được health, D1 và Meta, gửi tin kiểm thử có nhãn thành công (message ID 10); chỉ phát hiện heartbeat còn thiếu. Đến 11:35 giờ Việt Nam, cron production chưa ghi heartbeat và tin Cloudflare vẫn pending, chưa gửi. Đã áp dụng lại riêng trigger */5 * * * * lúc 11:36; chưa nghiệm thu cron hoặc kết luận ổn định. Người quản lý đã xác nhận nhận tin giám sát. Lượt tự động cron-job.org 37574172658 lúc 12:00 ngày 07/10/2026 đã đọc production và gửi đúng cảnh báo heartbeat (message ID 11); source cron-job.org, lag 85 giây. Staging tiếp tục có heartbeat mới. Đến 12:00 production vẫn chưa được scheduled gọi; đã xóa rồi tạo lại duy nhất trigger mỗi 5 phút lúc 12:01:23, Cloudflare xác nhận created_on mới. Chưa kết luận cron production đạt.
 

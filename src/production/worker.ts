@@ -2,7 +2,7 @@ import type {ManagementBindings} from './management.ts';
 import {productionState,managementData,productionFile} from './management.ts';
 import {startGoogle,completeGoogle,ownerSession,requireMutation,clearSessionCookie,authConfigured} from '../cloud/auth.ts';
 import {productionMetaStatus,verifyProductionMeta} from './meta.ts';
-import {operationsStatus,enqueueProductionTelegramTest,runProductionOperations,monitorAuthorized,productionMonitorStatus} from './operations.ts';
+import {operationsStatus,enqueueProductionTelegramTest,runProductionOperations,monitorAuthorized,productionMonitorStatus,triggerAuthorized,runProductionHttpTick} from './operations.ts';
 const headers={'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer'};
 function json(body:unknown,status=200){return Response.json(body,{status,headers});}
 function login(env:ManagementBindings,url:URL) {
@@ -18,6 +18,13 @@ export default {
     const url=new URL(request.url);
     if(url.origin!==env.AUTH_ORIGIN)return json({error:'PRODUCTION_ORIGIN_INVALID'},403);
     await productionState(env);
+    if(url.pathname==='/api/production/tick'){
+      if(request.method!=='POST')return json({error:'METHOD_NOT_ALLOWED'},405);
+      if(url.search||!await triggerAuthorized(request,env))return json({error:'TRIGGER_AUTH_REQUIRED'},401);
+      // No caller-selected time, recipient, payload or operation is accepted.
+      if(await request.text()!=='')return json({error:'TRIGGER_BODY_NOT_ALLOWED'},422);
+      try{return json(await runProductionHttpTick(env));}catch{return json({error:'TRIGGER_UNAVAILABLE'},503);}
+    }
     if(url.pathname==='/health'&&request.method==='GET')return json({environment:'production',phase:'management',release:env.RELEASE_SHA,
       databaseChecked:true,publishingImplemented:false,publishingEnabled:false,schedulerImplemented:false,operationsSchedulerImplemented:true,ownerLoginConfigured:authConfigured(env)});
     if(url.pathname==='/api/production/monitor'&&request.method==='GET'){
