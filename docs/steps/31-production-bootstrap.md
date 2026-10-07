@@ -21,4 +21,12 @@ Chưa coi bootstrap là ứng dụng production dùng được; chưa chuyển f
 
 ## Tài nguyên đã tạo
 
-D1 production ID: 09cdecc7-36a2-4196-950e-ef68b1ecd834 (APAC), tên nttu-publisher-production. Bucket nttu-publisher-production-assets đã tạo với Standard storage. Hai tài nguyên mới đang trống; không sao chép database hoặc secret staging. Cần triển khai/kiểm tra bootstrap và nghiệm thu CI trước khi chốt bước.
+D1 production ID: 09cdecc7-36a2-4196-950e-ef68b1ecd834 (APAC), tên nttu-publisher-production. Bucket nttu-publisher-production-assets đã tạo với Standard storage. Hai tài nguyên mới đang trống; không sao chép database hoặc secret staging.
+
+## Nghiệm thu bootstrap
+
+331/331 kiểm thử Node, 13 kiểm tra ảnh và TypeScript đạt qua pre-push. CI 37561315839 đạt trên Windows/Linux, gồm smoke Worker/D1 staging hiện có. 4 kiểm thử riêng của bootstrap kiểm tra cách ly cấu hình và đóng đường ghi dữ liệu; thêm 5 yêu cầu HTTP workerd cục bộ đạt.
+
+Triển khai đầu bị từ chối quyền Worker; người quản lý đã bấm Allow để cấp lại phiên Cloudflare với quyền triển khai cần thiết. Bootstrap được triển khai từ commit 5744794974788b7044e0532894cc929cb68fbbdb vào https://nttu-publisher-production.nttu-kts-johntroger.workers.dev, Cloudflare version 1b446b1b-d24c-4fcd-97ae-60f1a016adaf. Kiểm tra trực tiếp lúc 09:23 ngày 07/10/2026: health 200 đúng SHA/phase bootstrap, publishingEnabled=false, schedulerImplemented=false, databaseChecked=false; root, login và hai đường dẫn đăng/bật lịch trả 503. Điều này chỉ nghiệm thu bootstrap, không chứng minh schema hoặc publisher production hoạt động.
+
+Staging vẫn release 556db22c45e1dcdc76b9628a51415730d007da42, publishingEnabled=true, paused=false. Draft PR #2 giữ riêng thay đổi khỏi main; chưa merge và chưa triển khai backend production. Các bằng chứng riêng nằm trong tmp/step31-*.json, không chứa token. Bước 32 đề xuất: schema/runtime production, Google owner login và giao diện quản lý, lịch vẫn tắt; chờ phê duyệt trước khi bắt đầu.
