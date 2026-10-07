@@ -2,6 +2,7 @@ import type {ManagementBindings} from './management.ts';
 import {productionState,managementData,productionFile} from './management.ts';
 import {startGoogle,completeGoogle,ownerSession,requireMutation,clearSessionCookie,authConfigured} from '../cloud/auth.ts';
 import {productionMetaStatus,verifyProductionMeta} from './meta.ts';
+import {operationsStatus,enqueueProductionTelegramTest,runProductionOperations,monitorAuthorized,productionMonitorStatus,triggerAuthorized,runProductionHttpTick} from './operations.ts';
 const headers={'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer'};
 function json(body:unknown,status=200){return Response.json(body,{status,headers});}
 function login(env:ManagementBindings,url:URL) {
@@ -17,8 +18,19 @@ export default {
     const url=new URL(request.url);
     if(url.origin!==env.AUTH_ORIGIN)return json({error:'PRODUCTION_ORIGIN_INVALID'},403);
     await productionState(env);
+    if(url.pathname==='/api/production/tick'){
+      if(request.method!=='POST')return json({error:'METHOD_NOT_ALLOWED'},405);
+      if(url.search||!await triggerAuthorized(request,env))return json({error:'TRIGGER_AUTH_REQUIRED'},401);
+      // No caller-selected time, recipient, payload or operation is accepted.
+      if(await request.text()!=='')return json({error:'TRIGGER_BODY_NOT_ALLOWED'},422);
+      try{return json(await runProductionHttpTick(env));}catch{return json({error:'TRIGGER_UNAVAILABLE'},503);}
+    }
     if(url.pathname==='/health'&&request.method==='GET')return json({environment:'production',phase:'management',release:env.RELEASE_SHA,
-      databaseChecked:true,publishingImplemented:false,publishingEnabled:false,schedulerImplemented:false,ownerLoginConfigured:authConfigured(env)});
+      databaseChecked:true,publishingImplemented:false,publishingEnabled:false,schedulerImplemented:false,operationsSchedulerImplemented:true,ownerLoginConfigured:authConfigured(env)});
+    if(url.pathname==='/api/production/monitor'&&request.method==='GET'){
+      if(!await monitorAuthorized(request,env))return json({error:'MONITOR_AUTH_REQUIRED'},401);
+      return json(await productionMonitorStatus(env));
+    }
     if(request.method==='GET'&&url.pathname==='/auth/google/start'){
       if(!authConfigured(env))return json({error:'GOOGLE_NOT_CONFIGURED'},503);
       return await startGoogle(request,env);
@@ -38,6 +50,12 @@ export default {
     }
     if(request.method==='GET'&&url.pathname==='/api/me')return json({email:owner.email,csrf:owner.csrf,environment:'production'});
     if(request.method==='GET'&&url.pathname==='/api/meta')return json(await productionMetaStatus(env));
+    if(request.method==='GET'&&url.pathname==='/api/telegram')return json(await operationsStatus(env));
+    if(request.method==='POST'&&url.pathname==='/api/telegram/test'){
+      try{requireMutation(request,env,owner);}catch{return json({error:'CSRF_REQUIRED'},403);}
+      const body=await request.text();if(body.length>1024)return json({error:'TELEGRAM_REQUEST_INVALID'},422);
+      try{return json(await enqueueProductionTelegramTest(env,JSON.parse(body)));}catch{return json({error:'TELEGRAM_TEST_UNAVAILABLE'},422);}
+    }
     if(request.method==='POST'&&url.pathname==='/api/meta/check'){
       try{requireMutation(request,env,owner);}catch{return json({error:'CSRF_REQUIRED'},403);}
       const length=Number(request.headers.get('Content-Length'));if(length>1024)return json({error:'META_REQUEST_INVALID'},422);
@@ -57,4 +75,5 @@ export default {
     return json({error:'PRODUCTION_ROUTE_NOT_AVAILABLE'},404);
   } catch { return json({error:'PRODUCTION_MANAGEMENT_UNAVAILABLE'},503); }
  },
+ async scheduled(event:{cron:string;scheduledTime:number},env:ManagementBindings){await runProductionOperations(event,env);},
 };

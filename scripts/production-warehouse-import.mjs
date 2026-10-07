@@ -21,7 +21,7 @@ export function importConfig(config){
  ||config.triggers?.crons?.length!==0)throw Error('Production import boundary invalid');
 }
 export const importGuard=`EXISTS(SELECT 1 FROM production_identity WHERE id=1 AND environment='production' AND database_id='${PRODUCTION_DB}' AND schema_version=1)
- AND (SELECT count(*) FROM schema_migrations) IN (10,11) AND (SELECT count(*) FROM application_state)=1
+ AND (SELECT count(*) FROM schema_migrations) IN (10,11,12,13) AND (SELECT count(*) FROM application_state)=1
  AND EXISTS(SELECT 1 FROM application_state WHERE environment='production' AND paused_by_user=1 AND maintenance_owner IS NULL)
  AND EXISTS(SELECT 1 FROM production_control WHERE id=1 AND enabled=0 AND page_id IS NULL AND connection_verified=0)
  AND NOT EXISTS(SELECT 1 FROM page_connections) AND NOT EXISTS(SELECT 1 FROM publish_jobs)
