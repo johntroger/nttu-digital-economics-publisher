@@ -30,18 +30,35 @@ concurrency:
   group: independent-staging-monitor
   cancel-in-progress: false
 jobs:
-  production-monitor:
-    if: github.ref == 'refs/heads/main' && vars.PRODUCTION_MONITOR_ENABLED == 'true' && (github.event_name != 'workflow_dispatch' || inputs.monitor_target != 'staging') && (github.event_name != 'schedule' || vars.MONITOR_EXTERNAL_PRIMARY != 'true' || github.event.schedule == '23 2,14 * * *')
+  monitor:
+    if: github.ref == 'refs/heads/main' && (vars.MONITOR_ENABLED == 'true' || vars.PRODUCTION_MONITOR_ENABLED == 'true') && (github.event_name != 'schedule' || vars.MONITOR_EXTERNAL_PRIMARY != 'true' || github.event.schedule == '23 2,14 * * *')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .nvmrc
+      - name: Read staging state and deliver incident alerts
+        if: vars.MONITOR_ENABLED == 'true' && (github.event_name != 'workflow_dispatch' || inputs.monitor_target != 'production')
+        run: node scripts/monitor.mjs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          STAGING_WORKER_URL: ${{ vars.STAGING_WORKER_URL }}
+          STAGING_HEALTH_TOKEN: ${{ secrets.STAGING_HEALTH_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          STAGING_D1_DATABASE_ID: ${{ vars.STAGING_D1_DATABASE_ID }}
+          MONITOR_STATE_ISSUE: ${{ vars.MONITOR_STATE_ISSUE }}
+          MONITOR_TELEGRAM_CHAT_ID: ${{ vars.MONITOR_TELEGRAM_CHAT_ID }}
+          MONITOR_TELEGRAM_BOT_TOKEN: ${{ secrets.MONITOR_TELEGRAM_BOT_TOKEN }}
+          MONITOR_TEST: ${{ github.event_name == 'workflow_dispatch' && inputs.send_test }}
+          MONITOR_TRIGGER_SOURCE: ${{ github.event_name == 'schedule' && 'github-schedule' || inputs.trigger_source || 'manual' }}
+          MONITOR_TRIGGER_AT: ${{ inputs.triggered_at }}
       - name: Read production state and deliver incident alerts
+        if: ${{ !cancelled() && vars.PRODUCTION_MONITOR_ENABLED == 'true' && (github.event_name != 'workflow_dispatch' || inputs.monitor_target != 'staging') }}
         run: node scripts/monitor.mjs
         env:
           MONITOR_TARGET: production
@@ -52,32 +69,6 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           MONITOR_STATE_ISSUE: ${{ vars.PRODUCTION_MONITOR_STATE_ISSUE }}
-          MONITOR_TELEGRAM_CHAT_ID: ${{ vars.MONITOR_TELEGRAM_CHAT_ID }}
-          MONITOR_TELEGRAM_BOT_TOKEN: ${{ secrets.MONITOR_TELEGRAM_BOT_TOKEN }}
-          MONITOR_TEST: ${{ github.event_name == 'workflow_dispatch' && inputs.send_test }}
-          MONITOR_TRIGGER_SOURCE: ${{ github.event_name == 'schedule' && 'github-schedule' || inputs.trigger_source || 'manual' }}
-          MONITOR_TRIGGER_AT: ${{ inputs.triggered_at }}
-  monitor:
-    if: github.ref == 'refs/heads/main' && vars.MONITOR_ENABLED == 'true' && (github.event_name != 'workflow_dispatch' || inputs.monitor_target != 'production') && (github.event_name != 'schedule' || vars.MONITOR_EXTERNAL_PRIMARY != 'true' || github.event.schedule == '23 2,14 * * *')
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version-file: .nvmrc
-      - name: Read cloud state and deliver incident alerts
-        run: node scripts/monitor.mjs
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          STAGING_WORKER_URL: ${{ vars.STAGING_WORKER_URL }}
-          STAGING_HEALTH_TOKEN: ${{ secrets.STAGING_HEALTH_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          STAGING_D1_DATABASE_ID: ${{ vars.STAGING_D1_DATABASE_ID }}
-          MONITOR_STATE_ISSUE: ${{ vars.MONITOR_STATE_ISSUE }}
           MONITOR_TELEGRAM_CHAT_ID: ${{ vars.MONITOR_TELEGRAM_CHAT_ID }}
           MONITOR_TELEGRAM_BOT_TOKEN: ${{ secrets.MONITOR_TELEGRAM_BOT_TOKEN }}
           MONITOR_TEST: ${{ github.event_name == 'workflow_dispatch' && inputs.send_test }}
