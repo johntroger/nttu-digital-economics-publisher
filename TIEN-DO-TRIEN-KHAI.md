@@ -112,3 +112,9 @@ staging release d563017b8d37f14539d0db0abf57900bb3f83254 đạt. 41 private path
 trả 401, không có bảng giả lập/job/publication trên staging, checksum gốc giữ
 nguyên, lịch vẫn dừng/publish 501. Chưa triển khai Bước 20.
 Chi tiết: docs/steps/19-cloud-workflow.md.
+
+## Mốc hiện hành — Bước 30–31 (07/10/2026)
+
+Các bước 20–29 đã nối Meta thử, kho 40 bài đã duyệt, điều phối đăng cloud, lịch một bài/ngày 10:00 trên Tập Viết và giám sát ngoài bằng cron-job.org/GitHub. Xem báo cáo từng bước trong docs/steps. Bước 30 sửa nhãn giao diện, kiểm tra phục hồi và lưu bản ZIP lên Google Drive riêng tư, kiểm tra trạng thái vận hành; 327 kiểm thử Node và 13 kiểm tra ảnh đạt. Người quản lý chấp nhận tạm thời mà không chờ mốc 09:30/10:00; không coi hai mốc đó đã được kiểm chứng.
+
+Bước 31 bắt đầu chuẩn bị production riêng trên nhánh codex/step31-production-bootstrap. Đích chính thức đã xác nhận là NganhKinhTeSoNTTU; Page ID số/token production chưa xác minh. Bootstrap không có cron hoặc khả năng đăng. Chưa triển khai publisher production hoặc bật đăng chính thức. Chi tiết: docs/steps/30-operational-acceptance.md và docs/steps/31-production-bootstrap.md.

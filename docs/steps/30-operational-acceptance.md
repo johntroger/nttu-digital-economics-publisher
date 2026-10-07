@@ -38,7 +38,9 @@ Nghiệm thu triển khai đầu: release 47501c8412e9a545bc0db1ed87eb30aa2bf4d6
 - Lỗi lời nhắc được triển khai và kiểm tra trực tiếp trên trang đăng nhập; lịch vẫn bật sau triển khai.
 - Lưu bản phục hồi hiện tại ở nơi riêng tư độc lập với máy tính. Gói cục bộ giúp phục hồi nhưng chưa đủ chống mất máy; chưa cấu hình sao lưu định kỳ/retention.
 
-Không đánh dấu Bước 30 đạt toàn bộ khi các điều kiện này còn chờ. Ba lượt thử một phút chỉ chứng minh nguồn tự kích hoạt, không chứng minh vận hành ổn định dài hạn hoặc SLA 30 phút.
+Ngày 07/10/2026, người quản lý yêu cầu “tạm thời coi như ổn, ko cần chờ thêm, tiến hành bước tiếp theo”. Bước 30 được chấp nhận tạm thời theo quyết định này; hai mốc 09:30 và 10:00 chưa có bằng chứng tại thời điểm quyết định, không ghi là đã kiểm thử đạt. Ba lượt thử một phút chỉ chứng minh nguồn tự kích hoạt, không chứng minh vận hành ổn định dài hạn hoặc SLA 30 phút.
+
+Các kiểm tra bổ sung đã hoàn tất trước quyết định: release 556db22c45e1dcdc76b9628a51415730d007da42, CI 37559589947 đạt; 327 kiểm thử Node và 13 kiểm tra ảnh. Giao diện Google owner, ảnh/caption bài R01 trên Facebook và 24 kiểm tra quyền truy cập đã được đối chiếu. Lượt giám sát cron-job.org lúc 09:00 thành công. Gói phục hồi đã lưu vào Drive riêng tư của tài khoản quản lý; tải lại kiểm SHA-256 khớp bản gốc. Người quản lý cung cấp ảnh cấu hình báo sau một lần lỗi, khi phục hồi và khi tự vô hiệu hóa, nhận qua email tài khoản, rồi xác nhận Save. Chưa kiểm thử gửi email lỗi thực tế hoặc cấu hình backup định kỳ.
 
 ## Trước khi chuyển fanpage chính thức
 
