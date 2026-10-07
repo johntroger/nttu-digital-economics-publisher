@@ -1,5 +1,5 @@
 import type {ManagementBindings} from './management.ts';
-import {productionState,managementData} from './management.ts';
+import {productionState,managementData,productionFile} from './management.ts';
 import {startGoogle,completeGoogle,ownerSession,requireMutation,clearSessionCookie,authConfigured} from '../cloud/auth.ts';
 const headers={'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer'};
 function json(body:unknown,status=200){return Response.json(body,{status,headers});}
@@ -37,12 +37,13 @@ export default {
     }
     if(request.method==='GET'&&url.pathname==='/api/me')return json({email:owner.email,csrf:owner.csrf,environment:'production'});
     if(request.method==='GET'&&url.pathname==='/api/management')return json(await managementData(env));
+    if(request.method==='GET'&&/^\/api\/library\/files\/[a-zA-Z0-9-]{1,128}$/.test(url.pathname))return await productionFile(env,url.pathname.split('/').at(-1)!);
     if(request.method==='GET'&&(url.pathname==='/'||url.pathname==='/management.js')) {
       if(!env.ASSETS)return json({error:'ASSETS_UNAVAILABLE'},503);
       const asset=new URL(url.pathname==='/'?'/manager.html':url.pathname,url.origin);
       const response=await env.ASSETS.fetch(new Request(asset));
       const result=new Response(response.body,response);for(const [k,v] of Object.entries(headers))result.headers.set(k,v);
-      result.headers.set('Content-Security-Policy',"default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'");return result;
+      result.headers.set('Content-Security-Policy',"default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; connect-src 'self'; img-src 'self'; base-uri 'none'; frame-ancestors 'none'");return result;
     }
     return json({error:'PRODUCTION_ROUTE_NOT_AVAILABLE'},404);
   } catch { return json({error:'PRODUCTION_MANAGEMENT_UNAVAILABLE'},503); }

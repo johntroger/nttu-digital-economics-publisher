@@ -9,7 +9,11 @@ import {randomUUID} from 'node:crypto';
 import {SignJWT} from 'jose';
 import {Miniflare,convertV4MiniflareOptions} from 'miniflare';
 import {productionMigrations,prepareProductionManagement} from './production-management-prepare.mjs';
-const databaseId='11111111-1111-1111-1111-111111111111',origin='https://nttu-publisher-production.example.workers.dev',signing='e'.repeat(64);
+import {approvedPack} from './cloud-batch-import.mjs';
+import {productionWarehouseStatements,PRODUCTION_DB} from './production-warehouse-import.mjs';
+import {SOURCE_REGISTRY} from '../src/cloud/source-registry.ts';
+// Actual ID is metadata only: all bindings below are isolated in-memory fixtures.
+const databaseId=PRODUCTION_DB,origin='https://nttu-publisher-production.example.workers.dev',signing='e'.repeat(64);
 mkdirSync('tmp',{recursive:true});
 const output='tmp/production-smoke-'+randomUUID();
 const {directory}=prepareProductionManagement({databaseId,releaseSha:'a'.repeat(40),origin},{output,clientId:'fixture.apps.googleusercontent.com'});
@@ -45,6 +49,16 @@ try{
  const start=await mf.dispatchFetch(origin+'/auth/google/start',{redirect:'manual'});assert.equal(start.status,302);const url=new URL(start.headers.get('Location')),flow=start.headers.get('Set-Cookie').split(';')[0];
  const failed=await mf.dispatchFetch(origin+'/auth/google/callback?code=fixture&state='+url.searchParams.get('state'),{headers:{Cookie:flow},redirect:'manual'});
  assert.equal(failed.headers.get('Location'),'/?login=failed&reason=grant');assert.equal(exchanges,1);
+ const json=p=>JSON.parse(readFileSync(p));
+ const pack=approvedPack(json('content/batch-2026-v1.json'),json('content/batch-2026-v1.manifest.json'),json('content/samples/step22-approval.json'),json('content/batch/step23-approval.json'));
+ const library=pack.map(p=>({id:p.id,kind:'image',state:'complete',checksum:p.entry.image_sha256,width:1080,height:1080}));
+ library.push(...SOURCE_REGISTRY.filter(s=>s.authority==='document').map(s=>({id:s.id,kind:'document',state:'complete',source_key:s.id,checksum:s.sha256})));
+ for(const f of library){await db.prepare('INSERT INTO cloud_library VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)').bind(f.id,f.kind,f.id,f.source_key??null,f.checksum,'private/'+f.id,f.kind==='image'?'image/png':'application/pdf',5000,f.width??null,f.height??null,'complete','owner','now').run();
+  if(f.kind==='image')await db.prepare('INSERT INTO assets VALUES(?,?,?,?,?,?,?,?)').bind('library-'+f.id,'private/'+f.id,f.checksum,'image/png',1080,1080,5000,'complete').run();}
+ await db.batch(productionWarehouseStatements(pack,library,'f'.repeat(64),'2026-10-07T03:00:00Z').map(sql=>db.prepare(sql)));
+ const warehouse=await(await mf.dispatchFetch(origin+'/api/management',{headers:{Cookie:cookie}})).json();assert.equal(warehouse.posts.length,40);assert.ok(warehouse.posts.every(p=>p.contentDesignApproved&&p.imageUrl));assert.deepEqual(warehouse.schedule,[]);assert.deepEqual(warehouse.history,[]);assert.equal(warehouse.publishingEnabled,false);
+ await assert.rejects(db.batch(productionWarehouseStatements(pack,library,'f'.repeat(64),'2026-10-07T03:00:00Z').map(sql=>db.prepare(sql))));
+ assert.equal((await db.prepare('SELECT count(*) n FROM posts').first()).n,40);
  assert.equal((await db.prepare('PRAGMA foreign_key_check').all()).results.length,0);
  await db.prepare("UPDATE application_state SET paused_by_user=0 WHERE environment='production'").run();assert.equal((await mf.dispatchFetch(origin+'/api/management',{headers:{Cookie:cookie}})).status,503);
  console.log('Production workerd smoke passed: complete schema, isolated identity, owner/session privacy, ASSETS, disabled publication routes, logout CSRF, OAuth native exchange and fail-closed unpause. No external provider request.');
