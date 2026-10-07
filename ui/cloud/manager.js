@@ -95,7 +95,7 @@ function renderPosts() {
     button.setAttribute('aria-pressed', String(post.id === selected?.id));
     const key = document.createElement('small'); key.textContent = `${post.key} · ${post.pool === 'reserve' ? 'Dự phòng' : 'Theo kế hoạch'}`;
     const title = document.createElement('strong'); title.textContent = post.title;
-    const status = document.createElement('small'); status.textContent = `Phiên bản ${post.version} · ${post.stage === 'brief' ? 'Đề cương' : 'Caption cần rà soát'}`;
+    const status = document.createElement('small'); status.textContent = `Phiên bản ${post.version} · ${post.stage === 'brief' ? 'Đề cương' : 'Đã biên tập caption'}`;
     button.append(key, title, status); button.addEventListener('click', () => openPost(post.id)); $('rows').append(button);
   }
 }

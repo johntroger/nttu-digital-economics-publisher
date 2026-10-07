@@ -26,6 +26,10 @@ Trang chưa đăng nhập ghi cố định “Lịch đăng Facebook đang dừn
 
 Guard triển khai chỉ cho phép đúng thay đổi chuỗi HTML này trong worker. Bất kỳ thay đổi logic worker, lịch, schema hoặc backend khác vẫn bị chặn khi lịch bật. Hai kiểm thử hồi quy kiểm tra lời nhắc trong cả hai cấu hình gate và giới hạn của guard. Nhóm auth/deployment có 27 kiểm thử đạt trước push; kiểm tra đầy đủ tiếp tục chạy qua pre-push và CI.
 
+Giao diện đã đăng nhập còn có chỉ số “0 đủ điều kiện đăng” cố định và nhãn “Caption cần rà soát” cho mọi caption. Thay chỉ số bằng lời giải thích điều kiện được kiểm tra trước mỗi lượt; nhãn phiên bản thể hiện đã biên tập, không tự khẳng định đã duyệt. Tổng 40 đổi thành “Bài đang quản lý”, vì bao gồm cả bài đã dùng. Biên nhận duyệt và logic eligibility không đổi.
+
+Nghiệm thu triển khai đầu: release 47501c8412e9a545bc0db1ed87eb30aa2bf4d62b; CI 37559099006 thành công; 327 kiểm thử Node và 13 kiểm tra ảnh đạt. Kiểm tra remote 12 đường dẫn riêng tư: 401 với khách chưa đăng nhập và health bearer; bearer chỉ đọc trạng thái vận hành. Lời nhắc đăng nhập mới đúng; lịch enabled=1, revision=3, test_publish_at=null và lịch sử không đổi. Giao diện Google owner đã được mở để tiếp tục nghiệm thu; các nhãn kho được sửa ở lần tiếp theo.
+
 ## Điều kiện còn chờ nghiệm thu thật
 
 - Hai lượt cron-job.org theo lịch 30 phút: kiểm tra nguồn, thời điểm yêu cầu, thời điểm bắt đầu, kết quả và checkpoint. Không dùng TEST RUN thay cho lượt theo lịch.
