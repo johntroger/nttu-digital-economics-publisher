@@ -118,3 +118,15 @@ Chi tiết: docs/steps/19-cloud-workflow.md.
 Các bước 20–29 đã nối Meta thử, kho 40 bài đã duyệt, điều phối đăng cloud, lịch một bài/ngày 10:00 trên Tập Viết và giám sát ngoài bằng cron-job.org/GitHub. Xem báo cáo từng bước trong docs/steps. Bước 30 sửa nhãn giao diện, kiểm tra phục hồi và lưu bản ZIP lên Google Drive riêng tư, kiểm tra trạng thái vận hành; 327 kiểm thử Node và 13 kiểm tra ảnh đạt. Người quản lý chấp nhận tạm thời mà không chờ mốc 09:30/10:00; không coi hai mốc đó đã được kiểm chứng.
 
 Bước 31 bắt đầu chuẩn bị production riêng trên nhánh codex/step31-production-bootstrap. Đích chính thức đã xác nhận là NganhKinhTeSoNTTU; Page ID số/token production chưa xác minh. Bootstrap không có cron hoặc khả năng đăng. Chưa triển khai publisher production hoặc bật đăng chính thức. Chi tiết: docs/steps/30-operational-acceptance.md và docs/steps/31-production-bootstrap.md.
+
+## Mốc hiện hành — Bước 32–35 (07/10/2026)
+
+Production đã có đăng nhập Google, kho 40 bài/56 assets, xác minh Meta Page 817593604765443 và token dài hạn, hàng chờ Telegram và giám sát riêng. Cron production không ghi heartbeat nên đã chuyển nguồn xử lý thông báo sang cron-job.org gọi HTTP mỗi phút với token riêng do người quản lý phê duyệt. Bốn lượt tự động đầu tiên 200 OK, Telegram delivered một lần (message ID 12); đến 17:56 có 318 lượt HTTP, dispatch idle. Giám sát cron-job.org/GitHub vẫn mỗi 30 phút, checkpoint không có incident. Không coi nguyên nhân Cron đã được sửa.
+
+357 kiểm thử, 13 kiểm tra ảnh, native workerd/D1 và CI Windows/Ubuntu đạt. Runtime production ad94c090d5781e26afae57b171c2e56188e5ef10, schema 13; staging vẫn release 556db22c45e1dcdc76b9628a51415730d007da42 và giữ lịch Tập Viết. Facebook production vẫn tắt, lịch đích 10:00 giờ Việt Nam/một bài mỗi ngày. Còn xác nhận người quản lý nhìn thấy tin PRODUCTION để khép mục nhận tin của Bước 35.
+
+Bước 36 chưa được phê duyệt và chưa code. Phạm vi đề xuất ở docs/steps/36-production-publisher-plan.md: chuẩn bị publisher production và kiểm thử giả lập, giữ khóa đăng thật. Các mốc cũ phía trên là lịch sử, không phải trạng thái hiện hành.
+
+## Bước 36 — đã hoàn thành phạm vi chuẩn bị
+
+Đã xây bản xem trước riêng tư 30 ngày và bộ publisher giả lập với gate mặc định khóa, intent/evidence/finalization, phục hồi rollback và timeout 10 giây. Kho thật 40/40 khớp duyệt; mô phỏng 30 ngày giữ nguyên 10 dự phòng, không outbound Meta. Native D1 và bộ xử lý biên dịch workerd đều đạt. CI Windows/Ubuntu đã đạt và phần xem trước đã triển khai. Giao diện owner hiển thị 40/40 khớp duyệt; đổi ngày preview không tạo lịch/job/publication. HTTP Telegram vẫn hoạt động, staging giữ release cũ; chưa mở production CHECK/gate, chưa đăng thật. Chi tiết: `docs/steps/36-production-publisher.md`.

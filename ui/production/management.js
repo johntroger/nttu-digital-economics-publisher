@@ -1,5 +1,5 @@
 const panel=document.querySelector('#panel'),error=document.querySelector('#error');
-let data,identity,view='overview';
+let data,identity,preview,view='overview';
 function el(tag,text){const x=document.createElement(tag);if(text!==undefined)x.textContent=String(text);return x;}
 function empty(title,body){const box=el('div');box.className='empty';box.append(el('strong',title),el('p',body));return box;}
 function table(head,rows){const t=el('table'),h=el('thead'),tr=el('tr');head.forEach(x=>tr.append(el('th',x)));h.append(tr);t.append(h);const b=el('tbody');rows.forEach(row=>{const r=el('tr');row.forEach(x=>r.append(el('td',x??'—')));b.append(r);});t.append(b);return t;}
@@ -27,6 +27,14 @@ function render(){
  }else if(view==='schedule'){
   panel.append(table(['Thiết lập','Giá trị'],[['Trạng thái','Chưa bật'],['Giờ đăng','10:00 · Việt Nam'],['Tần suất','1 bài tự động/ngày'],['Fanpage','Ngành Kinh tế số – NTTU']]));
   panel.append(data.schedule.length?table(['Ngày','Trạng thái'],data.schedule.map(x=>[x.business_date,x.status])):empty('Chưa có bài được lên lịch','Sau khi kho chính thức và kết nối được nghiệm thu, lịch sẽ được cấu hình với ngày bắt đầu do bạn phê duyệt.'));
+  if(preview){
+   panel.append(el('h3','Bản xem trước 30 ngày'),el('p',preview.note));
+   const label=el('label','Ngày bắt đầu xem trước '),input=el('input');input.type='date';input.value=preview.startDate;label.append(input);
+   const button=el('button','Xem trước');button.addEventListener('click',async()=>{button.disabled=true;try{preview=await get('/api/production/preview?startDate='+encodeURIComponent(input.value));render();}catch(e){error.textContent=e.message;error.hidden=false;button.disabled=false;}});
+   panel.append(label,button,el('p',preview.valid+'/'+preview.total+' bài khớp biên nhận duyệt · '+preview.main+' bài chính · '+preview.reserve+' dự phòng.'));
+   panel.append(table(['Ngày · 10:00 Việt Nam','Bài','Đối chiếu'],preview.calendar.map(p=>[p.day,p.key+' · '+p.title,p.approvalValid?'Khớp duyệt':p.reasons.join(', ')])));
+   panel.append(el('h3','Bài dự phòng'),table(['Bài','Đối chiếu'],preview.reserves.map(p=>[p.key+' · '+p.title,p.approvalValid?'Khớp duyệt':p.reasons.join(', ')])));
+  }
  }else if(view==='history'){
   if(!data.history.length)panel.append(empty('Chưa có bài đăng chính thức','Lịch sử thử nghiệm trên Tập Viết được giữ riêng tại staging.'));
   else data.history.forEach(x=>{const d=el('details');d.append(el('summary',x.remote_id+' · '+x.confirmed_at),el('pre',x.caption_snapshot));panel.append(d);});
@@ -47,7 +55,7 @@ function render(){
  }
 }
 async function get(path){const r=await fetch(path,{cache:'no-store',redirect:'error'});if(r.status===401){location.assign('/');throw Error('Phiên đăng nhập hết hạn.');}if(!r.ok)throw Error('Chưa đọc được dữ liệu. Hãy làm mới hoặc đăng nhập lại.');return r.json();}
-async function load(){error.hidden=true;try{[identity,data]=await Promise.all([get('/api/me'),get('/api/management')]);document.querySelector('#owner').textContent=identity.email;render();}catch(e){error.textContent=e.message;error.hidden=false;}}
+async function load(){error.hidden=true;try{[identity,data,preview]=await Promise.all([get('/api/me'),get('/api/management'),get('/api/production/preview')]);document.querySelector('#owner').textContent=identity.email;render();}catch(e){error.textContent=e.message;error.hidden=false;}}
 document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',()=>{if(!data)return;view=button.dataset.view;document.querySelectorAll('[data-view]').forEach(x=>{x.classList.toggle('selected',x===button);if(x===button)x.setAttribute('aria-current','page');else x.removeAttribute('aria-current');});render();}));
 document.querySelector('#refresh').addEventListener('click',load);
 document.querySelector('#logout').addEventListener('click',async()=>{if(!identity)return;try{const r=await fetch('/auth/logout',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':identity.csrf},body:'{}',redirect:'error'});if(!r.ok)throw Error('Chưa đăng xuất được. Hãy thử lại.');location.assign('/');}catch(e){error.textContent=e.message;error.hidden=false;}});

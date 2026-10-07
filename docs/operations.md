@@ -1,5 +1,15 @@
 # Hướng dẫn vận hành Phòng nội dung
 
+## Production hiện tại — cập nhật 07/10/2026
+
+Giao diện chính thức: https://nttu-publisher-production.nttu-kts-johntroger.workers.dev/. Đăng nhập Google của người quản lý; kho 40 bài và tài nguyên riêng đã chuyển, Page chính thức 817593604765443 đã xác minh. Facebook production đang tắt; chưa có bộ đăng được bật. Lịch 10:00 giờ Việt Nam dưới đây đang áp dụng cho staging/Tập Viết, không phải bằng chứng production đã đăng.
+
+Tác vụ «NTTU – Vận hành production» trên cron-job.org gọi POST /api/production/tick mỗi phút, body rỗng và token riêng trong header Authorization. Hiện endpoint chỉ xử lý hàng chờ Telegram, một mục mỗi lượt. Tick mỗi phút không phải đăng Facebook mỗi phút. Giữ tác vụ này bật và job giám sát 30 phút bật. Theo dõi heartbeat HTTP nhận/hoàn tất và các lượt 200; Cron cũ được lưu riêng, không phải nguồn đang được chọn.
+
+Không đưa token kích hoạt vào URL, body, ảnh hoặc chat. Token này không thay token Meta, token giám sát hoặc phiên owner. Tác vụ ngoài có email cảnh báo lỗi/phục hồi/tự tắt. Khi thay token, cập nhật cả Worker và header job rồi xác minh lượt thực tế; không dùng token có quyền rộng hơn để xử lý lỗi xác thực.
+
+Tình trạng chi tiết và bằng chứng ở docs/steps/35-production-operations.md. Phạm vi chuẩn bị publisher cần phê duyệt riêng ở docs/steps/36-production-publisher-plan.md.
+
 ## Truy cập và lịch
 
 Staging: https://nttu-publisher-staging.nttu-kts-johntroger.workers.dev/. Đăng nhập Google bằng tranthanhtung37@gmail.com. Nếu phiên hết hạn, đăng nhập lại; không nhập token vào caption hoặc chat. Staging hiện đăng lên Tập Viết, Page ID 551227411605506.
@@ -53,3 +63,7 @@ Lưu ít nhất một bản đầy đủ ở nơi riêng tư độc lập với 
 ## Trước khi bật môi trường chính thức
 
 Chờ nghiệm thu, phê duyệt riêng và bước triển khai production. Backend hiện giới hạn Page thử; chỉ đổi Page ID trên staging không phải quy trình chuyển production. Không cho staging và production cùng đăng vào một Page. Khi production được phép hoạt động, bảo đảm lịch, kho, thông báo, giám sát và backup đều trỏ đúng môi trường.
+
+### Bản xem trước Bước 36
+
+Giao diện production → Lịch đăng → Bản xem trước 30 ngày. Chọn ngày chỉ thay bản xem trước, không lưu lịch. Endpoint GET `/api/production/preview` chỉ dành owner; trigger/monitor token không có quyền đọc. Không có route gửi production. Bộ publisher fake và schema fixture không được đưa vào Worker quản lý hoặc D1 cloud. Báo cáo và các điều kiện còn khóa: `docs/steps/36-production-publisher.md`.

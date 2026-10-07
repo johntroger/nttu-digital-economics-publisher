@@ -4,7 +4,7 @@ import {composeCaption,FOOTER,CAPTION_SEPARATOR} from '../domain/footer.ts';
 import {verifiedBytes} from '../cloud/storage.ts';
 import {productionMetaStatus} from './meta.ts';
 import {operationsStatus} from './operations.ts';
-export interface ManagementBindings extends CloudBindings { PRODUCTION_DATABASE_ID?:string; PRODUCTION_MONITOR_TOKEN?:string; PRODUCTION_TRIGGER_TOKEN?:string }
+export interface ManagementBindings extends CloudBindings { PRODUCTION_DATABASE_ID?:string; PRODUCTION_ASSET_BUCKET?:string; PRODUCTION_MONITOR_TOKEN?:string; PRODUCTION_TRIGGER_TOKEN?:string }
 type Row=Record<string,unknown>;
 export async function productionState(env:ManagementBindings) {
   if(env.APP_ENV!=='production'||env.INTEGRATION_MODE!=='management'||env.DAILY_PUBLISHING_ENABLED!=='false'

@@ -25,7 +25,7 @@ export function prepareProductionManagement(settings,{output='tmp/production-man
   const result=prepareProduction(settings,{output});const {directory,config}=result;
   config.main=relative(directory,resolve('src/production/worker.ts')).split(sep).join('/');
   config.vars={...config.vars,INTEGRATION_MODE:'management',AUTH_ORIGIN:new URL(settings.origin).origin,
-    PRODUCTION_DATABASE_ID:settings.databaseId,GOOGLE_CLIENT_ID:clientId,
+    PRODUCTION_DATABASE_ID:settings.databaseId,PRODUCTION_ASSET_BUCKET:'nttu-publisher-production-assets',GOOGLE_CLIENT_ID:clientId,
     META_APP_ID:'1125636386458970',META_PAGE_ID:'817593604765443',META_API_VERSION:'v26.0',META_CONNECTION_PURPOSE:'production_verify',
     TELEGRAM_CHAT_ID:'1548618770',TELEGRAM_ENABLED:'true'};
   config.triggers={crons:['*/5 * * * *']};
