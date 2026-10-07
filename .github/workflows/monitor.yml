@@ -1,10 +1,15 @@
-name: Independent staging monitor
+name: Independent publisher monitor
 on:
   schedule:
     - cron: '17,47 * * * *'
     - cron: '23 2,14 * * *'
   workflow_dispatch:
     inputs:
+      monitor_target:
+        description: Environment to check for a manual request
+        type: choice
+        options: [both, staging, production]
+        default: both
       send_test:
         description: Send one clearly labeled Telegram monitor test
         type: boolean
@@ -26,7 +31,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   monitor:
-    if: github.ref == 'refs/heads/main' && vars.MONITOR_ENABLED == 'true' && (github.event_name != 'schedule' || vars.MONITOR_EXTERNAL_PRIMARY != 'true' || github.event.schedule == '23 2,14 * * *')
+    if: github.ref == 'refs/heads/main' && (vars.MONITOR_ENABLED == 'true' || vars.PRODUCTION_MONITOR_ENABLED == 'true') && (github.event_name != 'schedule' || vars.MONITOR_EXTERNAL_PRIMARY != 'true' || github.event.schedule == '23 2,14 * * *')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -36,7 +41,8 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .nvmrc
-      - name: Read cloud state and deliver incident alerts
+      - name: Read staging state and deliver incident alerts
+        if: vars.MONITOR_ENABLED == 'true' && (github.event_name != 'workflow_dispatch' || inputs.monitor_target != 'production')
         run: node scripts/monitor.mjs
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -46,6 +52,23 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           STAGING_D1_DATABASE_ID: ${{ vars.STAGING_D1_DATABASE_ID }}
           MONITOR_STATE_ISSUE: ${{ vars.MONITOR_STATE_ISSUE }}
+          MONITOR_TELEGRAM_CHAT_ID: ${{ vars.MONITOR_TELEGRAM_CHAT_ID }}
+          MONITOR_TELEGRAM_BOT_TOKEN: ${{ secrets.MONITOR_TELEGRAM_BOT_TOKEN }}
+          MONITOR_TEST: ${{ github.event_name == 'workflow_dispatch' && inputs.send_test }}
+          MONITOR_TRIGGER_SOURCE: ${{ github.event_name == 'schedule' && 'github-schedule' || inputs.trigger_source || 'manual' }}
+          MONITOR_TRIGGER_AT: ${{ inputs.triggered_at }}
+      - name: Read production state and deliver incident alerts
+        if: ${{ !cancelled() && vars.PRODUCTION_MONITOR_ENABLED == 'true' && (github.event_name != 'workflow_dispatch' || inputs.monitor_target != 'staging') }}
+        run: node scripts/monitor.mjs
+        env:
+          MONITOR_TARGET: production
+          GITHUB_TOKEN: ${{ github.token }}
+          PRODUCTION_WORKER_URL: https://nttu-publisher-production.nttu-kts-johntroger.workers.dev
+          PRODUCTION_D1_DATABASE_ID: 09cdecc7-36a2-4196-950e-ef68b1ecd834
+          PRODUCTION_MONITOR_TOKEN: ${{ secrets.PRODUCTION_MONITOR_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          MONITOR_STATE_ISSUE: ${{ vars.PRODUCTION_MONITOR_STATE_ISSUE }}
           MONITOR_TELEGRAM_CHAT_ID: ${{ vars.MONITOR_TELEGRAM_CHAT_ID }}
           MONITOR_TELEGRAM_BOT_TOKEN: ${{ secrets.MONITOR_TELEGRAM_BOT_TOKEN }}
           MONITOR_TEST: ${{ github.event_name == 'workflow_dispatch' && inputs.send_test }}
