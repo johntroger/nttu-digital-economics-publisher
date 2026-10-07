@@ -49,7 +49,7 @@ export function assessProduction({health,status,snapshot},now){
   const expiry=[status.metaExpiresAt,status.dataAccessExpiresAt].filter(x=>x!==null);
   if(expiry.some(x=>!Number.isSafeInteger(x)||x<=now))codes.push('meta_expired');
   else if(expiry.some(x=>x<=now+3*86400000))codes.push('meta_expiring');
-  if(status.telegramConfigured!==true||['needs_action','delivery_unknown'].includes(status.runtime?.last_dispatch_state))codes.push('telegram');
+  if(status.telegramConfigured!==true||status.notificationsBlocked>0||['needs_action','delivery_unknown'].includes(status.runtime?.last_dispatch_state))codes.push('telegram');
  }
  return{day:businessDay(now),codes,observed};
 }

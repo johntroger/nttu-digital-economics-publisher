@@ -39,5 +39,6 @@ export async function productionMonitorStatus(env:ManagementBindings){
  return{environment:'production',databaseChecked:true,publishingEnabled:false,paused:true,schemaReady:ops.schemaReady,telegramConfigured:ops.configured,runtime:ops.runtime,
   metaConfigured:meta.configured,metaVerified:live?.state==='verified_read_only',metaExpiresAt:live?.expires??null,
   dataAccessExpiresAt:live?.dataExpires??null,
-  notificationsPending:ops.events.filter((e:any)=>!['delivered'].includes(e.state)).length};
+  notificationsPending:ops.events.filter((e:any)=>!['delivered'].includes(e.state)).length,
+  notificationsBlocked:ops.events.filter((e:any)=>['needs_action','delivery_unknown'].includes(e.state)).length};
 }
