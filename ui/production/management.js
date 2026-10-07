@@ -33,7 +33,14 @@ function render(){
  }else if(view==='notifications'){
   panel.append(data.notifications.length?table(['Sự kiện','Trạng thái'],data.notifications.map(x=>[x.event_id,x.state])):empty('Chưa có thông báo vận hành','Kết nối Telegram cho production sẽ được thiết lập và kiểm thử ở bước tích hợp.'));
  }else{
-  panel.append(table(['Kết nối','Hiện trạng'],[['Google',identity.email],['Facebook','Chưa xác minh Page ID và token production'],['Telegram','Chưa thiết lập production'],['Giám sát và phục hồi','Chưa nghiệm thu production']]));
+  const meta=data.meta,check=meta.lastCheck;
+  panel.append(table(['Kết nối','Hiện trạng'],[['Google',identity.email],['Facebook',check?.verifiedReadOnly?'Đã xác minh kết nối đọc với fanpage chính thức':'Cần xác minh kết nối production'],['Page ID',meta.pageId],['Ứng dụng Meta',meta.appId],['Phiên bản API',meta.apiVersion],['Telegram','Chưa thiết lập production'],['Giám sát và phục hồi','Chưa nghiệm thu production']]));
+  const formatDate=n=>n?new Date(n).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh'}):'Không có thời hạn trong phản hồi; vẫn có thể bị thu hồi';
+  if(check){panel.append(table(['Kiểm tra gần nhất','Kết quả'],[['Trang',check.pageName],['Thời điểm',new Date(check.checkedAt).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh'})],['Kết quả',check.verifiedReadOnly?'Đúng Trang, ứng dụng và quyền':check.current?(check.fresh?'Cần kiểm tra lại':'Kết quả đã quá 10 phút'):'Cấu hình đã đổi, cần kiểm tra lại'],['Mã kết quả',check.reason],['Quyền',check.scopes.join(', ')],['Token hết hạn',formatDate(check.expiresAt)],['Quyền dữ liệu hết hạn',formatDate(check.dataAccessExpiresAt)]]));}
+  panel.append(el('p','Xác minh dùng yêu cầu đọc, không đăng bài và không bật lịch. Kết quả có hiệu lực 10 phút với cấu hình hiện tại.'));
+  const verify=el('button','Xác minh fanpage chính thức');verify.disabled=!meta.configured||!meta.schemaReady;
+  if(verify.disabled)panel.append(el('p','Cần cấu hình token Trang và App Secret trong Cloudflare trước khi xác minh.'));
+  verify.addEventListener('click',async()=>{verify.disabled=true;error.hidden=true;try{const r=await fetch('/api/meta/check',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':identity.csrf},body:JSON.stringify({requestId:crypto.randomUUID()}),redirect:'error'});if(!r.ok)throw Error('Chưa xác minh được. Kiểm tra cấu hình và đăng nhập lại nếu cần.');await load();}catch(e){error.textContent=e.message;error.hidden=false;verify.disabled=false;}});panel.append(verify);
   const p=el('p'),a=el('a','Mở fanpage Ngành Kinh tế số – NTTU');a.href=data.targetPageUrl;a.target='_blank';a.rel='noopener noreferrer';p.append(a);panel.append(p);
  }
 }
@@ -43,3 +50,5 @@ document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener
 document.querySelector('#refresh').addEventListener('click',load);
 document.querySelector('#logout').addEventListener('click',async()=>{if(!identity)return;try{const r=await fetch('/auth/logout',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':identity.csrf},body:'{}',redirect:'error'});if(!r.ok)throw Error('Chưa đăng xuất được. Hãy thử lại.');location.assign('/');}catch(e){error.textContent=e.message;error.hidden=false;}});
 load();
+// Refresh short-lived verification receipts while the management page is visible.
+setInterval(()=>{if(!document.hidden&&data&&['overview','connections'].includes(view))load();},60000);

@@ -13,7 +13,8 @@ export function productionMigrations(databaseId) {
   files.push({name:'0007_production_management.sql',sql:readFileSync('cloud/production-management.sql','utf8')+`\nINSERT INTO production_identity VALUES(1,'production','${databaseId}',1);\n`},
     {name:'0008_owner_management.sql',sql:readFileSync('cloud/owner-management.sql','utf8')},
     {name:'0009_private_storage.sql',sql:readFileSync('cloud/private-storage.sql','utf8')},
-    {name:'0010_source_review.sql',sql:readFileSync('cloud/source-review.sql','utf8')});
+    {name:'0010_source_review.sql',sql:readFileSync('cloud/source-review.sql','utf8')},
+    {name:'0011_production_meta.sql',sql:readFileSync('cloud/meta.sql','utf8')});
   return files.map((file,i)=>{const checksum=createHash('sha256').update(file.sql).digest('hex');return {...file,checksum,
     sql:(i===0?'CREATE TABLE schema_migrations(name TEXT PRIMARY KEY,checksum TEXT NOT NULL);\n':'')+file.sql+`\nINSERT INTO schema_migrations VALUES('${file.name}','${checksum}');\n`};});
 }
@@ -22,7 +23,8 @@ export function prepareProductionManagement(settings,{output='tmp/production-man
   const result=prepareProduction(settings,{output});const {directory,config}=result;
   config.main=relative(directory,resolve('src/production/worker.ts')).split(sep).join('/');
   config.vars={...config.vars,INTEGRATION_MODE:'management',AUTH_ORIGIN:new URL(settings.origin).origin,
-    PRODUCTION_DATABASE_ID:settings.databaseId,GOOGLE_CLIENT_ID:clientId};
+    PRODUCTION_DATABASE_ID:settings.databaseId,GOOGLE_CLIENT_ID:clientId,
+    META_APP_ID:'1125636386458970',META_PAGE_ID:'817593604765443',META_API_VERSION:'v26.0',META_CONNECTION_PURPOSE:'production_verify'};
   mkdirSync(resolve(directory,'migrations'),{recursive:true});
   for(const file of productionMigrations(settings.databaseId))writeFileSync(resolve(directory,'migrations',file.name),file.sql);
   config.d1_databases[0].migrations_dir='./migrations';
