@@ -29,5 +29,6 @@ __pycache__/
 # Rendered branded media remains local with the approved source material.
 assets/samples/
 assets/batch/
+assets/reviews/
 # One-off workspace migration helper is not application source.
 /Finish-Facebook-Migration.cmd

@@ -22,7 +22,7 @@ if(built.status!==0)throw Error('Production Worker build failed');
 let exchanges=0,metaReads=0,telegramSends=0;
 const mf=new Miniflare(convertV4MiniflareOptions({workers:[{name:'production-management-fixture',modules:true,
  scriptPath:resolve(directory,'bundle/worker.js'),compatibilityDate:'2026-10-05',d1Databases:['DB'],
- bindings:{APP_ENV:'production',INTEGRATION_MODE:'management',DAILY_PUBLISHING_ENABLED:'false',PRODUCTION_DATABASE_ID:databaseId,
+ bindings:{APP_ENV:'production',INTEGRATION_MODE:'management',DAILY_PUBLISHING_ENABLED:'false',PRODUCTION_DATABASE_ID:databaseId,PRODUCTION_ASSET_BUCKET:'nttu-publisher-production-assets',
  RELEASE_SHA:'a'.repeat(40),AUTH_ORIGIN:origin,GOOGLE_CLIENT_ID:'fixture.apps.googleusercontent.com',GOOGLE_CLIENT_SECRET:'fixture-secret-only',SESSION_SIGNING_KEY:signing,
  META_APP_ID:'1125636386458970',META_PAGE_ID:'817593604765443',META_API_VERSION:'v26.0',META_CONNECTION_PURPOSE:'production_verify',META_PAGE_ACCESS_TOKEN:'fixture-page-token-'+ 'x'.repeat(60),META_APP_SECRET:'fixture-app-secret-'+ 's'.repeat(30),TELEGRAM_ENABLED:'true',TELEGRAM_CHAT_ID:'1548618770',TELEGRAM_BOT_TOKEN:'123456789:'+ 't'.repeat(35),PRODUCTION_MONITOR_TOKEN:'b'.repeat(64),PRODUCTION_TRIGGER_TOKEN:'d'.repeat(64)},
  serviceBindings:{ASSETS:async r=>{const name=new URL(r.url).pathname.slice(1);if(!['manager.html','management.js','management.css'].includes(name))return new Response('',{status:404});return new Response(readFileSync(resolve('ui/production',name)),{headers:{'Content-Type':name.endsWith('.html')?'text/html':name.endsWith('.js')?'text/javascript':'text/css'}});}},
@@ -42,7 +42,8 @@ try{
  const jwt=await new SignJWT({email:'tranthanhtung37@gmail.com',csrf:'c'.repeat(64)}).setSubject('fixture').setProtectedHeader({alg:'HS256',typ:'nttu-session+jwt'}).setIssuer(origin).setAudience('nttu-manager').setIssuedAt().setExpirationTime('1h').sign(new TextEncoder().encode(signing));
  const cookie='__Host-nttu_session='+jwt;
  const health=await mf.dispatchFetch(origin+'/health');assert.equal(health.status,200);assert.equal((await health.json()).publishingEnabled,false);
- for(const path of ['/api/me','/api/management','/management.js','/manager.html'])assert.equal((await mf.dispatchFetch(origin+path)).status,401);
+ assert.equal(readFileSync(resolve(directory,'bundle/worker.js'),'utf8').includes('production_fixture_jobs'),false);
+ for(const path of ['/api/me','/api/management','/api/production/preview','/management.js','/manager.html'])assert.equal((await mf.dispatchFetch(origin+path)).status,401);
  const manager=await mf.dispatchFetch(origin+'/',{headers:{Cookie:cookie}});assert.equal(manager.status,200);assert.match(await manager.text(),/Kho nội dung/);
  const read=await mf.dispatchFetch(origin+'/api/management',{headers:{Cookie:cookie}});assert.equal(read.status,200);const data=await read.json();assert.deepEqual(data.posts,[]);assert.deepEqual(data.history,[]);assert.equal(data.paused,true);
  assert.equal((await mf.dispatchFetch(origin+'/api/meta/check',{method:'POST',headers:{Cookie:cookie},body:'{}'})).status,403);
@@ -61,6 +62,8 @@ try{
  for(const f of library){await db.prepare('INSERT INTO cloud_library VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)').bind(f.id,f.kind,f.id,f.source_key??null,f.checksum,'private/'+f.id,f.kind==='image'?'image/png':'application/pdf',5000,f.width??null,f.height??null,'complete','owner','now').run();
   if(f.kind==='image')await db.prepare('INSERT INTO assets VALUES(?,?,?,?,?,?,?,?)').bind('library-'+f.id,'private/'+f.id,f.checksum,'image/png',1080,1080,5000,'complete').run();}
  await db.batch(productionWarehouseStatements(pack,library,'f'.repeat(64),'2026-10-07T03:00:00Z').map(sql=>db.prepare(sql)));
+ const previewResponse=await mf.dispatchFetch(origin+'/api/production/preview',{headers:{Cookie:cookie}});assert.equal(previewResponse.status,200);const preview=await previewResponse.json();assert.equal(preview.valid,40);assert.equal(preview.calendar.length,30);assert.equal(preview.reserves.length,10);assert.equal(preview.publishingEnabled,false);
+ assert.equal((await mf.dispatchFetch(origin+'/api/production/preview',{method:'POST',headers:{Cookie:cookie},body:'{}'})).status,405);
  const warehouse=await(await mf.dispatchFetch(origin+'/api/management',{headers:{Cookie:cookie}})).json();assert.equal(warehouse.posts.length,40);assert.ok(warehouse.posts.every(p=>p.contentDesignApproved&&p.imageUrl));assert.deepEqual(warehouse.schedule,[]);assert.deepEqual(warehouse.history,[]);assert.equal(warehouse.publishingEnabled,false);
  await assert.rejects(db.batch(productionWarehouseStatements(pack,library,'f'.repeat(64),'2026-10-07T03:00:00Z').map(sql=>db.prepare(sql))));
  assert.equal((await db.prepare('SELECT count(*) n FROM posts').first()).n,40);

@@ -1,5 +1,6 @@
 import type {ManagementBindings} from './management.ts';
 import {productionState,managementData,productionFile} from './management.ts';
+import {productionPreview} from './preview.ts';
 import {startGoogle,completeGoogle,ownerSession,requireMutation,clearSessionCookie,authConfigured} from '../cloud/auth.ts';
 import {productionMetaStatus,verifyProductionMeta} from './meta.ts';
 import {operationsStatus,enqueueProductionTelegramTest,runProductionOperations,monitorAuthorized,productionMonitorStatus,triggerAuthorized,runProductionHttpTick} from './operations.ts';
@@ -64,6 +65,12 @@ export default {
       try{return json(await verifyProductionMeta(env,owner,input));}catch(e){const code=e instanceof Error?e.message:'';return json({error:['META_NOT_CONFIGURED','META_REQUEST_INVALID','REQUEST_REUSED','META_BUSY'].includes(code)?code:'META_CHECK_UNAVAILABLE'},code==='REQUEST_REUSED'?409:422);}
     }
     if(request.method==='GET'&&url.pathname==='/api/management')return json(await managementData(env));
+    if(url.pathname==='/api/production/preview'){
+      if(request.method!=='GET')return json({error:'METHOD_NOT_ALLOWED'},405);
+      if([...url.searchParams.keys()].some(k=>k!=='startDate')||url.searchParams.getAll('startDate').length>1)return json({error:'PREVIEW_DATE_INVALID'},422);
+      try{return json(await productionPreview(env,url.searchParams.get('startDate')??undefined));}
+      catch(e){if(e instanceof Error&&e.message==='PREVIEW_DATE_INVALID')return json({error:e.message},422);throw e;}
+    }
     if(request.method==='GET'&&/^\/api\/library\/files\/[a-zA-Z0-9-]{1,128}$/.test(url.pathname))return await productionFile(env,url.pathname.split('/').at(-1)!);
     if(request.method==='GET'&&(url.pathname==='/'||url.pathname==='/management.js')) {
       if(!env.ASSETS)return json({error:'ASSETS_UNAVAILABLE'},503);
