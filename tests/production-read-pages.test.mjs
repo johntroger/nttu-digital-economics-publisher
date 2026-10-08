@@ -18,6 +18,14 @@ test('F1 batched SELECT transport preserves every approved item and performs no 
   do{const page=await productionPreviewPage(f.env,{cursor},now);seen.push(...page.items);cursor=page.nextCursor??undefined;}while(cursor);
   assert.deepEqual(seen.map(p=>[p.key,p.caption,p.receiptDigest,p.approvalValid]),[...full.calendar,...full.reserves].map(p=>[p.key,p.caption,p.receiptDigest,p.approvalValid]));
   assert.equal(f.db.prepare('SELECT total_changes() n').get().n,before);
+  const initial=await productionPreviewPage(f.env,{},now),batch=f.env.DB.batch;let changed=false;
+  f.env.DB.batch=async statements=>{const result=await batch(statements);if(!changed){changed=true;f.db.exec("UPDATE sources SET status='blocked'");}return result;};
+  const item=await productionPreviewPage(f.env,{cursor:initial.nextCursor},now);
+  assert.equal(item.complete,false);assert.equal(item.items[0].approvalValid,true);
+  await assert.rejects(finish(f.env,item.nextCursor),/READ_SNAPSHOT_CHANGED/);
+  f.db.exec('DROP TRIGGER production_identity_immutable');
+  f.db.prepare('UPDATE production_identity SET database_id=?').run('09cdecc7-36a2-4196-950e-ef68b1ecd835');
+  await assert.rejects(productionPreviewPage(f.env,{},now),/PRODUCTION_IDENTITY_INVALID/);
  }finally{f.db.close();}
 });
 test('F1 summary and post pages omit bodies; details preserve approved caption and source links; all reads leave D1 unchanged',async()=>{

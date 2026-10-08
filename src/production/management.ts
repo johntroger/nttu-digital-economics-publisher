@@ -7,22 +7,29 @@ import {operationsStatus} from './operations.ts';
 import {digest,readSnapshot,readCursor,initialCursor,signCursor} from './read-pages.ts';
 export interface ManagementBindings extends CloudBindings { PRODUCTION_DATABASE_ID?:string; PRODUCTION_ASSET_BUCKET?:string; PRODUCTION_MONITOR_TOKEN?:string; PRODUCTION_TRIGGER_TOKEN?:string }
 type Row=Record<string,unknown>;
-export async function productionState(env:ManagementBindings) {
+export function assertProductionEnvironment(env:ManagementBindings) {
   if(env.APP_ENV!=='production'||env.INTEGRATION_MODE!=='management'||env.DAILY_PUBLISHING_ENABLED!=='false'
     ||!env.DB||!/^[a-f0-9]{40}$/.test(env.RELEASE_SHA??'')
     || !/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(env.PRODUCTION_DATABASE_ID??'')
     || env.PRODUCTION_DATABASE_ID==='83881fd7-88e6-4835-b616-6f4f8f2d25cd') throw Error('PRODUCTION_NOT_CONFIGURED');
-  const row=await env.DB.prepare(`SELECT i.environment,i.database_id,i.schema_version,a.paused_by_user,
+}
+export const PRODUCTION_STATE_SQL=`SELECT i.environment,i.database_id,i.schema_version,a.paused_by_user,
     c.enabled,c.publish_time,c.timezone,c.target_page_url,c.page_id,c.connection_verified,
     (SELECT count(*) FROM schema_migrations) migration_count,
     (SELECT count(*) FROM schema_migrations WHERE name NOT IN ('0011_production_meta.sql','0012_production_operations.sql','0013_production_http_trigger.sql','0014_production_publisher.sql')) base_migration_count
     FROM production_identity i JOIN application_state a ON a.environment=i.environment
-    JOIN production_control c ON c.id=i.id WHERE i.id=1`).first<Row>();
+    JOIN production_control c ON c.id=i.id WHERE i.id=1`;
+export function assertProductionState(env:ManagementBindings,row:Row|null|undefined) {
+  assertProductionEnvironment(env);
   if(!row||row.environment!=='production'||row.database_id!==env.PRODUCTION_DATABASE_ID||row.schema_version!==1
     ||![10,11,12,13,14].includes(Number(row.migration_count))||row.base_migration_count!==10||row.paused_by_user!==1||row.enabled!==0||row.connection_verified!==0
     ||row.page_id!==null||row.publish_time!=='10:00'||row.timezone!=='Asia/Ho_Chi_Minh'
     ||row.target_page_url!=='https://www.facebook.com/NganhKinhTeSoNTTU') throw Error('PRODUCTION_IDENTITY_INVALID');
   return row;
+}
+export async function productionState(env:ManagementBindings) {
+  assertProductionEnvironment(env);
+  return assertProductionState(env,await env.DB!.prepare(PRODUCTION_STATE_SQL).first<Row>());
 }
 async function rows(env:ManagementBindings,sql:string) {
   const statement=env.DB!.prepare(sql);
