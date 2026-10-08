@@ -10,7 +10,7 @@ const parse=(s:unknown)=>{try{return JSON.parse(String(s));}catch{return null;}}
 const hash=async(s:string)=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s))),b=>b.toString(16).padStart(2,'0')).join('');
 const same=(a:unknown,b:unknown)=>JSON.stringify(a)===JSON.stringify(b);
 const future=(s:unknown,n:number)=>s==null||Number.isFinite(Date.parse(String(s)))&&Date.parse(String(s))>n;
-async function rows(env:ManagementBindings,sql:string,values:string[]=[]){return (await env.DB!.prepare(sql).bind(...values).all!<Row>()).results;}
+async function rows(env:ManagementBindings,sql:string,values:(string|number)[]=[]){return (await env.DB!.prepare(sql).bind(...values).all!<Row>()).results;}
 // All SQL is SELECT. This projection never grants readiness or consumes stock.
 export async function productionPreview(env:ManagementBindings,startDate?:string,now=Date.now()){
  await productionState(env);
@@ -29,11 +29,13 @@ export async function productionPreview(env:ManagementBindings,startDate?:string
   note:'Bản xem trước không lưu lịch và không cấp quyền đăng bài. Ngày bắt đầu cần được duyệt riêng.'};
 }
 
-export async function approvedProductionItems(env:ManagementBindings,now:number,versionId?:string|string[],readMode:'parallel'|'batch'='parallel'){
+export async function approvedProductionItems(env:ManagementBindings,now:number,versionId?:string|string[]|number[],readMode:'parallel'|'batch'='parallel'){
  const ids=typeof versionId==='string'?[versionId]:versionId;
  if(ids&&!ids.length)return [];
  const placeholders=ids?.map(()=>'?').join(',');
- const query=(sql:string,values:string[]=[])=>({sql,values});
+ // Numeric identities are used only by the F1 manifest; other callers retain IDs.
+ const selection=typeof ids?.[0]==='number'?'SELECT id FROM post_versions WHERE rowid IN ('+placeholders+')':placeholders;
+ const query=(sql:string,values:(string|number)[]=[])=>({sql,values});
  const queries=[
  query(`SELECT p.id,p.content_key,p.topic_group,p.pool,e.stable_order,e.stage,v.id version_id,v.body,v.caption_title,v.status,v.check_version,v.review_due_at,v.metadata_json,
  a.id asset_id,a.checksum,a.width,a.height,a.content_type,a.size_bytes,a.status asset_status,b.asset_id binding_id,b.checksum binding_checksum,b.check_version binding_version,
@@ -42,11 +44,11 @@ export async function approvedProductionItems(env:ManagementBindings,now:number,
  FROM posts p JOIN content_entries e ON e.post_id=p.id JOIN post_versions v ON v.id=e.active_version_id
  LEFT JOIN assets a ON a.id=v.asset_id LEFT JOIN asset_bindings b ON b.version_id=v.id
  LEFT JOIN cloud_library l ON v.asset_id='library-'||l.id
- LEFT JOIN cloud_reviews r ON r.version_id=v.id AND r.check_version=v.check_version ${ids?'WHERE v.id IN ('+placeholders+')':''} ORDER BY e.stable_order,p.id`,ids??[]),
- query('SELECT x.version_id,x.location ref_json,s.* FROM version_sources x JOIN sources s ON s.id=x.source_id'+(ids?' WHERE x.version_id IN ('+placeholders+')':''),ids??[]),
- query('SELECT x.version_id,f.* FROM version_facts x JOIN facts f ON f.id=x.fact_id'+(ids?' WHERE x.version_id IN ('+placeholders+')':''),ids??[]),
+ LEFT JOIN cloud_reviews r ON r.version_id=v.id AND r.check_version=v.check_version ${ids?'WHERE v.id IN ('+selection+')':''} ORDER BY e.stable_order,p.id`,ids??[]),
+ query('SELECT x.version_id,x.location ref_json,s.* FROM version_sources x JOIN sources s ON s.id=x.source_id'+(ids?' WHERE x.version_id IN ('+selection+')':''),ids??[]),
+ query('SELECT x.version_id,f.* FROM version_facts x JOIN facts f ON f.id=x.fact_id'+(ids?' WHERE x.version_id IN ('+selection+')':''),ids??[]),
  query("SELECT source_key,checksum FROM cloud_library WHERE kind='document' AND state='complete' ORDER BY source_key,checksum"),
- query('SELECT post_id,prerequisite_id FROM post_prerequisites'+(ids?' WHERE post_id IN (SELECT post_id FROM post_versions WHERE id IN ('+placeholders+'))':''),ids??[]),
+ query('SELECT post_id,prerequisite_id FROM post_prerequisites'+(ids?' WHERE post_id IN (SELECT post_id FROM post_versions WHERE id IN ('+selection+'))':''),ids??[]),
  ];
  // HTTP preview batches only SELECTs; existing live/preflight callers keep their read path.
  const result=readMode==='batch'&&env.DB!.batch
@@ -90,7 +92,8 @@ export async function productionPreviewPage(env:ManagementBindings,input:{cursor
  const start=cursor?.startDate??input.startDate??businessDate(new Date(now+86400000));
  try{scheduledInstant(start!);}catch{throw Error('PREVIEW_DATE_INVALID');}
  if(start!<businessDate(new Date(now))||scheduledInstant(start!).getTime()>now+366*86400000)throw Error('PREVIEW_DATE_INVALID');
- const manifest=await rows(env,'SELECT p.id postId,p.pool,v.id versionId,e.stable_order FROM posts p JOIN content_entries e ON e.post_id=p.id JOIN post_versions v ON v.id=e.active_version_id ORDER BY e.stable_order,p.id');
+ const manifestSQL='SELECT p.rowid postRow,p.pool,v.rowid versionRow,e.stable_order FROM posts p JOIN content_entries e ON e.post_id=p.id JOIN post_versions v ON v.id=e.active_version_id ORDER BY e.stable_order,p.id';
+ const manifest=await rows(env,manifestSQL);
  const manifestText=JSON.stringify(manifest),manifestHash=await digest(manifestText);
  if(cursor&&cursor.manifestHash!==manifestHash)throw Error('READ_SNAPSHOT_CHANGED');
  const snapshot=cursor?.snapshot??await digest(await readSnapshot(env,now));
@@ -107,10 +110,10 @@ export async function productionPreviewPage(env:ManagementBindings,input:{cursor
   return {...header,phase:'finalize',checkedThrough:c.offset,complete:true,items:[],nextCursor:null};
  }
  if(c.phase!=='item'||c.offset>=manifest.length)throw Error('READ_CURSOR_INVALID');
- const page=manifest.slice(c.offset,c.offset+1),items=await approvedProductionItems(env,c.checkedAt,page.map(p=>p.versionId),'batch');
- const after=await rows(env,'SELECT p.id postId,p.pool,v.id versionId,e.stable_order FROM posts p JOIN content_entries e ON e.post_id=p.id JOIN post_versions v ON v.id=e.active_version_id ORDER BY e.stable_order,p.id');
+ const page=manifest.slice(c.offset,c.offset+1),items=await approvedProductionItems(env,c.checkedAt,page.map(p=>p.versionRow),'batch');
+ const after=await rows(env,manifestSQL);
  if(JSON.stringify(after)!==manifestText)throw Error('READ_SNAPSHOT_CHANGED');
- const projected=items.map(p=>{const index=manifest.filter(m=>m.pool==='scheduled').findIndex(m=>m.postId===p.postId);const day=p.pool==='scheduled'?new Date(Date.parse(start!+'T00:00:00Z')+index*86400000).toISOString().slice(0,10):null;
+ const projected=items.map(p=>{const index=manifest.slice(0,c.offset).filter(m=>m.pool==='scheduled').length;const day=p.pool==='scheduled'?new Date(Date.parse(start!+'T00:00:00Z')+index*86400000).toISOString().slice(0,10):null;
   return {...p,...(day?{day,publishAt:scheduledInstant(day).toISOString()}:{}),prerequisitePreviewSatisfied:null};});
  const next=c.offset+page.length;
  return {...header,phase:'item',checkedThrough:next,complete:false,items:projected,nextCursor:await signCursor(env,{...c,offset:next,phase:next===manifest.length?'finalize':'item'})};
