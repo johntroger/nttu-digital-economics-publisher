@@ -58,6 +58,7 @@ test('F1 source expiry during a cursor chain invalidates the snapshot even witho
 test('F1 compact snapshot relies on enforced immutable fields and tracks reference-trigger revision changes',async()=>{
  const f=productionWarehouseFixture();try{
   for(const sql of ["UPDATE sources SET revision='tamper'","UPDATE facts SET value_json='0'","UPDATE cloud_library SET checksum='tamper' WHERE state='complete'","UPDATE assets SET checksum='tamper' WHERE status='complete'"])assert.throws(()=>f.db.exec(sql));
+  for(const sql of ["UPDATE sources SET id=id||'tamper'","UPDATE post_versions SET id=id||'tamper'","UPDATE posts SET id=id||'tamper'","UPDATE cloud_reviews SET id=id||'tamper'"])assert.throws(()=>f.db.exec(sql));
   const page=await productionPreviewPage(f.env,{},now),v=f.db.prepare('SELECT version_id FROM version_sources LIMIT 1').get().version_id,old=f.db.prepare('SELECT check_version FROM post_versions WHERE id=?').get(v).check_version;
   f.db.prepare("UPDATE version_sources SET location=location||' ' WHERE version_id=?").run(v);assert.ok(f.db.prepare('SELECT check_version FROM post_versions WHERE id=?').get(v).check_version>old);
   await assert.rejects(productionPreviewPage(f.env,{cursor:page.nextCursor},now),/READ_SNAPSHOT_CHANGED/);

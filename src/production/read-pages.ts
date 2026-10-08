@@ -7,21 +7,24 @@ export const digest=async(s:string)=>hex(await crypto.subtle.digest('SHA-256',en
 // Mutable eligibility, active-version links and source/fact state are included explicitly.
 export async function readSnapshot(e:ManagementBindings,now=Date.now()){
  const specs=[
- ['posts','id,content_key,topic_group,pool'],
- ['content_entries','post_id,active_version_id,stage,stable_order'],
- ['post_versions','id,check_version,status,review_due_at'],
- ['sources','id,status,reviewed_at,review_due_at'],
- ['facts','id,status,review_due_at'],
+ ['posts','rowid,content_key,topic_group,pool'],
+ ['content_entries',"rowid,(SELECT rowid FROM post_versions WHERE id=content_entries.active_version_id),stage,stable_order"],
+ ['post_versions','rowid,check_version,status,review_due_at'],
+ ['sources','rowid,status,reviewed_at,review_due_at'],
+ ['facts','rowid,status,review_due_at'],
  ['post_prerequisites','post_id,prerequisite_id'],
- ['assets','id,status'],
- ['asset_bindings','version_id,asset_id,checksum,check_version'],
- ['cloud_library','id,state'],
- ['cloud_reviews','id,version_id,check_version'],
+ ['assets','rowid,status'],
+ ['asset_bindings',"rowid,(SELECT rowid FROM post_versions WHERE id=asset_bindings.version_id),(SELECT rowid FROM assets WHERE id=asset_bindings.asset_id),checksum,check_version"],
+ ['cloud_library','rowid,state'],
+ ['cloud_reviews','rowid,version_id,check_version'],
  ['application_state','environment,operation_generation,paused_by_user,maintenance_owner,blocked_reasons'],
  ] as const;
  // Source/fact revisions and complete library/asset metadata cannot be edited.
  // Ref INSERT/UPDATE/DELETE and asset edits bump post_versions.check_version.
  // Keep mutable bindings explicitly; omit duplicated immutable bytes and long ref text.
+ // Referenced primary IDs cannot change under FKs, complete library/review IDs are
+ // immutable. Numeric row identities avoid repeatedly copying long private IDs.
+ // Rebuild/VACUUM may invalidate a cursor; it never grants permission to continue.
  const expiryTables=['post_versions','sources','facts'];
  const parts=specs.map(([table,fields])=>`(SELECT json_group_array(json(row)) FROM (SELECT json_array(${fields}${expiryTables.includes(table)?",CASE WHEN review_due_at IS NULL THEN 0 WHEN julianday(review_due_at)*86400000-210866760000000<=? THEN 1 ELSE 0 END":''}) row FROM ${table} ORDER BY ${fields}))`);
  const row=await e.DB!.prepare('SELECT json_array('+parts.join(',')+') snapshot').bind(now,now,now).first<{snapshot:string}>();
