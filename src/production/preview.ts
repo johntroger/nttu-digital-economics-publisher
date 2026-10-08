@@ -29,12 +29,13 @@ export async function productionPreview(env:ManagementBindings,startDate?:string
   note:'Bản xem trước không lưu lịch và không cấp quyền đăng bài. Ngày bắt đầu cần được duyệt riêng.'};
 }
 
-export async function approvedProductionItems(env:ManagementBindings,now:number,versionId?:string|string[]){
+export async function approvedProductionItems(env:ManagementBindings,now:number,versionId?:string|string[],readMode:'parallel'|'batch'='parallel'){
  const ids=typeof versionId==='string'?[versionId]:versionId;
  if(ids&&!ids.length)return [];
  const placeholders=ids?.map(()=>'?').join(',');
- const [posts,sources,facts,documents,prerequisites]=await Promise.all([
- rows(env,`SELECT p.id,p.content_key,p.topic_group,p.pool,e.stable_order,e.stage,v.id version_id,v.body,v.caption_title,v.status,v.check_version,v.review_due_at,v.metadata_json,
+ const query=(sql:string,values:string[]=[])=>({sql,values});
+ const queries=[
+ query(`SELECT p.id,p.content_key,p.topic_group,p.pool,e.stable_order,e.stage,v.id version_id,v.body,v.caption_title,v.status,v.check_version,v.review_due_at,v.metadata_json,
  a.id asset_id,a.checksum,a.width,a.height,a.content_type,a.size_bytes,a.status asset_status,b.asset_id binding_id,b.checksum binding_checksum,b.check_version binding_version,
  l.id image_id,l.checksum library_checksum,l.state library_state,
  r.id review_id,r.check_version reviewed_version,r.asset_checksum,r.footer_version,r.body_snapshot,r.caption_snapshot,r.source_snapshot,r.rubric_json,r.reviewer actor,r.checked_at
@@ -42,11 +43,16 @@ export async function approvedProductionItems(env:ManagementBindings,now:number,
  LEFT JOIN assets a ON a.id=v.asset_id LEFT JOIN asset_bindings b ON b.version_id=v.id
  LEFT JOIN cloud_library l ON v.asset_id='library-'||l.id
  LEFT JOIN cloud_reviews r ON r.version_id=v.id AND r.check_version=v.check_version ${ids?'WHERE v.id IN ('+placeholders+')':''} ORDER BY e.stable_order,p.id`,ids??[]),
- rows(env,'SELECT x.version_id,x.location ref_json,s.* FROM version_sources x JOIN sources s ON s.id=x.source_id'+(ids?' WHERE x.version_id IN ('+placeholders+')':''),ids??[]),
- rows(env,'SELECT x.version_id,f.* FROM version_facts x JOIN facts f ON f.id=x.fact_id'+(ids?' WHERE x.version_id IN ('+placeholders+')':''),ids??[]),
- rows(env,"SELECT source_key,checksum FROM cloud_library WHERE kind='document' AND state='complete' ORDER BY source_key,checksum"),
- rows(env,'SELECT post_id,prerequisite_id FROM post_prerequisites'+(ids?' WHERE post_id IN (SELECT post_id FROM post_versions WHERE id IN ('+placeholders+'))':''),ids??[]),
- ]);
+ query('SELECT x.version_id,x.location ref_json,s.* FROM version_sources x JOIN sources s ON s.id=x.source_id'+(ids?' WHERE x.version_id IN ('+placeholders+')':''),ids??[]),
+ query('SELECT x.version_id,f.* FROM version_facts x JOIN facts f ON f.id=x.fact_id'+(ids?' WHERE x.version_id IN ('+placeholders+')':''),ids??[]),
+ query("SELECT source_key,checksum FROM cloud_library WHERE kind='document' AND state='complete' ORDER BY source_key,checksum"),
+ query('SELECT post_id,prerequisite_id FROM post_prerequisites'+(ids?' WHERE post_id IN (SELECT post_id FROM post_versions WHERE id IN ('+placeholders+'))':''),ids??[]),
+ ];
+ // HTTP preview batches only SELECTs; existing live/preflight callers keep their read path.
+ const result=readMode==='batch'&&env.DB!.batch
+  ? await env.DB!.batch(queries.map(q=>env.DB!.prepare(q.sql).bind(...q.values))) as {results:Row[]}[]
+  : await Promise.all(queries.map(async q=>({results:await rows(env,q.sql,q.values)})));
+ const [posts,sources,facts,documents,prerequisites]=result.map(r=>r.results) as [Row[],Row[],Row[],Row[],Row[]];
  const items=await Promise.all(posts.map(async p=>{
   const reasons:string[]=[],meta=parse(p.metadata_json),approval=meta?.ownerApproval,receipt=parse(p.source_snapshot),refs=meta?.sourceRefs;
   const caption=composeCaption(p.body);
@@ -101,7 +107,7 @@ export async function productionPreviewPage(env:ManagementBindings,input:{cursor
   return {...header,phase:'finalize',checkedThrough:c.offset,complete:true,items:[],nextCursor:null};
  }
  if(c.phase!=='item'||c.offset>=manifest.length)throw Error('READ_CURSOR_INVALID');
- const page=manifest.slice(c.offset,c.offset+1),items=await approvedProductionItems(env,c.checkedAt,page.map(p=>p.versionId));
+ const page=manifest.slice(c.offset,c.offset+1),items=await approvedProductionItems(env,c.checkedAt,page.map(p=>p.versionId),'batch');
  const after=await rows(env,'SELECT p.id postId,p.pool,v.id versionId,e.stable_order FROM posts p JOIN content_entries e ON e.post_id=p.id JOIN post_versions v ON v.id=e.active_version_id ORDER BY e.stable_order,p.id');
  if(JSON.stringify(after)!==manifestText)throw Error('READ_SNAPSHOT_CHANGED');
  const projected=items.map(p=>{const index=manifest.filter(m=>m.pool==='scheduled').findIndex(m=>m.postId===p.postId);const day=p.pool==='scheduled'?new Date(Date.parse(start!+'T00:00:00Z')+index*86400000).toISOString().slice(0,10):null;

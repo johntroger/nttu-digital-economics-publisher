@@ -8,6 +8,18 @@ import {signCursor,readSnapshot} from '../src/production/read-pages.ts';
 import worker from '../src/production/worker.ts';
 const now=Date.parse('2026-10-08T01:00:00Z');
 async function finish(env,cursor,at=now){while(cursor){const p=await productionPreviewPage(env,{cursor},at);cursor=p.nextCursor;}}
+
+test('F1 batched SELECT transport preserves every approved item and performs no database writes',async()=>{
+ const f=productionWarehouseFixture();try{
+  const before=f.db.prepare('SELECT total_changes() n').get().n,prepare=f.env.DB.prepare;
+  f.env.DB.prepare=sql=>{assert.match(sql,/^SELECT\b/i);return prepare(sql);};
+  f.env.DB.batch=async statements=>Promise.all(statements.map(s=>s.all()));
+  const full=await productionPreview(f.env,undefined,now),seen=[];let cursor;
+  do{const page=await productionPreviewPage(f.env,{cursor},now);seen.push(...page.items);cursor=page.nextCursor??undefined;}while(cursor);
+  assert.deepEqual(seen.map(p=>[p.key,p.caption,p.receiptDigest,p.approvalValid]),[...full.calendar,...full.reserves].map(p=>[p.key,p.caption,p.receiptDigest,p.approvalValid]));
+  assert.equal(f.db.prepare('SELECT total_changes() n').get().n,before);
+ }finally{f.db.close();}
+});
 test('F1 summary and post pages omit bodies; details preserve approved caption and source links; all reads leave D1 unchanged',async()=>{
  const f=productionWarehouseFixture();try{const before=f.db.prepare('SELECT total_changes() n').get().n;
   const summary=await managementSummary(f.env);assert.equal(summary.counts.posts,40);assert.equal(summary.counts.reserve,10);assert.equal(summary.posts,undefined);
