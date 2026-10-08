@@ -4,6 +4,8 @@ import {liveFixture} from './helpers/production-live-fixture.mjs';
 import {productionPreparation} from '../src/production/preparation.ts';
 import {productionSendPreflight} from '../src/production/send-preflight.ts';
 import {signCursor,initialCursor} from '../src/production/read-pages.ts';
+import {metaProof} from '../src/cloud/meta.ts';
+import {createHmac} from 'node:crypto';
 const transport=f=>async(input,init)=>{assert.equal(init.method,'GET');const url=new URL(String(input));f.calls.push(url.pathname);return url.pathname.endsWith('/debug_token')?Response.json({data:{is_valid:true,type:'PAGE',app_id:f.env.META_APP_ID,expires_at:Math.floor(f.now()/1000)+86400,data_access_expires_at:0,scopes:['pages_manage_posts','pages_read_engagement']}}):Response.json({id:f.env.META_PAGE_ID,name:'Ngành Kinh tế số - NTTU'});};
 const prepare=(f,input,get=transport(f))=>productionPreparation(f.env,input,get,f.now);
 async function advance(f,to){let r=await prepare(f,{versionId:f.item.versionId});while(r.phase!==to)r=await prepare(f,{receipt:r.nextReceipt});return r;}
@@ -73,5 +75,16 @@ test('F2 selected snapshot keeps an unrelated version change separate but reject
  const image=await prepare(f,{receipt:initial.nextReceipt});assert.equal(image.phase,'image');
  f.db.prepare('UPDATE post_versions SET check_version=check_version+1 WHERE id=?').run(f.item.versionId);
  await assert.rejects(prepare(f,{receipt:image.nextReceipt}),/CHANGED/);assert.equal(f.calls.length,0);
+ }finally{f.db.close();}
+});
+
+test('Meta derived-key reuse always signs the current token and replaces its key on App Secret rotation',async()=>{
+ const f=await liveFixture();try{const secret=f.env.META_APP_SECRET,token=f.env.META_PAGE_ACCESS_TOKEN,first=await metaProof(f.env);
+ for(const change of ['token','secret','restore']){
+  if(change==='token')f.env.META_PAGE_ACCESS_TOKEN+='changed';if(change==='secret')f.env.META_APP_SECRET+='changed';if(change==='restore'){f.env.META_APP_SECRET=secret;f.env.META_PAGE_ACCESS_TOKEN=token;}
+  const proof=await metaProof(f.env);assert.equal(proof,createHmac('sha256',f.env.META_APP_SECRET).update(f.env.META_PAGE_ACCESS_TOKEN).digest('hex'));if(change!=='restore')assert.notEqual(proof,first);else assert.equal(proof,first);
+ }
+ const other={...f.env,META_APP_SECRET:secret+'parallel',META_PAGE_ACCESS_TOKEN:token+'parallel'},values=await Promise.all([metaProof(f.env),metaProof(other)]);
+ assert.deepEqual(values,[f.env,other].map(e=>createHmac('sha256',e.META_APP_SECRET).update(e.META_PAGE_ACCESS_TOKEN).digest('hex')));
  }finally{f.db.close();}
 });
