@@ -4,7 +4,7 @@ import {assertProductionEnvironment,assertProductionState,PRODUCTION_STATE_SQL} 
 import {assertPublisherBoundary} from './publisher-boundary.ts';
 import {approvalQueries,projectApprovalRows} from './preview.ts';
 import type {ProjectionRows} from './preview.ts';
-import {digest,readSnapshotStatement} from './read-pages.ts';
+import {digest} from './read-pages.ts';
 import {readOnlyMetaProvider} from './send-preflight.ts';
 import {PRODUCTION_PAGE,publicationHash} from './publisher-provider.ts';
 import {metaFingerprint} from '../cloud/meta.ts';
@@ -30,6 +30,30 @@ async function verify(e:PublisherBindings,token:string,now:number):Promise<Recei
 }
 const clockValue=(n:number)=>{if(!Number.isSafeInteger(n)||n<0)throw Error('PREFLIGHT_CLOCK_INVALID');return n;};
 const day=(n:number)=>businessDate(new Date(n));
+// Preparation is scoped to one selected version. F1 warehouse preview still uses
+// its global snapshot. Immutable row identities/revisions are protected by the
+// same triggers/FKs; final projection rechecks the complete approval bytes.
+function selectedSnapshot(e:PublisherBindings,version:string,now:number){
+ const specs=[
+  ['posts','rowid,content_key,topic_group,pool','id=(SELECT post_id FROM post_versions WHERE id=?)'],
+  ['content_entries','rowid,active_version_id,stage,stable_order','post_id=(SELECT post_id FROM post_versions WHERE id=?)'],
+  ['post_versions','rowid,check_version,status,review_due_at','id=?'],
+  ['sources','rowid,status,reviewed_at,review_due_at','id IN (SELECT source_id FROM version_sources WHERE version_id=?)'],
+  ['facts','rowid,status,review_due_at','id IN (SELECT fact_id FROM version_facts WHERE version_id=?)'],
+  ['post_prerequisites','post_id,prerequisite_id','post_id=(SELECT post_id FROM post_versions WHERE id=?)'],
+  ['assets','rowid,status','id=(SELECT asset_id FROM post_versions WHERE id=?)'],
+  ['asset_bindings','rowid,asset_id,checksum,check_version','version_id=?'],
+  ['cloud_library','rowid,state',"kind='document' OR 'library-'||id=(SELECT asset_id FROM post_versions WHERE id=?)"],
+  ['cloud_reviews','rowid,check_version','version_id=?'],
+  ['application_state','operation_generation,paused_by_user,maintenance_owner,blocked_reasons',"environment='production'"],
+ ] as const;
+ const values:(string|number)[]=[],parts=specs.map(([table,fields,where])=>{
+  const expiry=['post_versions','sources','facts'].includes(table);
+  if(expiry)values.push(now);if(where.includes('?'))values.push(version);
+  return `(SELECT json_group_array(json(row)) FROM (SELECT json_array(${fields}${expiry?",CASE WHEN review_due_at IS NULL THEN 0 WHEN julianday(review_due_at)*86400000-210866760000000<=? THEN 1 ELSE 0 END":''}) row FROM ${table} WHERE ${where} ORDER BY ${fields}))`;
+ });
+ return e.DB!.prepare('SELECT json_array('+parts.join(',')+') snapshot').bind(...values);
+}
 // There is no write statement or provider POST capability in any preparation phase.
 export async function productionPreparation(e:PublisherBindings,input:unknown,transport:typeof fetch,clock:()=>number=Date.now,expectedPhase?:string){
  assertProductionEnvironment(e);assertPublisherBoundary(e.APP_ENV??'',e.META_PAGE_ID??'',e.PRODUCTION_DATABASE_ID??'',e.PRODUCTION_ASSET_BUCKET??'');
@@ -47,8 +71,8 @@ export async function productionPreparation(e:PublisherBindings,input:unknown,tr
    (SELECT count(*) FROM production_send_permits WHERE revoked=0) permits,
    (SELECT count(*) FROM production_publisher_usage WHERE day=? OR post=(SELECT post_id FROM post_versions WHERE id=?)) used,
    (SELECT count(*) FROM post_prerequisites q WHERE q.post_id=(SELECT post_id FROM post_versions WHERE id=?) AND NOT EXISTS(SELECT 1 FROM production_publisher_usage u WHERE u.post=q.prerequisite_id)) prerequisites,
-   (SELECT min(julianday(review_due_at)*86400000-210866760000000) FROM (SELECT review_due_at FROM post_versions UNION ALL SELECT review_due_at FROM sources UNION ALL SELECT review_due_at FROM facts) WHERE julianday(review_due_at)*86400000-210866760000000>?) deadline`).bind(day(now),version,version,now),
-  readSnapshotStatement(e,now),
+   (SELECT min(julianday(review_due_at)*86400000-210866760000000) FROM (SELECT review_due_at FROM post_versions WHERE id=? UNION ALL SELECT review_due_at FROM sources WHERE id IN (SELECT source_id FROM version_sources WHERE version_id=?) UNION ALL SELECT review_due_at FROM facts WHERE id IN (SELECT fact_id FROM version_facts WHERE version_id=?)) WHERE julianday(review_due_at)*86400000-210866760000000>?) deadline`).bind(day(now),version,version,version,version,version,now),
+  selectedSnapshot(e,version,now),
   e.DB!.prepare("SELECT l.* FROM post_versions v JOIN content_entries c ON c.active_version_id=v.id JOIN cloud_library l ON v.asset_id='library-'||l.id WHERE v.id=? AND l.state='complete'").bind(version)];
  if(projected)statements.push(...approvalQueries('?',[version]).map(q=>e.DB!.prepare(q.sql).bind(...q.values)));
  if(statements.some(s=>!s))throw Error('SEND_PREFLIGHT_UNAVAILABLE');

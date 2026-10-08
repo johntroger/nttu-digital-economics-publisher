@@ -66,3 +66,12 @@ test('F2 content phases validate all 40 original approvals without accepting cal
  assert.equal(f.calls.length,0);
  }finally{f.db.close();}
 });
+
+test('F2 selected snapshot keeps an unrelated version change separate but rejects a change to the selected approval',async()=>{
+ const f=await liveFixture();try{f.env.SESSION_SIGNING_KEY='e'.repeat(64);const initial=await prepare(f,{versionId:f.item.versionId});
+ f.db.prepare("UPDATE post_versions SET status='quarantined' WHERE id=(SELECT active_version_id FROM content_entries WHERE active_version_id<>? LIMIT 1)").run(f.item.versionId);
+ const image=await prepare(f,{receipt:initial.nextReceipt});assert.equal(image.phase,'image');
+ f.db.prepare('UPDATE post_versions SET check_version=check_version+1 WHERE id=?').run(f.item.versionId);
+ await assert.rejects(prepare(f,{receipt:image.nextReceipt}),/CHANGED/);assert.equal(f.calls.length,0);
+ }finally{f.db.close();}
+});
