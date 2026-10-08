@@ -137,6 +137,11 @@ Schema14 và adapter D1/R2 production đã triển khai sau CI Windows/Ubuntu. 3
 
 ## Bước 38 — chức năng đạt, nghiệm thu tài nguyên chưa đạt (08/10/2026)
 
-Đã triển khai dry-run owner/CSRF chỉ đọc và hồ sơ P01 theo lựa chọn được giao; chưa đăng Facebook. 405 kiểm thử, 13 kiểm tra ảnh, tám kịch bản native và CI Windows/Ubuntu đạt. Runtime production `7aadfc165dfd51692aeeedb34cf2f5cc9507c170`, schema14; draft PR10 chưa merge. Đường chuẩn bị chỉ SELECT và Meta GET; permit/job/intent/publication/slot vẫn 0, cửa publisher tắt, application paused. Telegram HTTP và staging giữ nguyên.
+Đã triển khai dry-run owner/CSRF chỉ đọc và hồ sơ P01 theo lựa chọn được giao; chưa đăng Facebook. 405 kiểm thử, 13 kiểm tra ảnh, tám kịch bản native và CI Windows/Ubuntu đạt. Runtime production `7aadfc165dfd51692aeeedb34cf2f5cc9507c170`, schema 14; draft PR10 chưa merge. Đường chuẩn bị chỉ SELECT và Meta GET; permit/job/intent/publication/slot vẫn 0, cửa publisher tắt, application paused. Telegram HTTP và staging giữ nguyên.
 
 Dashboard xác nhận Workers Free Active, ngân sách CPU10ms. Dry-run sau tối ưu vẫn23ms, preview35ms và management20ms; request thành công chưa chứng minh ổn định. Người quản lý chọn giữ Free ngày08/10, đã lập thiết kế F1–F4 chờ duyệt code; chưa phát sinh phí hoặc code bước mới. Hồ sơ thử ngày07/10 đã hết hạn, cần tạo lại trước review. Xem `docs/steps/38-production-send-preflight.md` và `docs/steps/38-resource-acceptance-plan.md`.
+
+
+## Bước 38 / F1 — đã hoàn thành phạm vi đọc (08/10/2026)
+
+Giao diện tải summary/danh sách 5 bài/chi tiết và các tab theo nhu cầu; preview khởi tạo, kiểm từng bài rồi đối chiếu snapshot cuối. 418 kiểm thử, 13 kiểm tra ảnh, native D1/workerd và CI Windows/Ubuntu đạt. Runtime 6312d6ea25814c2a5c92def5ba2480ecbd5288bc,schema 14; publisher vẫn tắt/paused, không permit/job/intent/publication/slot. CPU preview 48 mẫu: trung vị 3 / p95 6 / cao nhất 8 ms trong ngân sách Free 10 ms. Các màn hình khác số mẫu ít, toàn production còn cần F2–F4; dry-run 23 ms và mẫu monitor 19 ms chưa sửa. F2 chưa được phê duyệt, chưa code. Báo cáo: docs/steps/38-f1-free-management.md; draft PR11 chưa merge.

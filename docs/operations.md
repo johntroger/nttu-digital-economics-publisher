@@ -80,4 +80,9 @@ Nếu kết quả unknown: giữ khóa, không POST lại; chỉ đối soát GE
 
 Production → Lịch đăng → Chuẩn bị bài thử. Chọn bài rồi bấm Kiểm tra chuẩn bị gửi; request owner/CSRF chỉ đọc, không tạo lịch/permit/job hoặc POST Facebook. Hồ sơ có caption/ảnh/version/checksum/Page và thời gian đề xuất của server; hết hạn sau tối đa năm phút và phải tạo lại trước duyệt thử. Không có nút cấp quyền hoặc đăng trong giao diện hiện tại. Helper permit/activation chỉ được nghiệm thu bằng fixture; không gọi cloud trực tiếp hoặc tự sửa SQL để mở cửa.
 
-Ngày08/10, Bước38 chưa đạt ngân sách CPU: dry-run23ms trong khi gói Workers Free có10ms. Giữ publisher tắt/paused đến khi xử lý tài nguyên và nghiệm thu các giao diện điều khiển còn thiếu. Token Telegram/monitor không cấp quyền đăng. Báo cáo: `docs/steps/38-production-send-preflight.md`; hai phương án chờ lựa chọn: `docs/steps/38-resource-acceptance-plan.md`.
+Ngày08/10, Bước38 chưa đạt ngân sách CPU: dry-run 23 ms trong khi gói Workers Free có10ms. Giữ publisher tắt/paused đến khi xử lý tài nguyên và nghiệm thu các giao diện điều khiển còn thiếu. Token Telegram/monitor không cấp quyền đăng. Báo cáo: `docs/steps/38-production-send-preflight.md`; hai phương án chờ lựa chọn: `docs/steps/38-resource-acceptance-plan.md`.
+
+
+### Giao diện đọc F1 trên Workers Free
+
+Tổng quan chỉ tải summary; Kho nội dung đọc 5 tiêu đề mỗi lần, mở bài để đọc caption/ảnh/nguồn. Đọc thêm 5 bài dùng cursor cùng snapshot; nếu dữ liệu đổi thì Làm mới để đọc lại. Thư viện và lịch sử tải riêng. Lịch đăng kiểm từng bài; tiến độ chưa đầy đủ không phải kết quả toàn kho. Chỉ sau đối chiếu snapshot cuối mới hiển thị 40/40 khớp duyệt; lỗi cuối xóa kết quả từng phần. Cursor hết hạn sau 5 phút hoặc khi nguồn/fact đến hạn thì kiểm lại. Đây là màn hình đọc, không cấp quyền đăng. Dry-run gửi còn23ms và production giữ tắt/paused; cần F2–F4 trước thử thật. Báo cáo: docs/steps/38-f1-free-management.md.

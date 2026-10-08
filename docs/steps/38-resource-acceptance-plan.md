@@ -1,6 +1,6 @@
 # Bước 38 — Phương án nghiệm thu ngân sách CPU
 
-Ngày 08/10/2026: người quản lý chọn **giữ Workers Free**, chấp nhận làm chậm để ổn định. Không nâng gói. Phương án B dưới đây là hướng được chọn, nhưng thiết kế/code chia giai đoạn vẫn cần phê duyệt theo quy trình từng bước. Bằng chứng và phạm vi đã triển khai nằm trong [báo cáo Bước 38](38-production-send-preflight.md).
+Ngày 08/10/2026: người quản lý chọn **giữ Workers Free**, chấp nhận làm chậm để ổn định. Không nâng gói. Phương án B dưới đây là hướng được chọn, F1 đã được phê duyệt và triển khai kiểm thử; F2–F4 vẫn cần phê duyệt riêng theo quy trình từng bước. Bằng chứng và phạm vi đã triển khai nằm trong [báo cáo Bước 38](38-production-send-preflight.md).
 
 ## Phương án A — Workers Paid
 
@@ -27,6 +27,8 @@ Giữ production publisher tắt và không cấp permit/credential/job trong qu
 Rà soát code cho thấy `managementData` trả cả 40 caption/metadata và dữ liệu nhiều tab trong một request; `productionPreview` xác minh cả 40 bài rồi dựng toàn lịch; `productionSendPreflight` chạy projection bài hai lần, đọc/kiểm ảnh, xác minh Meta và chốt hồ sơ trong một request. Đây là các công việc cần tách. Chưa có profile CPU từng hàm nên không quy toàn bộ 23 ms cho SHA hoặc một thư viện cụ thể.
 
 ### Giai đoạn F1 — giao diện và đo nền
+
+F1 đã hoàn thành phạm vi đọc và số đo hiện tại; xem [báo cáo F1](38-f1-free-management.md). Preview gồm khởi tạo, một bài mỗi request và đối chiếu snapshot cuối; chỉ kết luận toàn kho khi pha cuối đạt. F2 chưa code.
 
 Tách management thành summary gọn, danh sách bài theo cursor (khởi đầu năm bài/trang), chi tiết một bài, thư viện và lịch sử tải khi mở tab. Giữ xác thực owner trên mọi request. Không gửi body/metadata/caption của cả kho khi chỉ cần tiêu đề. Preview kiểm từng trang nhỏ, cursor do server ràng buộc; hiển thị tiến độ và chỉ ghi kết quả kiểm cho những bài đã đọc. Không hiển thị “40/40 đạt” khi mới kiểm một trang; nếu thay snapshot hoặc phiên bản trong lúc đọc phải làm lại.
 
