@@ -87,7 +87,7 @@ export default {
         if(id&&/^[a-zA-Z0-9:-]{1,128}$/.test(id)&&!url.search)return json(await managementPostDetail(env,id));
         if(['/api/management/library','/api/management/history','/api/management/schedule'].includes(url.pathname)&&!url.search)return json(await managementSection(env,url.pathname.split('/').at(-1)!));
         return json({error:'READ_REQUEST_INVALID'},422);
-      }catch(e){const code=e instanceof Error?e.message:'';return json({error:/^READ_/.test(code)?code:'READ_UNAVAILABLE'},code==='READ_POST_NOT_FOUND'?404:422);}
+      }catch(e){const code=e instanceof Error?e.message:'';if(code.startsWith('PRODUCTION_'))throw e;return json({error:/^READ_/.test(code)?code:'READ_UNAVAILABLE'},code==='READ_POST_NOT_FOUND'?404:422);}
     }
     if(url.pathname==='/api/production/send-preflight'){
       if(request.method!=='POST')return json({error:'METHOD_NOT_ALLOWED'},405);

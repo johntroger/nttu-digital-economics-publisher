@@ -70,7 +70,7 @@ test('F1 detects mutation during a page read and rejects malformed input via own
   f.env.PRODUCTION_DATABASE_ID='09cdecc7-36a2-4196-950e-ef68b1ecd835';
   for(const path of [...paths,'/api/management/history','/api/management/schedule']){
    const rejected=await worker.fetch(new Request(f.env.AUTH_ORIGIN+path,{headers:{Cookie:'__Host-nttu_session='+jwt}}),f.env);
-   assert.notEqual(rejected.status,200);assert.deepEqual(Object.keys(await rejected.json()),['error']);
+   assert.equal(rejected.status,503);assert.deepEqual(await rejected.json(),{error:'PRODUCTION_MANAGEMENT_UNAVAILABLE'});
   }
  }finally{f.db.close();}
 });
