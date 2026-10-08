@@ -75,3 +75,9 @@ Production → Lịch đăng → Kiểm tra trước khi đăng (cuối trang). 
 Schema14 bổ sung bảng `production_publisher_*` và `production_send_permits`, không nhập fixture hoặc cấp quyền đăng từ approvals22–23. Không tự sửa enabled, tạo permit bằng SQL hoặc cấp Secret publisher để thử. Cần hoàn tất CPU/full dry-run, duyệt bài/ảnh/version/Page/giờ và phê duyệt cấp capability bên ngoài trước khi thử thật. Báo cáo Bước37 và kế hoạch đề xuất Bước38 nằm trong docs/steps.
 
 Nếu kết quả unknown: giữ khóa, không POST lại; chỉ đối soát GET và bằng chứng khớp intent. Nếu finalizer lỗi mà evidence đã lưu: phục hồi evidence, không gửi lại. Pause thu hồi permit, hủy held/retry_wait nhưng giữ requested/unknown. Migration rollback `cloud/production-publisher-rollback.sql` chỉ dành schema rỗng, tắt, không permit/job/evidence/publication; backup trước, kiểm trên bản sao rồi mới thao tác cloud trong phạm vi bảo trì được duyệt. Không rollback xóa biên nhận vận hành thật.
+
+### Chuẩn bị bài thử Bước 38
+
+Production → Lịch đăng → Chuẩn bị bài thử. Chọn bài rồi bấm Kiểm tra chuẩn bị gửi; request owner/CSRF chỉ đọc, không tạo lịch/permit/job hoặc POST Facebook. Hồ sơ có caption/ảnh/version/checksum/Page và thời gian đề xuất của server; hết hạn sau tối đa năm phút và phải tạo lại trước duyệt thử. Không có nút cấp quyền hoặc đăng trong giao diện hiện tại. Helper permit/activation chỉ được nghiệm thu bằng fixture; không gọi cloud trực tiếp hoặc tự sửa SQL để mở cửa.
+
+Ngày08/10, Bước38 chưa đạt ngân sách CPU: dry-run23ms trong khi gói Workers Free có10ms. Giữ publisher tắt/paused đến khi xử lý tài nguyên và nghiệm thu các giao diện điều khiển còn thiếu. Token Telegram/monitor không cấp quyền đăng. Báo cáo: `docs/steps/38-production-send-preflight.md`; hai phương án chờ lựa chọn: `docs/steps/38-resource-acceptance-plan.md`.
