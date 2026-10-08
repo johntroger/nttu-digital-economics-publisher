@@ -24,14 +24,14 @@ export async function publisherIdentity(e:PublisherBindings){
  assertPublisherBoundary(e.APP_ENV??'',e.META_PAGE_ID??'',e.PRODUCTION_DATABASE_ID??'',e.PRODUCTION_ASSET_BUCKET??'');
  if(e.INTEGRATION_MODE!=='management'||!e.DB?.batch||e.DAILY_PUBLISHING_ENABLED!=='false'||! /^[a-f0-9]{40}$/.test(e.RELEASE_SHA??''))throw Error('LIVE_PUBLISHER_BOUNDARY_INVALID');
  const i=await one(e,"SELECT i.database_id,a.paused_by_user,a.maintenance_owner,a.blocked_reasons,a.operation_generation,(SELECT count(*) FROM schema_migrations) migrations,(SELECT count(*) FROM schema_migrations WHERE name='0014_production_publisher.sql') publisher_schema FROM production_identity i JOIN application_state a ON a.environment=i.environment WHERE i.id=1 AND i.environment='production' AND i.schema_version=1");
- if(!i||i.database_id!==e.PRODUCTION_DATABASE_ID||i.migrations!==14||i.publisher_schema!==1)throw Error('LIVE_PUBLISHER_SCHEMA_INVALID');return i;
+ if(!i||i.database_id!==e.PRODUCTION_DATABASE_ID||![14,15].includes(i.migrations)||i.publisher_schema!==1)throw Error('LIVE_PUBLISHER_SCHEMA_INVALID');return i;
 }
 const identity=publisherIdentity;
 const runtimeGate=(e:PublisherBindings,c:Row,a:Row)=>e.PRODUCTION_PUBLISHER_ENABLED==='true'&&c.enabled===1&&a.paused_by_user===0&&a.maintenance_owner===null&&a.blocked_reasons==='[]'&&!c.blocked;
 function event(e:ManagementBindings,id:string,kind:string,guard:string,args:Value[]=[],extra:Row={}){
  return s(e,`INSERT INTO notification_outbox(event_id,payload_json) SELECT ?,? WHERE ${guard} ON CONFLICT(event_id) DO NOTHING`,id,JSON.stringify({kind,environment:'production',page:'Ngành Kinh tế số - NTTU',...extra}),...args);
 }
-async function finalize(e:ManagementBindings,j:Row,attempt:string,result:PublicationResult,at:number,observed:number){
+export async function finalizePublisherEvidence(e:ManagementBindings,j:Row,attempt:string,result:PublicationResult,at:number,observed:number){
  const owned="EXISTS(SELECT 1 FROM production_publisher_config WHERE active_job=?) AND EXISTS(SELECT 1 FROM production_publisher_attempts WHERE id=? AND job=? AND state IN ('intent','unknown'))";
  const args=[j.id,attempt,j.id];
  if(result.kind==='confirmed'){
@@ -53,6 +53,7 @@ async function finalize(e:ManagementBindings,j:Row,attempt:string,result:Publica
   ...(result.kind==='global'?[s(e,"UPDATE production_publisher_config SET enabled=0,blocked='connection_error' WHERE id=1"),s(e,"UPDATE application_state SET paused_by_user=1 WHERE environment='production'")]:[]),
   s(e,'UPDATE production_publisher_evidence SET applied=1 WHERE attempt=?',attempt)]);return state;
 }
+const finalize=finalizePublisherEvidence;
 async function saveEvidence(e:ManagementBindings,j:Row,attempt:string,result:PublicationResult,at:number,observed:number){
  await s(e,"INSERT INTO production_publisher_evidence(attempt,response,sent_at,observed_at) VALUES(?,?,?,?) ON CONFLICT(attempt) DO NOTHING",attempt,JSON.stringify(result),at,observed).run();
  const saved=await one(e,'SELECT * FROM production_publisher_evidence WHERE attempt=?',attempt);if(!saved)throw Error('EVIDENCE_NOT_DURABLE');
@@ -128,7 +129,8 @@ async function operation(e:PublisherBindings,provider:ProductionMetaPublisher,cl
  const result=await provider.send({attemptId:attempt,pageId:PRODUCTION_PAGE,caption:j.caption,checksum:j.checksum,bytes,sentAt:now},clock);
  return {state:await saveEvidence(e,j,attempt,result,now,clock()),sends:1};
 }
-// A dedicated capability/heartbeat: never called by the Telegram tick or native cron.
+// Legacy B37 fixture comparison only. Production HTTP uses publisher-stages.ts.
+// Never called by the Telegram tick or native cron.
 export async function runProductionPublisher(e:PublisherBindings,provider:ProductionMetaPublisher,clock:()=>number=Date.now){
  if(!(provider instanceof ProductionMetaPublisher))throw Error('EXPLICIT_LIVE_PROVIDER_REQUIRED');
  await identity(e);const now=clock();if(!Number.isSafeInteger(now)||now<0)throw Error('PUBLISHER_CLOCK_INVALID');

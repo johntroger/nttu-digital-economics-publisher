@@ -7,6 +7,13 @@ Kế hoạch hiện hành: `KE-HOACH-TONG-THE.md` v4.3. Chỉ triển khai từn
 
 ## Chạy local
 
+Các lệnh `npm run test`, `test:portable`, `test:cloud`, `test:cloud:workflow` và
+`test:images` tự dọn fixture mới tạo và cache của lần chạy sau khi tiến trình kết
+thúc, kể cả khi kiểm thử thất bại. Không chạy nhiều tác vụ tạo fixture đồng thời.
+Database đang dùng, backup thật, nguồn gốc, ảnh và bằng chứng nghiệm thu được giữ.
+Với script local khác: `node scripts/run-clean.mjs script scripts/<ten-script>.mjs`.
+Chạy trực tiếp `node --test` bỏ qua bước tự dọn. Quy tắc làm việc nằm trong `AGENTS.md`.
+
 Node.js 24, sau cài dev dependencies:
 
 ```powershell

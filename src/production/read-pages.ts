@@ -5,7 +5,7 @@ const hex=(a:ArrayBuffer)=>Array.from(new Uint8Array(a),b=>b.toString(16).padSta
 export const digest=async(s:string)=>hex(await crypto.subtle.digest('SHA-256',encoder.encode(s)));
 // Immutable bodies, completed bytes and review receipts are identified by immutable IDs.
 // Mutable eligibility, active-version links and source/fact state are included explicitly.
-export function readSnapshotStatement(e:ManagementBindings,now=Date.now()){
+export function readSnapshotSQL(){
  const specs=[
  ['posts','rowid,content_key,topic_group,pool'],
  ['content_entries',"rowid,(SELECT rowid FROM post_versions WHERE id=content_entries.active_version_id),stage,stable_order"],
@@ -27,7 +27,10 @@ export function readSnapshotStatement(e:ManagementBindings,now=Date.now()){
  // Rebuild/VACUUM may invalidate a cursor; it never grants permission to continue.
  const expiryTables=['post_versions','sources','facts'];
  const parts=specs.map(([table,fields])=>`(SELECT json_group_array(json(row)) FROM (SELECT json_array(${fields}${expiryTables.includes(table)?",CASE WHEN review_due_at IS NULL THEN 0 WHEN julianday(review_due_at)*86400000-210866760000000<=? THEN 1 ELSE 0 END":''}) row FROM ${table} ORDER BY ${fields}))`);
- return e.DB!.prepare('SELECT json_array('+parts.join(',')+') snapshot').bind(now,now,now);
+ return 'SELECT json_array('+parts.join(',')+') snapshot';
+}
+export function readSnapshotStatement(e:ManagementBindings,now=Date.now()){
+ return e.DB!.prepare(readSnapshotSQL()).bind(now,now,now);
 }
 export async function readSnapshot(e:ManagementBindings,now=Date.now()){
  const row=await readSnapshotStatement(e,now).first<{snapshot:string}>();

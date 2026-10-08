@@ -54,6 +54,17 @@ export class ProductionMetaPublisher {
    const error=body.error as {code?:unknown}|undefined;return {kind:publicationFailure(response.status,typeof error?.code==='number'?error.code:undefined).kind,...(validId(body.post_id)?{remoteId:body.post_id}:{})};
   },10000);}catch{return {kind:'unknown'};}
  }
+ // F3: one POST only. A returned remote ID is a hint, never confirmation.
+ // Correlated GET and durable finalization happen on separate invocations.
+ async dispatch(request:PublicationRequest):Promise<PublicationResult>{
+  if(!this.configured()||request.pageId!==PRODUCTION_PAGE||!request.attemptId||!request.caption||!Number.isSafeInteger(request.sentAt)||request.bytes.length>5242880||request.bytes.length===0||await publicationHash(request.bytes)!==request.checksum)return {kind:'global'};
+  try{return await bounded(async signal=>{
+   const form=new FormData();form.set('source',new Blob([new Uint8Array(request.bytes)],{type:'image/png'}),'approved.png');form.set('caption',request.caption);form.set('published','true');form.set('appsecret_proof',await metaProof(this.env));
+   const response=await this.transport(this.endpoint(PRODUCTION_PAGE)+'/photos',{method:'POST',redirect:'manual',headers:{Authorization:'Bearer '+this.env.META_PAGE_ACCESS_TOKEN},body:form,signal}),body=await data(response);
+   if(response.status===200)return {kind:'unknown',...(validId(body.post_id)?{remoteId:body.post_id}:{})};
+   const error=body.error as {code?:unknown}|undefined;return {kind:publicationFailure(response.status,typeof error?.code==='number'?error.code:undefined).kind};
+  },10000);}catch{return {kind:'unknown'};}
+ }
  async reconcile(request:Omit<PublicationRequest,'bytes'>,remoteId:string,clock:()=>number=Date.now):Promise<PublicationResult>{
   if(!this.configured()||request.pageId!==PRODUCTION_PAGE)return {kind:'unknown'};
   try{return await bounded(signal=>this.evidence(request,remoteId,signal,clock),8000);}catch{return {kind:'unknown',...(validId(remoteId)?{remoteId}:{})};}

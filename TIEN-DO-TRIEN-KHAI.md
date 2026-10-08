@@ -150,3 +150,8 @@ Giao diện tải summary/danh sách 5 bài/chi tiết và các tab theo nhu c�
 ## Bước 38 / F2 — hoàn tất phạm vi chuẩn bị (08/10/2026)
 
 Bốn lượt nội dung, R2, Meta GET và chốt hồ sơ sử dụng biên nhận có chữ ký, hạn chuỗi/ngày Việt Nam/snapshot/credential. 429 kiểm thử, 13 kiểm tra ảnh và CI/native 10 kịch bản đạt. Runtime 130a6ff98c9ff4cc4b7d54c330389890396f5fb8 có 39 mẫu CPU F2, mọi pha dưới 10 ms; chi tiết trong docs/steps/38-f2-free-preparation.md. Không migration hoặc quyền/job/POST; publisher tắt/paused. F3 chưa duyệt, chưa code.
+
+
+### 08/10/2026 — F3: bộ đăng bền vững, chưa rollout
+
+F3 được phê duyệt; HTTP publisher chuyển sang một giai đoạn mỗi tick, journal schema15 opt-in, intent/ngày/Page nguyên tử, POST/GET/chốt evidence tách lượt. Giữ unknown không tự gửi lại; phục hồi finalizer khi pause; stock kiểm từng bài với snapshot SQL. Có thể chuẩn bị trước giờ ba phút, không POST trước due_at. 12 kiểm thử F3 và 18 kịch bản native/mock đạt. Toàn bộ 445 kiểm thử local, TypeScript và 13 kiểm tra ảnh đạt; CI được chốt trên PR F3. Production vẫn F2, schema14, publisher tắt/paused; chưa áp dụng migration/cloud, không tạo credential/permit/job thật hoặc Facebook POST. Báo cáo: docs/steps/38-f3-durable-publisher.md. F4 cần phê duyệt riêng để rollout với cửa đóng và đo CPU, rồi xin duyệt bài thử thật.
