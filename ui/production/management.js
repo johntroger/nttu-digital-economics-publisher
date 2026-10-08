@@ -1,5 +1,5 @@
 const panel=document.querySelector('#panel'),error=document.querySelector('#error');
-let data,identity,preview,preflight,sendReview,view='overview',epoch=0,controller;
+let data,identity,preview,preflight,sendReview,preparation,view='overview',epoch=0,controller;
 function el(tag,text){const x=document.createElement(tag);if(text!==undefined)x.textContent=String(text);return x;}
 function empty(title,body){const box=el('div');box.className='empty';box.append(el('strong',title),el('p',body));return box;}
 function table(head,rows){const t=el('table'),h=el('thead'),tr=el('tr');head.forEach(x=>tr.append(el('th',x)));h.append(tr);t.append(h);const b=el('tbody');rows.forEach(row=>{const r=el('tr');row.forEach(x=>r.append(el('td',x??'—')));b.append(r);});t.append(b);return t;}
@@ -27,9 +27,12 @@ function render(){
   const label=el('label','Bài thử '),select=el('select');select.id='send-review-post';
   [...(preview?.calendar??[]),...(preview?.reserves??[])].forEach(p=>{const option=el('option',p.key+' · '+p.title);option.value=p.versionId;option.disabled=!p.approvalValid;select.append(option);});label.append(select);
   if(sendReview)select.value=sendReview.dossier.versionId;
-  const check=el('button','Kiểm tra chuẩn bị gửi');check.disabled=!select.options.length;
-  check.addEventListener('click',async()=>{check.disabled=true;error.hidden=true;try{const r=await fetch('/api/production/send-preflight',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':identity.csrf},body:JSON.stringify({versionId:select.value}),redirect:'error'});const result=await r.json();if(!r.ok)throw Error('Chưa kiểm tra được bài thử: '+(result.error??'Hãy thử lại.'));sendReview=result;render();}catch(e){sendReview=null;error.textContent=e.message;error.hidden=false;check.disabled=false;}});
+  if(preparation)select.value=preparation.versionId;
+  select.disabled=Boolean(preparation);
+  const check=el('button','Kiểm tra chuẩn bị gửi');check.disabled=!select.options.length||!preview?.complete||Boolean(preparation);
+  check.addEventListener('click',()=>loadPreparation(select.value));
   reviewBox.append(label,check);
+  if(preparation)reviewBox.append(el('p',preparation.message));
   if(sendReview){const d=sendReview.dossier,format=n=>new Date(n).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh'});reviewBox.append(el('h3',d.key+' · '+d.title),el('p',sendReview.note),table(['Hồ sơ thử','Giá trị'],[['Fanpage',d.pageName+' · '+d.pageId],['Thời điểm thử đề xuất',format(d.dueAt)+' · Việt Nam'],['Hồ sơ hết hiệu lực',format(Math.min(d.reviewExpiresAt,d.dueAt))],['Trạng thái','Chuẩn bị đã kiểm tra · chưa được phép đăng'],['Phiên bản',d.versionId],['Mã ảnh đã duyệt',d.imageChecksum],['Mã hồ sơ',sendReview.dossierHash]]));const img=el('img');img.src=d.imageUrl;img.alt='Ảnh đã duyệt của bài thử '+d.key;img.className='post-artwork';reviewBox.append(img,el('pre',d.caption),el('p','Sau khi bạn duyệt riêng hồ sơ còn hiệu lực, hệ thống mới được chuẩn bị quyền đăng một lần. Lịch thường vẫn giữ tắt.'));}
   panel.append(reviewBox);
   panel.append(table(['Thiết lập','Giá trị'],[['Trạng thái','Chưa bật'],['Giờ đăng','10:00 · Việt Nam'],['Tần suất','1 bài tự động/ngày'],['Fanpage','Ngành Kinh tế số – NTTU']]));
@@ -66,7 +69,22 @@ function render(){
 function showError(e){if(e.name==='AbortError')return;error.textContent=e.message;error.hidden=false;}
 function renderPost(p,body){body.replaceChildren(el('p','Phiên bản '+p.version+' · '+(p.pool==='reserve'?'Dự phòng':'Bài chính')+' · '+(p.contentDesignApproved?'Đã duyệt nội dung và thiết kế':'Chờ đối chiếu duyệt')));if(p.imageUrl){const img=el('img');img.src=p.imageUrl;img.alt='Ảnh đã duyệt của '+p.content_key;img.loading='lazy';img.className='post-artwork';body.append(img);}body.append(el('pre',p.caption),el('h3','Căn cứ nội dung'));for(const r of p.sourceRefs){const f=p.sourceFiles.find(x=>x.source_key===r.id),line=el('p');if(f){const a=el('a',r.id+' · trang '+r.pages.join(', '));a.href='/api/library/files/'+f.id;a.target='_blank';a.rel='noopener noreferrer';line.append(a);}else line.append(el('strong',r.id+' · xác nhận của người quản lý'));line.append(el('span',' — '+r.supports));body.append(line);}}
 async function get(path){const r=await fetch(path,{cache:'no-store',redirect:'error',signal:controller?.signal});if(r.status===401){location.assign('/');throw Error('Phiên đăng nhập hết hạn.');}if(!r.ok){const result=await r.json().catch(()=>({}));throw Error(result.error==='READ_SNAPSHOT_CHANGED'?'Dữ liệu đã đổi trong lúc đọc. Hãy làm mới để kiểm lại toàn bộ.':result.error==='READ_CURSOR_EXPIRED'?'Phiên xem trước đã hết hạn. Hãy làm mới.':'Chưa đọc được dữ liệu. Hãy làm mới hoặc đăng nhập lại.');}return r.json();}
-function beginRead(){controller?.abort();controller=new AbortController();return ++epoch;}
+function beginRead(){controller?.abort();controller=new AbortController();preparation=null;return ++epoch;}
+async function loadPreparation(versionId){
+ const turn=beginRead();sendReview=null;error.hidden=true;preparation={versionId,message:'Đang kiểm nội dung đã duyệt…'};render();
+ try{
+  let input={versionId};const phases=['content','image','connection','finalize'],messages=['Đang kiểm byte ảnh đã duyệt…','Đang xác minh fanpage…','Đang đối chiếu và chốt hồ sơ…'];
+  for(let step=0;step<phases.length;step++){
+   const r=await fetch('/api/production/send-preflight/'+phases[step],{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':identity.csrf},body:JSON.stringify(input),redirect:'error',signal:controller.signal});
+   const result=await r.json();if(turn!==epoch||view!=='schedule')return;
+   if(!r.ok)throw Error('Chưa kiểm tra được bài thử: '+(result.error??'Hãy thử lại.'));
+   if(result.phase!==phases[step]||result.complete!==(step===3))throw Error('Chuỗi kiểm tra chưa hợp lệ. Hãy kiểm lại từ đầu.');
+   if(step===3){if(!result.preparationVerified||!result.dossier)throw Error('Hồ sơ chưa kiểm tra đầy đủ.');sendReview=result;preparation=null;render();return;}
+   if(typeof result.nextReceipt!=='string'||result.preparationVerified||result.dossier)throw Error('Hồ sơ chưa kiểm tra đầy đủ.');
+   input={receipt:result.nextReceipt};preparation={versionId,message:messages[step]};render();
+  }
+ }catch(e){if(turn!==epoch)return;sendReview=null;preparation=null;render();showError(e);}
+}
 async function loadMorePosts(){const turn=epoch,cursor=data.postCursor;try{const page=await get('/api/management/posts'+(cursor?'?cursor='+encodeURIComponent(cursor):''));if(turn!==epoch||view!=='posts')return;if(data.posts?.length&&data.postSnapshot!==page.snapshot)throw Error('Dữ liệu đã đổi. Hãy làm mới.');data.posts=[...(data.posts??[]),...page.items.filter(p=>!data.posts?.some(old=>old.id===p.id))];data.postCursor=page.nextCursor;data.postSnapshot=page.snapshot;render();}catch(e){showError(e);}}
 async function loadPreview(startDate){const turn=beginRead();preview=null;preflight=null;sendReview=null;render();try{const first=await get('/api/production/preview'+(startDate?'?startDate='+encodeURIComponent(startDate):''));if(turn!==epoch)return;preview={...first,calendar:[],reserves:[],valid:0,complete:false,loading:true};let page=first;while(true){if(turn!==epoch||view!=='schedule')return;if(page.snapshot!==preview.snapshot)throw Error('Dữ liệu đã đổi. Hãy làm mới.');for(const p of page.items){(p.pool==='scheduled'?preview.calendar:preview.reserves).push(p);if(p.approvalValid)preview.valid++;}preview.checkedThrough=page.checkedThrough;preview.complete=page.complete;preview.loading=!page.complete;render();if(!page.nextCursor)break;page=await get('/api/production/preview?cursor='+encodeURIComponent(page.nextCursor));}preflight=await get('/api/production/preflight');if(turn===epoch)render();}catch(e){if(turn!==epoch)return;if(preview){preview.complete=false;preview.loading=false;preview.calendar=[];preview.reserves=[];preview.valid=0;preview.checkedThrough=0;}render();showError(e);}}
 async function load(){const turn=beginRead();error.hidden=true;preview=null;preflight=null;sendReview=null;try{const result=await Promise.all([get('/api/me'),get('/api/management')]);if(turn!==epoch)return;[identity,data]=result;document.querySelector('#owner').textContent=identity.email;await loadView();}catch(e){showError(e);}}

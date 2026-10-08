@@ -145,3 +145,8 @@ Dashboard xác nhận Workers Free Active, ngân sách CPU10ms. Dry-run sau tố
 ## Bước 38 / F1 — đã hoàn thành phạm vi đọc (08/10/2026)
 
 Giao diện tải summary/danh sách 5 bài/chi tiết và các tab theo nhu cầu; preview khởi tạo, kiểm từng bài rồi đối chiếu snapshot cuối. 418 kiểm thử, 13 kiểm tra ảnh, native D1/workerd và CI Windows/Ubuntu đạt. Runtime 6312d6ea25814c2a5c92def5ba2480ecbd5288bc,schema 14; publisher vẫn tắt/paused, không permit/job/intent/publication/slot. CPU preview 48 mẫu: trung vị 3 / p95 6 / cao nhất 8 ms trong ngân sách Free 10 ms. Các màn hình khác số mẫu ít, toàn production còn cần F2–F4; dry-run 23 ms và mẫu monitor 19 ms chưa sửa. F2 chưa được phê duyệt, chưa code. Báo cáo: docs/steps/38-f1-free-management.md; draft PR11 chưa merge.
+
+
+## Bước 38 / F2 — hoàn tất phạm vi chuẩn bị (08/10/2026)
+
+Bốn lượt nội dung, R2, Meta GET và chốt hồ sơ sử dụng biên nhận có chữ ký, hạn chuỗi/ngày Việt Nam/snapshot/credential. 429 kiểm thử, 13 kiểm tra ảnh và CI/native 10 kịch bản đạt. Runtime 130a6ff98c9ff4cc4b7d54c330389890396f5fb8 có 39 mẫu CPU F2, mọi pha dưới 10 ms; chi tiết trong docs/steps/38-f2-free-preparation.md. Không migration hoặc quyền/job/POST; publisher tắt/paused. F3 chưa duyệt, chưa code.

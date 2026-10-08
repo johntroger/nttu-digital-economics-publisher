@@ -13,7 +13,15 @@ const secret=(value:unknown):value is string=>typeof value==='string'&&/^[a-zA-Z
 export function metaCredentialsPresent(env:CloudBindings){return id(env.META_APP_ID)&&id(env.META_PAGE_ID)&&secret(env.META_APP_SECRET)&&secret(env.META_PAGE_ACCESS_TOKEN)&&/^v[1-9][0-9]\.0$/.test(env.META_API_VERSION??'');}
 export function metaConfigured(env:CloudBindings){return metaCredentialsPresent(env)&&env.META_CONNECTION_PURPOSE==='test';}
 async function fingerprint(env:CloudBindings){const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify([env.META_APP_ID,env.META_APP_SECRET,env.META_PAGE_ID,env.META_PAGE_ACCESS_TOKEN,env.META_API_VERSION,env.META_CONNECTION_PURPOSE])));return Array.from(new Uint8Array(bytes),n=>n.toString(16).padStart(2,'0')).join('');}
-async function appProof(env:CloudBindings){const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(env.META_APP_SECRET!),{name:'HMAC',hash:'SHA-256'},false,['sign']);const bytes=await crypto.subtle.sign('HMAC',key,new TextEncoder().encode(env.META_PAGE_ACCESS_TOKEN!));return Array.from(new Uint8Array(bytes),n=>n.toString(16).padStart(2,'0')).join('');}
+let appProofKey:{secret:string;key:Promise<CryptoKey>}|undefined;
+async function appProof(env:CloudBindings){
+  const secret=env.META_APP_SECRET??'';
+  // Cache only the derived key, never a token, signature or verification result.
+  // Secret rotation replaces it; each call signs the current Page token.
+  if(!appProofKey||appProofKey.secret!==secret)appProofKey={secret,key:crypto.subtle.importKey('raw',new TextEncoder().encode(secret),{name:'HMAC',hash:'SHA-256'},false,['sign'])};
+  const bytes=await crypto.subtle.sign('HMAC',await appProofKey.key,new TextEncoder().encode(env.META_PAGE_ACCESS_TOKEN!));
+  return Array.from(new Uint8Array(bytes),n=>n.toString(16).padStart(2,'0')).join('');
+}
 async function checks(env:CloudBindings,sql:string,...values:(string|number|null)[]){if(!env.DB!.prepare(sql).all)throw new CatalogError('CLOUD_DATABASE_UNAVAILABLE',503);return(await env.DB!.prepare(sql).bind(...values).all!<Check>()).results;}
 export function metaCheckView(row:Check,current:boolean,now:number){const fresh=row.checked_at<=now&&now-row.checked_at<MAX_AGE;
   return {id:row.id,checkedAt:row.checked_at,state:row.state,reason:row.reason,current,fresh,

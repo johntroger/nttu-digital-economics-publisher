@@ -4,9 +4,11 @@ import {runProductionPublisher} from '../../src/production/publisher-live.ts';
 import type {PublisherBindings} from '../../src/production/publisher-live.ts';
 import {ProductionMetaPublisher} from '../../src/production/publisher-provider.ts';
 import {productionSendPreflight,issueSingleTestPermit,activateSingleTestPermit} from '../../src/production/send-preflight.ts';
+import {productionPreparation} from '../../src/production/preparation.ts';
 import {POLICY} from '../../src/domain/policy.ts';
 export default {async fetch(request:Request,env:PublisherBindings){
- try{const p=await request.json() as {at:number;diagnostic?:boolean;dryRunVersion?:string;approve?:any;previewPage?:{cursor?:string}};
+ try{const p=await request.json() as {at:number;diagnostic?:boolean;dryRunVersion?:string;preparation?:unknown;approve?:any;previewPage?:{cursor?:string}};
+ if(p.preparation)return Response.json(await productionPreparation({...env,PRODUCTION_PUBLISHER_ENABLED:'false'},p.preparation,fetch,()=>p.at));
  if(p.previewPage)return Response.json(await productionPreviewPage(env,p.previewPage,p.at));
  if(p.dryRunVersion)return Response.json(await productionSendPreflight({...env,PRODUCTION_PUBLISHER_ENABLED:'false'},{versionId:p.dryRunVersion},fetch,()=>p.at));
  if(p.approve){const permit=await issueSingleTestPermit(env,p.approve,{actor:POLICY.ownerEmail,dossierHash:p.approve.dossierHash},()=>p.at);return Response.json(await activateSingleTestPermit(env,permit.permitId,POLICY.ownerEmail,()=>p.at));}

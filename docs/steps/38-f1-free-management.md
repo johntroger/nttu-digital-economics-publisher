@@ -40,3 +40,8 @@ Preview: 48 mẫu, trung vị 3 ms, p95 6 ms, cao nhất 8 ms; 69 invocation qua
 F1 chưa sửa dry-run gửi 23 ms, đường POST hoặc monitor từng có mẫu 19 ms. F2 chuẩn bị bài qua nhiều request; F3 xử lý publisher/đối soát và ngân sách giám sát; F4 nghiệm thu toàn đường trước xin duyệt một bài thật. Không dùng CPU của giao diện đọc để mở cửa đăng.
 
 Thiết kế tiếp theo: [phương án Free](38-resource-acceptance-plan.md). Draft [PR11](https://github.com/johntroger/nttu-digital-economics-publisher/pull/11) chưa merge.
+
+
+## Tiếp nối F2 (08/10/2026)
+
+Trạng thái và số đo phía trên ghi nhận khi hoàn tất giai đoạn này. F2 nay đã hoàn tất phần chuẩn bị theo bốn request; xem [báo cáo F2](38-f2-free-preparation.md). F3–F4 vẫn chờ phê duyệt; publisher chưa được mở.

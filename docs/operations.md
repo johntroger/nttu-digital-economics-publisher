@@ -86,3 +86,8 @@ Ngày08/10, Bước38 chưa đạt ngân sách CPU: dry-run 23 ms trong khi gói
 ### Giao diện đọc F1 trên Workers Free
 
 Tổng quan chỉ tải summary; Kho nội dung đọc 5 tiêu đề mỗi lần, mở bài để đọc caption/ảnh/nguồn. Đọc thêm 5 bài dùng cursor cùng snapshot; nếu dữ liệu đổi thì Làm mới để đọc lại. Thư viện và lịch sử tải riêng. Lịch đăng kiểm từng bài; tiến độ chưa đầy đủ không phải kết quả toàn kho. Chỉ sau đối chiếu snapshot cuối mới hiển thị 40/40 khớp duyệt; lỗi cuối xóa kết quả từng phần. Cursor hết hạn sau 5 phút hoặc khi nguồn/fact đến hạn thì kiểm lại. Đây là màn hình đọc, không cấp quyền đăng. Dry-run gửi còn23ms và production giữ tắt/paused; cần F2–F4 trước thử thật. Báo cáo: docs/steps/38-f1-free-management.md.
+
+
+### Chuẩn bị bài thử sau F2
+
+Mở Lịch đăng, đợi preview kiểm đủ rồi chọn bài và bấm Kiểm tra chuẩn bị gửi. Hệ thống lần lượt kiểm nội dung, byte ảnh, fanpage và chốt hồ sơ. Chỉ hồ sơ cuối mới là kết quả đầy đủ. Nếu lỗi hoặc đổi tab, kiểm lại từ đầu. Nguồn/ảnh/cấu hình/token thay đổi, hết hạn chuỗi hoặc qua ngày Việt Nam sẽ hủy kết quả. Hồ sơ không cấp quyền đăng Facebook; vẫn cần F3–F4 và phê duyệt riêng bài/thời điểm. Báo cáo: docs/steps/38-f2-free-preparation.md.
