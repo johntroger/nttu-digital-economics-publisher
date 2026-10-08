@@ -15,7 +15,7 @@ const val=(e:Env,q:string,...v:(string|number|null)[])=>e.DB!.prepare(q).bind(..
 function isolated(e:Env){
  if(e.CPU_TEST_MODE!=='isolated-f4'||!e.CPU_TEST_DATABASE_ID||['09cdecc7-36a2-4196-950e-ef68b1ecd834','83881fd7-88e6-4835-b616-6f4f8f2d25cd'].includes(e.CPU_TEST_DATABASE_ID)||!/^https:\/\/nttu-f4-mock-[a-f0-9]+\.nttu-kts-johntroger\.workers\.dev$/.test(e.CPU_MOCK_ORIGIN??''))throw Error('F4_ISOLATION_REQUIRED');
 }
-const active=(e:Env)=>({...e,PRODUCTION_PUBLISHER_TOKEN:e.CPU_TEST_TOKEN,PRODUCTION_PUBLISHER_ENABLED:'true',META_PAGE_ACCESS_TOKEN:'f4-fixture-token-'+ 't'.repeat(60),META_APP_SECRET:'f4-fixture-secret-'+ 's'.repeat(30),META_APP_ID:'1125636386458970',META_API_VERSION:'v26.0',META_CONNECTION_PURPOSE:'production_verify'});
+const active=(e:Env)=>({...e,SESSION_SIGNING_KEY:'f4-isolated-receipts-'+'k'.repeat(48),PRODUCTION_PUBLISHER_TOKEN:e.CPU_TEST_TOKEN,PRODUCTION_PUBLISHER_ENABLED:'true',META_PAGE_ACCESS_TOKEN:'f4-fixture-token-'+ 't'.repeat(60),META_APP_SECRET:'f4-fixture-secret-'+ 's'.repeat(30),META_APP_ID:'1125636386458970',META_API_VERSION:'v26.0',META_CONNECTION_PURPOSE:'production_verify'});
 export async function cpuFetch(request:Request,e:Env,transport:typeof fetch=fetch){
  try{
  isolated(e);const env=active(e);if(!await publisherAuthorized(request,env))return Response.json({error:'AUTH_REQUIRED'},{status:401});
