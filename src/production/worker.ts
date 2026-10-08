@@ -31,7 +31,8 @@ export default {
     // F1 read functions validate database identity themselves before reading content.
     // Keep the outer guard for all other routes; do not repeat the same D1 read.
     const guardedRead=request.method==='GET'&&(url.pathname==='/api/production/preview'||url.pathname==='/api/management'||url.pathname.startsWith('/api/management/'));
-    if(!guardedRead&&!(request.method==='POST'&&url.pathname==='/api/production/send-preflight'))await productionState(env);
+    const preparationRoute=/^\/api\/production\/send-preflight(?:\/(content|image|connection|finalize))?$/.exec(url.pathname);
+    if(!guardedRead&&!(request.method==='POST'&&preparationRoute))await productionState(env);
     if(url.pathname==='/api/production/tick'){
       if(request.method!=='POST')return json({error:'METHOD_NOT_ALLOWED'},405);
       if(url.search||!await triggerAuthorized(request,env))return json({error:'TRIGGER_AUTH_REQUIRED'},401);
@@ -89,13 +90,13 @@ export default {
         return json({error:'READ_REQUEST_INVALID'},422);
       }catch(e){const code=e instanceof Error?e.message:'';if(code.startsWith('PRODUCTION_'))throw e;return json({error:/^READ_/.test(code)?code:'READ_UNAVAILABLE'},code==='READ_POST_NOT_FOUND'?404:422);}
     }
-    if(url.pathname==='/api/production/send-preflight'){
+    if(preparationRoute){
       if(request.method!=='POST')return json({error:'METHOD_NOT_ALLOWED'},405);
       try{requireMutation(request,env,owner);}catch{return json({error:'CSRF_REQUIRED'},403);}
       if(url.search||Number(request.headers.get('Content-Length'))>6144)return json({error:'SEND_REVIEW_INVALID'},422);
       const text=await request.text();if(text.length>6144)return json({error:'SEND_REVIEW_INVALID'},422);
       let input;try{input=JSON.parse(text);}catch{return json({error:'SEND_REVIEW_INVALID'},422);}
-      try{return json(await productionPreparation(env,input,fetch));}
+      try{return json(await productionPreparation(env,input,fetch,Date.now,preparationRoute[1]??'content'));}
       catch(e){const code=e instanceof Error?e.message:'';if(code.startsWith('PRODUCTION_'))throw e;return json({error:/^(SEND_|PREFLIGHT_|FILE_)/.test(code)?code:'SEND_PREFLIGHT_UNAVAILABLE'},422);}
     }
     if(url.pathname==='/api/production/preflight'){

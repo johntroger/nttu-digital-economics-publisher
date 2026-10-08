@@ -20,6 +20,8 @@ test('F2 four SELECT-only phases preserve the legacy dossier bytes and never gra
 test('F2 rejects altered, wrong-scope, rotated-key, changed-release and expired receipts before external reads',async()=>{
  const f=await liveFixture();try{f.env.SESSION_SIGNING_KEY='e'.repeat(64);const first=await prepare(f,{versionId:f.item.versionId}),token=first.nextReceipt;
  for(const input of [{receipt:token.slice(0,-1)+'x'},{receipt:token,versionId:f.item.versionId},{receipt:token,now:f.now()},{pageId:'x'},{receipt:12}])await assert.rejects(prepare(f,input));
+ await assert.rejects(productionPreparation(f.env,{receipt:token},transport(f),f.now,'finalize'),/PHASE_INVALID/);
+ await assert.rejects(productionPreparation(f.env,{versionId:f.item.versionId},transport(f),f.now,'connection'),/PHASE_INVALID/);
  await assert.rejects(prepare(f,{receipt:await signCursor(f.env,initialCursor(f.env,'preview','fixture',f.now()))}),/INVALID/);
  f.env.RELEASE_SHA='b'.repeat(40);await assert.rejects(prepare(f,{receipt:token}),/EXPIRED/);f.env.RELEASE_SHA=JSON.parse(atob(token.split('.')[0])).release;
  f.env.SESSION_SIGNING_KEY='f'.repeat(64);await assert.rejects(prepare(f,{receipt:token}),/INVALID/);f.env.SESSION_SIGNING_KEY='e'.repeat(64);

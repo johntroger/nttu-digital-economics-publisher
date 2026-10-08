@@ -31,13 +31,14 @@ async function verify(e:PublisherBindings,token:string,now:number):Promise<Recei
 const clockValue=(n:number)=>{if(!Number.isSafeInteger(n)||n<0)throw Error('PREFLIGHT_CLOCK_INVALID');return n;};
 const day=(n:number)=>businessDate(new Date(n));
 // There is no write statement or provider POST capability in any preparation phase.
-export async function productionPreparation(e:PublisherBindings,input:unknown,transport:typeof fetch,clock:()=>number=Date.now){
+export async function productionPreparation(e:PublisherBindings,input:unknown,transport:typeof fetch,clock:()=>number=Date.now,expectedPhase?:string){
  assertProductionEnvironment(e);assertPublisherBoundary(e.APP_ENV??'',e.META_PAGE_ID??'',e.PRODUCTION_DATABASE_ID??'',e.PRODUCTION_ASSET_BUCKET??'');
  if(!input||typeof input!=='object'||Array.isArray(input)||Object.keys(input).length!==1)throw Error('SEND_REVIEW_INVALID');
  const i=input as Record<string,unknown>,now=clockValue(clock());
  const initial=typeof i.versionId==='string'&&/^[a-zA-Z0-9:-]{1,128}$/.test(i.versionId);
  if(!initial&&typeof i.receipt!=='string')throw Error('SEND_REVIEW_INVALID');
  const prior=initial?null:await verify(e,i.receipt as string,now),version=prior?.version??i.versionId as string;
+ if(expectedPhase!==undefined&&expectedPhase!==(prior?.phase??'content'))throw Error('SEND_RECEIPT_PHASE_INVALID');
  const projected=!prior||prior.phase==='finalize';
  if(!e.DB!.batch)throw Error('PRODUCTION_DATABASE_UNAVAILABLE');
  const identitySQL=PRODUCTION_STATE_SQL.replace('a.paused_by_user,','a.paused_by_user,a.maintenance_owner,a.blocked_reasons,a.operation_generation,');

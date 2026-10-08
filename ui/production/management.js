@@ -75,7 +75,7 @@ async function loadPreparation(versionId){
  try{
   let input={versionId};const phases=['content','image','connection','finalize'],messages=['Đang kiểm byte ảnh đã duyệt…','Đang xác minh fanpage…','Đang đối chiếu và chốt hồ sơ…'];
   for(let step=0;step<phases.length;step++){
-   const r=await fetch('/api/production/send-preflight',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':identity.csrf},body:JSON.stringify(input),redirect:'error',signal:controller.signal});
+   const r=await fetch('/api/production/send-preflight/'+phases[step],{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':identity.csrf},body:JSON.stringify(input),redirect:'error',signal:controller.signal});
    const result=await r.json();if(turn!==epoch||view!=='schedule')return;
    if(!r.ok)throw Error('Chưa kiểm tra được bài thử: '+(result.error??'Hãy thử lại.'));
    if(result.phase!==phases[step]||result.complete!==(step===3))throw Error('Chuỗi kiểm tra chưa hợp lệ. Hãy kiểm lại từ đầu.');
