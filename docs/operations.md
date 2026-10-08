@@ -91,3 +91,9 @@ Tổng quan chỉ tải summary; Kho nội dung đọc 5 tiêu đề mỗi lần
 ### Chuẩn bị bài thử sau F2
 
 Mở Lịch đăng, đợi preview kiểm đủ rồi chọn bài và bấm Kiểm tra chuẩn bị gửi. Hệ thống lần lượt kiểm nội dung, byte ảnh, fanpage và chốt hồ sơ. Chỉ hồ sơ cuối mới là kết quả đầy đủ. Nếu lỗi hoặc đổi tab, kiểm lại từ đầu. Nguồn/ảnh/cấu hình/token thay đổi, hết hạn chuỗi hoặc qua ngày Việt Nam sẽ hủy kết quả. Hồ sơ không cấp quyền đăng Facebook; vẫn cần F3–F4 và phê duyệt riêng bài/thời điểm. Báo cáo: docs/steps/38-f2-free-preparation.md.
+
+### Bộ đăng F3 — chưa rollout
+
+F3 lưu tiến độ chuẩn bị và evidence qua nhiều lượt. Production hiện vẫn chạy F2, tắt/paused; chưa áp dụng schema15 hoặc cấp publisher token/permit. Sau khi F4 được duyệt, cần backup, kiểm migration15 với cửa đăng đóng và đo CPU trước duyệt bài thử thật. Không đổi cron Telegram/monitor thành publisher và không tự mở SQL để kiểm thử.
+
+Khi được vận hành, mỗi tick xử lý một giai đoạn. Chuẩn bị có thể bắt đầu trước giờ ba phút nhưng POST không được trước giờ permit. Mất response sau intent giữ unknown; không bấm đăng lại, không xóa khóa/job/evidence hoặc đổi ngày để né khóa. Hint remote ID cần GET tương quan. Chốt evidence bị lỗi có thể phục hồi kể cả khi pause và không POST lại. Các lệnh npm kiểm thử và hook trước push dùng run-clean; giữ bằng chứng nghiệm thu, chỉ dọn fixture/cache mới thuộc lượt chạy. Chi tiết: docs/steps/38-f3-durable-publisher.md.

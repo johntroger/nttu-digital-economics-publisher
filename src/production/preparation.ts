@@ -78,7 +78,7 @@ export async function productionPreparation(e:PublisherBindings,input:unknown,tr
  if(statements.some(s=>!s))throw Error('SEND_PREFLIGHT_UNAVAILABLE');
  const results=await e.DB!.batch!(statements) as {results:Row[]}[];
  const identity=assertProductionState(e,results[0]?.results[0]),config=results[1]?.results[0],state=results[2]?.results[0],file=results[4]?.results[0];
- if(identity.migration_count!==14)throw Error('PRODUCTION_IDENTITY_INVALID');
+ if(![14,15].includes(Number(identity.migration_count)))throw Error('PRODUCTION_IDENTITY_INVALID');
  if(e.PRODUCTION_PUBLISHER_ENABLED!=='false'||config?.enabled!==0||config.active_job!==null||config.blocked!==null||identity.paused_by_user!==1||identity.maintenance_owner!==null||identity.blocked_reasons!=='[]')throw Error('PREFLIGHT_CLOSED_GATES_REQUIRED');
  if(!state||state.active||state.permits||state.used)throw Error('SEND_REVIEW_BUSY');
  if(state.prerequisites)throw Error('SEND_PREREQUISITES_REQUIRED');

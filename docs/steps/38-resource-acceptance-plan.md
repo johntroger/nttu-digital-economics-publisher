@@ -1,6 +1,6 @@
 # Bước 38 — Phương án nghiệm thu ngân sách CPU
 
-Ngày 08/10/2026: người quản lý chọn **giữ Workers Free**, chấp nhận làm chậm để ổn định. Không nâng gói. Phương án B dưới đây là hướng được chọn, F1 đã được phê duyệt và triển khai kiểm thử; F2 đã được phê duyệt và hoàn tất phạm vi chuẩn bị; F3–F4 vẫn cần phê duyệt riêng theo quy trình từng bước. Bằng chứng và phạm vi đã triển khai nằm trong [báo cáo Bước 38](38-production-send-preflight.md).
+Ngày 08/10/2026: người quản lý chọn **giữ Workers Free**, chấp nhận làm chậm để ổn định. Không nâng gói. F1–F2 đã triển khai và kiểm thử trong phạm vi đọc/chuẩn bị. F3 đã được phê duyệt, hoàn tất code và kiểm thử cô lập; chưa rollout cloud hoặc đo CPU F3. F4 vẫn cần phê duyệt riêng. Bằng chứng F3: [báo cáo bộ đăng bền vững](38-f3-durable-publisher.md).
 
 ## Phương án A — Workers Paid
 
@@ -36,7 +36,7 @@ Tách management thành summary gọn, danh sách bài theo cursor (khởi đầ
 
 ### Giai đoạn F2 — chuẩn bị bài qua nhiều request
 
-Đã hoàn tất phạm vi bốn lượt chuẩn bị và số đo hiện tại; xem [báo cáo F2](38-f2-free-preparation.md). F3 chưa được phê duyệt, chưa code.
+Đã hoàn tất phạm vi bốn lượt chuẩn bị và số đo hiện tại; xem [báo cáo F2](38-f2-free-preparation.md). F3 đã được phê duyệt và kiểm thử cô lập.
 
 1. Kiểm phiên bản, nguồn/facts, biên nhận duyệt và trạng thái ban đầu của một bài.
 2. Đọc và kiểm byte ảnh R2 gắn đúng checksum/version.
@@ -46,6 +46,8 @@ Tách management thành summary gọn, danh sách bài theo cursor (khởi đầ
 Receipt ký bởi server, có loại tác vụ và số bước rõ ràng, chỉ mang digest/identity cần thiết, ràng buộc owner, release, ngày, revision, operation generation và hết hạn. Không tin kết quả hash do trình duyệt tự báo; không đưa token vào receipt. Dry-run giữ SELECT-only: dùng receipt stateless, không tạo quyền/job. Replay receipt chỉ được đọc lại hoặc bị từ chối, tuyệt đối không chuyển thành quyền POST. Toàn chuỗi có hạn; nếu quá hạn, đổi dữ liệu hoặc vượt qua nửa đêm thì bắt đầu lại. Chữ ký/đọc lại trạng thái cũng phải nằm trong số đo CPU mỗi request.
 
 ### Giai đoạn F3 — publisher có trạng thái bền vững
+
+Đã hoàn tất code/local/native/mock; xem [báo cáo F3](38-f3-durable-publisher.md). Migration15 là opt-in và chưa áp dụng cloud. Production vẫn F2 với cửa đăng đóng. Nghiệm thu CPU và rollout chuyển sang F4, không coi native/mock là bằng chứng Workers Free đủ ngân sách.
 
 Tách kiểm kho khỏi gửi: đếm theo SQL và kiểm từng bài ở những lượt riêng, không gọi projection 40 bài trong tick. Chuẩn bị công việc ở trạng thái held chưa được gửi; receipt không thay thế permit owner.
 

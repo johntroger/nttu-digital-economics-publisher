@@ -1,4 +1,5 @@
-import {publisherPreflight,publisherAuthorized,runProductionPublisher} from './publisher-live.ts';
+import {publisherPreflight,publisherAuthorized} from './publisher-live.ts';
+import {runStagedProductionPublisher} from './publisher-stages.ts';
 import type {PublisherBindings} from './publisher-live.ts';
 import {ProductionMetaPublisher} from './publisher-provider.ts';
 import {productionPreparation} from './preparation.ts';
@@ -26,7 +27,7 @@ export default {
       if(request.method!=='POST')return json({error:'METHOD_NOT_ALLOWED'},405);
       if(url.search||!await publisherAuthorized(request,env))return json({error:'PUBLISHER_AUTH_REQUIRED'},401);
       if(await request.text()!=='')return json({error:'PUBLISHER_BODY_NOT_ALLOWED'},422);
-      return json(await runProductionPublisher(env,new ProductionMetaPublisher(env,fetch)));
+      return json(await runStagedProductionPublisher(env,new ProductionMetaPublisher(env,fetch)));
     }
     // F1 read functions validate database identity themselves before reading content.
     // Keep the outer guard for all other routes; do not repeat the same D1 read.

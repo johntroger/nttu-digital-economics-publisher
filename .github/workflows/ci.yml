@@ -37,9 +37,9 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           npm run test:cloud
-          node scripts/production-management-smoke.mjs
-          node scripts/production-publisher-smoke.mjs
-          node scripts/production-live-smoke.mjs
+          node scripts/run-clean.mjs script scripts/production-management-smoke.mjs
+          node scripts/run-clean.mjs script scripts/production-publisher-smoke.mjs
+          npm run test:production-live
   deploy-staging:
     name: Deploy staging foundation
     needs: portable-checks
