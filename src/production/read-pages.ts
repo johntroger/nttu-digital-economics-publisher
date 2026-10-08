@@ -30,7 +30,7 @@ export async function readSnapshot(e:ManagementBindings,now=Date.now()){
  const row=await e.DB!.prepare('SELECT json_array('+parts.join(',')+') snapshot').bind(now,now,now).first<{snapshot:string}>();
  if(!row)throw Error('READ_SNAPSHOT_UNAVAILABLE');return row.snapshot;
 }
-type Cursor={kind:string;owner:string;release:string;snapshot:string;offset:number;checkedAt:number;expiresAt:number;startDate?:string};
+type Cursor={kind:string;owner:string;release:string;snapshot:string;offset:number;checkedAt:number;expiresAt:number;startDate?:string;manifestHash?:string;phase?:'item'|'finalize';eligibilityDeadline?:number};
 async function key(e:ManagementBindings){if(!e.SESSION_SIGNING_KEY)throw Error('READ_CURSOR_UNAVAILABLE');return crypto.subtle.importKey('raw',encoder.encode(e.SESSION_SIGNING_KEY),{name:'HMAC',hash:'SHA-256'},false,['sign','verify']);}
 export async function signCursor(e:ManagementBindings,c:Cursor){const body=btoa(JSON.stringify(c));return body+'.'+hex(await crypto.subtle.sign('HMAC',await key(e),encoder.encode('nttu-read-page-v1:'+body)));}
 export async function readCursor(e:ManagementBindings,token:string|undefined,kind:string,now:number):Promise<Cursor|null>{
@@ -39,6 +39,7 @@ export async function readCursor(e:ManagementBindings,token:string|undefined,kin
  const [body,signature]=token.split('.'),bytes=Uint8Array.from(signature!.match(/../g)!,x=>parseInt(x,16));
  if(!await crypto.subtle.verify('HMAC',await key(e),bytes,encoder.encode('nttu-read-page-v1:'+body)))throw Error('READ_CURSOR_INVALID');
  let c:Cursor;try{c=JSON.parse(atob(body!));}catch{throw Error('READ_CURSOR_INVALID');}
- if(c.kind!==kind||c.owner!==POLICY.ownerEmail||c.release!==e.RELEASE_SHA||!Number.isSafeInteger(c.offset)||c.offset<0||!Number.isSafeInteger(c.checkedAt)||c.checkedAt>now||c.expiresAt!==c.checkedAt+300000||now>=c.expiresAt)throw Error('READ_CURSOR_EXPIRED');return c;
+ if(c.kind!==kind||c.owner!==POLICY.ownerEmail||c.release!==e.RELEASE_SHA||!Number.isSafeInteger(c.offset)||c.offset<0||!Number.isSafeInteger(c.checkedAt)||c.checkedAt>now||c.expiresAt!==c.checkedAt+300000||now>=c.expiresAt)throw Error('READ_CURSOR_EXPIRED');
+ if(c.eligibilityDeadline!==undefined&&now>=c.eligibilityDeadline)throw Error('READ_SNAPSHOT_CHANGED');return c;
 }
 export function initialCursor(e:ManagementBindings,kind:string,snapshot:string,now:number,startDate?:string):Cursor{return {kind,owner:POLICY.ownerEmail,release:e.RELEASE_SHA!,snapshot,offset:0,checkedAt:now,expiresAt:now+300000,...(startDate?{startDate}:{})};}

@@ -84,14 +84,28 @@ export async function productionPreviewPage(env:ManagementBindings,input:{cursor
  const start=cursor?.startDate??input.startDate??businessDate(new Date(now+86400000));
  try{scheduledInstant(start!);}catch{throw Error('PREVIEW_DATE_INVALID');}
  if(start!<businessDate(new Date(now))||scheduledInstant(start!).getTime()>now+366*86400000)throw Error('PREVIEW_DATE_INVALID');
- const before=await readSnapshot(env,now),snapshot=await digest(before);
- if(cursor&&cursor.snapshot!==snapshot)throw Error('READ_SNAPSHOT_CHANGED');
- const c=cursor??initialCursor(env,'preview',snapshot,now,start);
  const manifest=await rows(env,'SELECT p.id postId,p.pool,v.id versionId,e.stable_order FROM posts p JOIN content_entries e ON e.post_id=p.id JOIN post_versions v ON v.id=e.active_version_id ORDER BY e.stable_order,p.id');
+ const manifestText=JSON.stringify(manifest),manifestHash=await digest(manifestText);
+ if(cursor&&cursor.manifestHash!==manifestHash)throw Error('READ_SNAPSHOT_CHANGED');
+ const snapshot=cursor?.snapshot??await digest(await readSnapshot(env,now));
+ let c=cursor??{...initialCursor(env,'preview',snapshot,now,start),manifestHash,phase:manifest.length?'item' as const:'finalize' as const};
+ const header={environment:'production',previewOnly:true,publishingEnabled:false,realPublication:'NOT_RUN',snapshot,checkedAt:c.checkedAt,startDate:start,timeZone:POLICY.timeZone,publishTime:POLICY.publishTime,total:manifest.length,main:manifest.filter(p=>p.pool==='scheduled').length,reserve:manifest.filter(p=>p.pool==='reserve').length,note:'Xem trước theo từng bài; chưa lưu lịch hoặc cấp quyền đăng. Chỉ kết luận toàn kho sau đối chiếu snapshot cuối.'};
+ if(!cursor){
+  const due=await env.DB!.prepare("SELECT min(julianday(review_due_at)*86400000-210866760000000) deadline FROM (SELECT review_due_at FROM post_versions UNION ALL SELECT review_due_at FROM sources UNION ALL SELECT review_due_at FROM facts) WHERE julianday(review_due_at)*86400000-210866760000000>?").bind(now).first<{deadline:number|null}>();
+  if(due?.deadline!=null)c={...c,eligibilityDeadline:Math.floor(due.deadline)};
+  // No global approval is claimed until the final snapshot matches the initial one.
+  return {...header,phase:'initialize',checkedThrough:0,complete:false,items:[],nextCursor:await signCursor(env,c)};
+ }
+ if(c.phase==='finalize'){
+  if(c.offset!==manifest.length||await digest(await readSnapshot(env,now))!==snapshot)throw Error('READ_SNAPSHOT_CHANGED');
+  return {...header,phase:'finalize',checkedThrough:c.offset,complete:true,items:[],nextCursor:null};
+ }
+ if(c.phase!=='item'||c.offset>=manifest.length)throw Error('READ_CURSOR_INVALID');
  const page=manifest.slice(c.offset,c.offset+1),items=await approvedProductionItems(env,c.checkedAt,page.map(p=>p.versionId));
- if(await readSnapshot(env,now)!==before)throw Error('READ_SNAPSHOT_CHANGED');
+ const after=await rows(env,'SELECT p.id postId,p.pool,v.id versionId,e.stable_order FROM posts p JOIN content_entries e ON e.post_id=p.id JOIN post_versions v ON v.id=e.active_version_id ORDER BY e.stable_order,p.id');
+ if(JSON.stringify(after)!==manifestText)throw Error('READ_SNAPSHOT_CHANGED');
  const projected=items.map(p=>{const index=manifest.filter(m=>m.pool==='scheduled').findIndex(m=>m.postId===p.postId);const day=p.pool==='scheduled'?new Date(Date.parse(start!+'T00:00:00Z')+index*86400000).toISOString().slice(0,10):null;
   return {...p,...(day?{day,publishAt:scheduledInstant(day).toISOString()}:{}),prerequisitePreviewSatisfied:null};});
  const next=c.offset+page.length;
- return {environment:'production',previewOnly:true,publishingEnabled:false,realPublication:'NOT_RUN',snapshot,checkedAt:c.checkedAt,startDate:start,timeZone:POLICY.timeZone,publishTime:POLICY.publishTime,total:manifest.length,main:manifest.filter(p=>p.pool==='scheduled').length,reserve:manifest.filter(p=>p.pool==='reserve').length,checkedThrough:next,complete:next===manifest.length,items:projected,nextCursor:next<manifest.length?await signCursor(env,{...c,offset:next}):null,note:'Xem trước theo từng bài; chưa lưu lịch hoặc cấp quyền đăng. Chỉ kết luận toàn kho sau khi đọc đủ cùng snapshot.'};
+ return {...header,phase:'item',checkedThrough:next,complete:false,items:projected,nextCursor:await signCursor(env,{...c,offset:next,phase:next===manifest.length?'finalize':'item'})};
 }

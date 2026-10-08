@@ -13,7 +13,7 @@ const flush=async()=>{for(let i=0;i<8;i++)await new Promise(setImmediate);};
 function harness(respond){
  const ids=Object.fromEntries(['panel','error','owner','logout','refresh'].map(k=>[k,new Element(k)])),nav=['overview','posts','schedule','history','notifications','connections'].map(view=>Object.assign(new Element('button'),{dataset:{view}})),calls=[];
  const summary={counts:{posts:40,main:30,reserve:10,files:56,publications:0},targetPageUrl:'https://www.facebook.com/NganhKinhTeSoNTTU'};
- const context=vm.createContext({document:{hidden:false,createElement:tag=>new Element(tag),querySelector:s=>ids[s.slice(1)],querySelectorAll:()=>nav},AbortController,console,location:{assign(){}},setInterval(){},crypto,Date,fetch:async(path,opts)=>{calls.push(path);const body=path==='/api/me'?{email:'owner',csrf:'fixture'}:path==='/api/management'?structuredClone(summary):await respond(path,opts);return {status:200,ok:true,json:async()=>body};}});
+ const context=vm.createContext({document:{hidden:false,createElement:tag=>new Element(tag),querySelector:s=>ids[s.slice(1)],querySelectorAll:()=>nav},AbortController,console,location:{assign(){}},setInterval(){},crypto,Date,fetch:async(path,opts)=>{calls.push(path);const body=path==='/api/me'?{email:'owner',csrf:'fixture'}:path==='/api/management'?structuredClone(summary):await respond(path,opts);return {status:body.httpError?422:200,ok:!body.httpError,json:async()=>body.httpError?{error:body.httpError}:body};}});
  vm.runInContext(readFileSync('ui/production/management.js','utf8'),context);
  const find=(root,predicate)=>[root,...root.children.flatMap(c=>find(c,predicate))].filter(predicate);
  return {ids,nav,calls,find,click:async view=>{await nav.find(n=>n.dataset.view===view).emit('click');await flush();}};
@@ -37,4 +37,8 @@ test('F1 UI switching tabs prevents a late preview page from replacing the new v
  let resolveNext;const pending=new Promise(r=>resolveNext=r);
  const page={snapshot:'same',startDate:'2026-10-09',total:2,main:2,reserve:0,checkedThrough:1,complete:false,nextCursor:'fixture-cursor',items:[]};
  const h=harness(async path=>path==='/api/management/schedule'?{items:[]}:path==='/api/production/preview'?page:path.includes('cursor=')?pending:assert.fail(path));await flush();await h.click('schedule');await h.click('overview');resolveNext({...page,complete:true,nextCursor:null});await flush();assert.match(h.ids.panel.text,/Chuẩn bị fanpage chính thức/);assert.ok(!h.ids.panel.text.includes('Bản xem trước'));
+});
+test('F1 UI discards partial approval results when the final snapshot has changed',async()=>{
+ const page={snapshot:'same',startDate:'2026-10-09',total:1,main:1,reserve:0,checkedThrough:1,complete:false,nextCursor:'final',items:[{key:'P01',title:'One',pool:'scheduled',versionId:'v1',approvalValid:true}]};
+ const h=harness(async path=>path==='/api/management/schedule'?{items:[]}:path==='/api/production/preview'?page:path.includes('cursor=')?{httpError:'READ_SNAPSHOT_CHANGED'}:assert.fail(path));await flush();await h.click('schedule');await flush();assert.match(h.ids.error.text,/Dữ liệu đã đổi/);assert.equal(h.ids.error.hidden,false);assert.ok(!h.ids.panel.text.includes('1/1 bài khớp'));assert.match(h.ids.panel.text,/Đã kiểm 0\/1/);
 });
