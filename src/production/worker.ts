@@ -28,7 +28,10 @@ export default {
       if(await request.text()!=='')return json({error:'PUBLISHER_BODY_NOT_ALLOWED'},422);
       return json(await runProductionPublisher(env,new ProductionMetaPublisher(env,fetch)));
     }
-    await productionState(env);
+    // F1 read functions validate database identity themselves before reading content.
+    // Keep the outer guard for all other routes; do not repeat the same D1 read.
+    const guardedRead=request.method==='GET'&&(url.pathname==='/api/production/preview'||url.pathname==='/api/management'||url.pathname.startsWith('/api/management/'));
+    if(!guardedRead)await productionState(env);
     if(url.pathname==='/api/production/tick'){
       if(request.method!=='POST')return json({error:'METHOD_NOT_ALLOWED'},405);
       if(url.search||!await triggerAuthorized(request,env))return json({error:'TRIGGER_AUTH_REQUIRED'},401);

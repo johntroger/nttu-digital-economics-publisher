@@ -31,7 +31,13 @@ export async function readSnapshot(e:ManagementBindings,now=Date.now()){
  if(!row)throw Error('READ_SNAPSHOT_UNAVAILABLE');return row.snapshot;
 }
 type Cursor={kind:string;owner:string;release:string;snapshot:string;offset:number;checkedAt:number;expiresAt:number;startDate?:string;manifestHash?:string;phase?:'item'|'finalize';eligibilityDeadline?:number};
-async function key(e:ManagementBindings){if(!e.SESSION_SIGNING_KEY)throw Error('READ_CURSOR_UNAVAILABLE');return crypto.subtle.importKey('raw',encoder.encode(e.SESSION_SIGNING_KEY),{name:'HMAC',hash:'SHA-256'},false,['sign','verify']);}
+let cursorKey:{raw:string;value:Promise<CryptoKey>}|undefined;
+async function key(e:ManagementBindings){
+ if(!e.SESSION_SIGNING_KEY)throw Error('READ_CURSOR_UNAVAILABLE');
+ // Cache only a derived key, never a verification result. Rotation replaces it.
+ if(cursorKey?.raw!==e.SESSION_SIGNING_KEY)cursorKey={raw:e.SESSION_SIGNING_KEY,value:crypto.subtle.importKey('raw',encoder.encode(e.SESSION_SIGNING_KEY),{name:'HMAC',hash:'SHA-256'},false,['sign','verify'])};
+ return cursorKey.value;
+}
 export async function signCursor(e:ManagementBindings,c:Cursor){const body=btoa(JSON.stringify(c));return body+'.'+hex(await crypto.subtle.sign('HMAC',await key(e),encoder.encode('nttu-read-page-v1:'+body)));}
 export async function readCursor(e:ManagementBindings,token:string|undefined,kind:string,now:number):Promise<Cursor|null>{
  if(token===undefined)return null;

@@ -46,6 +46,10 @@ test('F1 signed cursor rejects tampering, cross-endpoint use, release change and
   await assert.rejects(productionPreviewPage(f.env,{cursor,startDate:'2026-10-10'},now),/PREVIEW_DATE_INVALID/);
   const wrong=await signCursor(f.env,{kind:'preview',owner:'other@example.com',release:f.env.RELEASE_SHA,snapshot:page.snapshot,offset:1,checkedAt:now,expiresAt:now+300000,startDate:'2026-10-09'});
   await assert.rejects(productionPreviewPage(f.env,{cursor:wrong},now),/READ_CURSOR_EXPIRED/);
+  f.env.SESSION_SIGNING_KEY='d'.repeat(64);
+  await assert.rejects(productionPreviewPage(f.env,{cursor},now),/READ_CURSOR_INVALID/);
+  const rotated=await productionPreviewPage(f.env,{},now);
+  assert.equal((await productionPreviewPage(f.env,{cursor:rotated.nextCursor},now)).items.length,1);
  }finally{f.db.close();}
 });
 test('F1 changes to previous-page eligibility, sources, facts, links and document state invalidate remaining pages',async()=>{
@@ -63,6 +67,11 @@ test('F1 detects mutation during a page read and rejects malformed input via own
   const first=f.db.prepare('SELECT id FROM posts ORDER BY content_key LIMIT 1').get();
   const detail=await worker.fetch(new Request(f.env.AUTH_ORIGIN+'/api/management/posts/'+encodeURIComponent(first.id),{headers:{Cookie:'__Host-nttu_session='+jwt}}),f.env);assert.equal(detail.status,200);assert.ok((await detail.json()).caption.includes('============'));
   assert.ok((await readSnapshot(f.env)).length>0);
+  f.env.PRODUCTION_DATABASE_ID='09cdecc7-36a2-4196-950e-ef68b1ecd835';
+  for(const path of [...paths,'/api/management/history','/api/management/schedule']){
+   const rejected=await worker.fetch(new Request(f.env.AUTH_ORIGIN+path,{headers:{Cookie:'__Host-nttu_session='+jwt}}),f.env);
+   assert.notEqual(rejected.status,200);assert.deepEqual(Object.keys(await rejected.json()),['error']);
+  }
  }finally{f.db.close();}
 });
 test('F1 source expiry during a cursor chain invalidates the snapshot even without database writes',async()=>{
