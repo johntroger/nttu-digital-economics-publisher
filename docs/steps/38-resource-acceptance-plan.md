@@ -1,6 +1,6 @@
 # Bước 38 — Phương án nghiệm thu ngân sách CPU
 
-Ngày 08/10/2026: đang chờ lựa chọn của người quản lý. Đây là kế hoạch xử lý điều kiện chưa đạt trong Bước 38, chưa phải phê duyệt code bước mới hoặc nâng gói. Bằng chứng và phạm vi đã triển khai nằm trong [báo cáo Bước 38](38-production-send-preflight.md).
+Ngày 08/10/2026: người quản lý chọn **giữ Workers Free**, chấp nhận làm chậm để ổn định. Không nâng gói. Phương án B dưới đây là hướng được chọn, nhưng thiết kế/code chia giai đoạn vẫn cần phê duyệt theo quy trình từng bước. Bằng chứng và phạm vi đã triển khai nằm trong [báo cáo Bước 38](38-production-send-preflight.md).
 
 ## Phương án A — Workers Paid
 
@@ -21,3 +21,38 @@ Trước khi code phương án B: trình thiết kế request/receipt và phạm
 ## Điều kiện chung
 
 Giữ production publisher tắt và không cấp permit/credential/job trong quá trình xử lý tài nguyên. Không đổi staging đang đăng trên Tập Viết. Khi đạt ngân sách, tạo lại hồ sơ P01 còn hiệu lực để review; đăng thử thật cần phê duyệt riêng. Chỉ sau thử thật thành công mới xét bật lịch chính thức 10:00 Việt Nam, một bài/ngày.
+
+## Thiết kế cụ thể cho hướng Free
+
+Rà soát code cho thấy `managementData` trả cả 40 caption/metadata và dữ liệu nhiều tab trong một request; `productionPreview` xác minh cả 40 bài rồi dựng toàn lịch; `productionSendPreflight` chạy projection bài hai lần, đọc/kiểm ảnh, xác minh Meta và chốt hồ sơ trong một request. Đây là các công việc cần tách. Chưa có profile CPU từng hàm nên không quy toàn bộ 23 ms cho SHA hoặc một thư viện cụ thể.
+
+### Giai đoạn F1 — giao diện và đo nền
+
+Tách management thành summary gọn, danh sách bài theo cursor (khởi đầu năm bài/trang), chi tiết một bài, thư viện và lịch sử tải khi mở tab. Giữ xác thực owner trên mọi request. Không gửi body/metadata/caption của cả kho khi chỉ cần tiêu đề. Preview kiểm từng trang nhỏ, cursor do server ràng buộc; hiển thị tiến độ và chỉ ghi kết quả kiểm cho những bài đã đọc. Không hiển thị “40/40 đạt” khi mới kiểm một trang; nếu thay snapshot hoặc phiên bản trong lúc đọc phải làm lại.
+
+Đo baseline xác thực, SELECT và serialization riêng trên cloud để chọn kích thước trang theo ngân sách, không ấn định năm bài là chắc đạt. Giữ các endpoint cũ trong fixture so sánh đủ 40 bài; đổi production UI và routes đồng bộ sau kiểm thử. Chưa sửa publisher hoặc cấp quyền ở F1.
+
+### Giai đoạn F2 — chuẩn bị bài qua nhiều request
+
+1. Kiểm phiên bản, nguồn/facts, biên nhận duyệt và trạng thái ban đầu của một bài.
+2. Đọc và kiểm byte ảnh R2 gắn đúng checksum/version.
+3. Meta GET xác minh kết nối/đích, giới hạn timeout và payload.
+4. Đọc lại trạng thái hiện hành, kiểm receipts các bước, chốt hồ sơ ngắn hạn và thời điểm Việt Nam.
+
+Receipt ký bởi server, có loại tác vụ và số bước rõ ràng, chỉ mang digest/identity cần thiết, ràng buộc owner, release, ngày, revision, operation generation và hết hạn. Không tin kết quả hash do trình duyệt tự báo; không đưa token vào receipt. Dry-run giữ SELECT-only: dùng receipt stateless, không tạo quyền/job. Replay receipt chỉ được đọc lại hoặc bị từ chối, tuyệt đối không chuyển thành quyền POST. Toàn chuỗi có hạn; nếu quá hạn, đổi dữ liệu hoặc vượt qua nửa đêm thì bắt đầu lại. Chữ ký/đọc lại trạng thái cũng phải nằm trong số đo CPU mỗi request.
+
+### Giai đoạn F3 — publisher có trạng thái bền vững
+
+Tách kiểm kho khỏi gửi: đếm theo SQL và kiểm từng bài ở những lượt riêng, không gọi projection 40 bài trong tick. Chuẩn bị công việc ở trạng thái held chưa được gửi; receipt không thay thế permit owner.
+
+Request thực hiện POST phải đọc lại fences/permit/day/Page, chiếm quyền gửi bằng SQL nguyên tử và ghi intent **trước** outbound. Giảm công việc CPU ở request này bằng chuẩn bị snapshot ở các lượt trước; vẫn kiểm bytes/fences cần thiết. Không chia claim và POST thành hai lượt mà lượt sau có thể gửi trùng. Receipt sau POST và finalization có thể xử lý ở lượt kế tiếp từ evidence bền vững; mất response/crash sau intent chuyển unknown, không tự POST lại. Chỉ đối soát GET tương quan mới gỡ khóa. Mỗi lượt cron-job.org xử lý tối đa một giai đoạn đủ ngân sách, không chạy vòng lặp toàn chuỗi hoặc gom vào waitUntil (không tạo ngân sách CPU mới).
+
+Cần đo cả R2/byte hashing/FormData/POST/evidence chứ không chỉ dry-run. Nếu một bước vẫn vượt 10 ms thì tối ưu/chia nhỏ hợp lệ và kiểm lại; chưa cam kết toàn đường gửi sẽ đạt chỉ từ thiết kế này. Không chuyển logic gửi sang máy cá nhân hoặc GitHub scheduled workflow vốn không bảo đảm mốc đăng.
+
+### Giai đoạn F4 — nghiệm thu và thử thật
+
+Mục tiêu nội bộ mỗi request thường dưới 7 ms để có khoảng dư; không coi 9,9 ms là nền ổn định. Mỗi endpoint đo ít nhất 30 lượt warm và ghi riêng cold quan sát được; báo số mẫu, p95/max và invocation outcome. Nếu mẫu nào vượt ngân sách hoặc có exceededCpu, chưa nghiệm thu và tiếp tục xử lý. Không giả nhận warm là cold hoặc khẳng định lấy mẫu hữu hạn bảo đảm mọi request tương lai.
+
+Kiểm thử page cursor/snapshot change, receipt giả/sai owner/hết hạn, thay nguồn/ảnh/token, midnight, pause ở giữa chuỗi, song song/replay, crash trước/sau intent, evidence recovery và unknown. So sánh đủ 40 bài với projection đã duyệt, giữ caption/footer/ba logo. Kiểm trạng thái quản lý và monitor trong chuỗi chia giai đoạn. Native/mock/CI phải đạt trước rollout; đo cloud đạt trước xin duyệt một bài thật. Sau trial xác nhận mới đề xuất bật lịch thường một bài/ngày 10:00.
+
+Thứ tự phê duyệt: F1 trước, kiểm thử và đo; báo kết quả để duyệt F2; tiếp tục tương tự F3/F4. Không triển khai cả bốn giai đoạn từ một yêu cầu xem phương án.

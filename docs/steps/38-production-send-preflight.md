@@ -43,7 +43,7 @@ Snapshot cuối ngày 07/10: 40 bài, 56 assets, schema14; permit/job/intent/pub
 
 ## Quyết định còn chờ
 
-Xem [phương án nghiệm thu tài nguyên](38-resource-acceptance-plan.md). Đã trình hai lựa chọn: người quản lý tự nâng Workers Paid (phí nền hiện tại 5 USD/tháng cộng sử dụng), hoặc giữ Free và thiết kế lại các request vượt ngân sách. Chưa nhận lựa chọn; không tự phát sinh phí, không triển khai kiến trúc mới hoặc chuyển bước tiếp theo.
+Người quản lý đã chọn giữ Workers Free ngày 08/10/2026 và yêu cầu xem phương án xử lý. Đã lập [thiết kế Free F1–F4](38-resource-acceptance-plan.md), bắt đầu bằng phân trang/tải theo tab và đo nền, sau đó chia chuẩn bị và publisher thành các giai đoạn có kiểm soát. Chưa được duyệt code thiết kế này; không phát sinh phí, không triển khai kiến trúc mới hoặc chuyển bước tiếp theo.
 
 ## Điều kiện trước thử thật
 

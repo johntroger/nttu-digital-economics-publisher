@@ -4,6 +4,7 @@ import {composeCaption,FOOTER_VERSION} from '../domain/footer.ts';
 import {businessDate,scheduledInstant,POLICY} from '../domain/policy.ts';
 import {SOURCE_REGISTRY} from '../cloud/source-registry.ts';
 import {PUBLISHER_RESOURCES,assertPublisherBoundary} from './publisher-boundary.ts';
+import {digest,readSnapshot,readCursor,initialCursor,signCursor} from './read-pages.ts';
 type Row=Record<string,any>;
 const parse=(s:unknown)=>{try{return JSON.parse(String(s));}catch{return null;}};
 const hash=async(s:string)=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s))),b=>b.toString(16).padStart(2,'0')).join('');
@@ -28,7 +29,10 @@ export async function productionPreview(env:ManagementBindings,startDate?:string
   note:'Bản xem trước không lưu lịch và không cấp quyền đăng bài. Ngày bắt đầu cần được duyệt riêng.'};
 }
 
-export async function approvedProductionItems(env:ManagementBindings,now:number,versionId?:string){
+export async function approvedProductionItems(env:ManagementBindings,now:number,versionId?:string|string[]){
+ const ids=typeof versionId==='string'?[versionId]:versionId;
+ if(ids&&!ids.length)return [];
+ const placeholders=ids?.map(()=>'?').join(',');
  const [posts,sources,facts,documents,prerequisites]=await Promise.all([
  rows(env,`SELECT p.id,p.content_key,p.topic_group,p.pool,e.stable_order,e.stage,v.id version_id,v.body,v.caption_title,v.status,v.check_version,v.review_due_at,v.metadata_json,
  a.id asset_id,a.checksum,a.width,a.height,a.content_type,a.size_bytes,a.status asset_status,b.asset_id binding_id,b.checksum binding_checksum,b.check_version binding_version,
@@ -37,11 +41,11 @@ export async function approvedProductionItems(env:ManagementBindings,now:number,
  FROM posts p JOIN content_entries e ON e.post_id=p.id JOIN post_versions v ON v.id=e.active_version_id
  LEFT JOIN assets a ON a.id=v.asset_id LEFT JOIN asset_bindings b ON b.version_id=v.id
  LEFT JOIN cloud_library l ON v.asset_id='library-'||l.id
- LEFT JOIN cloud_reviews r ON r.version_id=v.id AND r.check_version=v.check_version ${versionId?'WHERE v.id=?':''} ORDER BY e.stable_order,p.id`,versionId?[versionId]:[]),
- rows(env,'SELECT x.version_id,x.location ref_json,s.* FROM version_sources x JOIN sources s ON s.id=x.source_id'+(versionId?' WHERE x.version_id=?':''),versionId?[versionId]:[]),
- rows(env,'SELECT x.version_id,f.* FROM version_facts x JOIN facts f ON f.id=x.fact_id'+(versionId?' WHERE x.version_id=?':''),versionId?[versionId]:[]),
+ LEFT JOIN cloud_reviews r ON r.version_id=v.id AND r.check_version=v.check_version ${ids?'WHERE v.id IN ('+placeholders+')':''} ORDER BY e.stable_order,p.id`,ids??[]),
+ rows(env,'SELECT x.version_id,x.location ref_json,s.* FROM version_sources x JOIN sources s ON s.id=x.source_id'+(ids?' WHERE x.version_id IN ('+placeholders+')':''),ids??[]),
+ rows(env,'SELECT x.version_id,f.* FROM version_facts x JOIN facts f ON f.id=x.fact_id'+(ids?' WHERE x.version_id IN ('+placeholders+')':''),ids??[]),
  rows(env,"SELECT source_key,checksum FROM cloud_library WHERE kind='document' AND state='complete' ORDER BY source_key,checksum"),
- rows(env,'SELECT post_id,prerequisite_id FROM post_prerequisites'+(versionId?' WHERE post_id=(SELECT post_id FROM post_versions WHERE id=?)':''),versionId?[versionId]:[]),
+ rows(env,'SELECT post_id,prerequisite_id FROM post_prerequisites'+(ids?' WHERE post_id IN (SELECT post_id FROM post_versions WHERE id IN ('+placeholders+'))':''),ids??[]),
  ]);
  const items=await Promise.all(posts.map(async p=>{
   const reasons:string[]=[],meta=parse(p.metadata_json),approval=meta?.ownerApproval,receipt=parse(p.source_snapshot),refs=meta?.sourceRefs;
@@ -70,4 +74,24 @@ export async function approvedProductionItems(env:ManagementBindings,now:number,
    imageChecksum:p.checksum,checkVersion:p.check_version,receiptDigest:await hash(JSON.stringify([p,linked,linkedFacts,documents])),sourceRefs:refs??[],approvalValid:reasons.length===0,reasons:[...new Set(reasons)],prerequisites:prerequisites.filter(q=>q.post_id===p.id).map(q=>q.prerequisite_id)};
  }));
  return items;
+}
+
+// Bounded read-only HTTP projection. Full projection remains a fixture/live-adapter helper.
+export async function productionPreviewPage(env:ManagementBindings,input:{cursor?:string|undefined;startDate?:string|undefined},now=Date.now()){
+ await productionState(env);assertPublisherBoundary('production',env.META_PAGE_ID??'',env.PRODUCTION_DATABASE_ID??'',env.PRODUCTION_ASSET_BUCKET??'');
+ const cursor=await readCursor(env,input.cursor,'preview',now);
+ if(cursor&&input.startDate!==undefined)throw Error('PREVIEW_DATE_INVALID');
+ const start=cursor?.startDate??input.startDate??businessDate(new Date(now+86400000));
+ try{scheduledInstant(start!);}catch{throw Error('PREVIEW_DATE_INVALID');}
+ if(start!<businessDate(new Date(now))||scheduledInstant(start!).getTime()>now+366*86400000)throw Error('PREVIEW_DATE_INVALID');
+ const before=await readSnapshot(env,now),snapshot=await digest(before);
+ if(cursor&&cursor.snapshot!==snapshot)throw Error('READ_SNAPSHOT_CHANGED');
+ const c=cursor??initialCursor(env,'preview',snapshot,now,start);
+ const manifest=await rows(env,'SELECT p.id postId,p.pool,v.id versionId,e.stable_order FROM posts p JOIN content_entries e ON e.post_id=p.id JOIN post_versions v ON v.id=e.active_version_id ORDER BY e.stable_order,p.id');
+ const page=manifest.slice(c.offset,c.offset+1),items=await approvedProductionItems(env,c.checkedAt,page.map(p=>p.versionId));
+ if(await readSnapshot(env,now)!==before)throw Error('READ_SNAPSHOT_CHANGED');
+ const projected=items.map(p=>{const index=manifest.filter(m=>m.pool==='scheduled').findIndex(m=>m.postId===p.postId);const day=p.pool==='scheduled'?new Date(Date.parse(start!+'T00:00:00Z')+index*86400000).toISOString().slice(0,10):null;
+  return {...p,...(day?{day,publishAt:scheduledInstant(day).toISOString()}:{}),prerequisitePreviewSatisfied:null};});
+ const next=c.offset+page.length;
+ return {environment:'production',previewOnly:true,publishingEnabled:false,realPublication:'NOT_RUN',snapshot,checkedAt:c.checkedAt,startDate:start,timeZone:POLICY.timeZone,publishTime:POLICY.publishTime,total:manifest.length,main:manifest.filter(p=>p.pool==='scheduled').length,reserve:manifest.filter(p=>p.pool==='reserve').length,checkedThrough:next,complete:next===manifest.length,items:projected,nextCursor:next<manifest.length?await signCursor(env,{...c,offset:next}):null,note:'Xem trước theo từng bài; chưa lưu lịch hoặc cấp quyền đăng. Chỉ kết luận toàn kho sau khi đọc đủ cùng snapshot.'};
 }

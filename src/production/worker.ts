@@ -3,8 +3,8 @@ import type {PublisherBindings} from './publisher-live.ts';
 import {ProductionMetaPublisher} from './publisher-provider.ts';
 import {productionSendPreflight} from './send-preflight.ts';
 import type {ManagementBindings} from './management.ts';
-import {productionState,managementData,productionFile} from './management.ts';
-import {productionPreview} from './preview.ts';
+import {productionState,managementSummary,managementPostPage,managementPostDetail,managementSection,productionFile} from './management.ts';
+import {productionPreviewPage} from './preview.ts';
 import {startGoogle,completeGoogle,ownerSession,requireMutation,clearSessionCookie,authConfigured} from '../cloud/auth.ts';
 import {productionMetaStatus,verifyProductionMeta} from './meta.ts';
 import {operationsStatus,enqueueProductionTelegramTest,runProductionOperations,monitorAuthorized,productionMonitorStatus,triggerAuthorized,runProductionHttpTick} from './operations.ts';
@@ -74,7 +74,18 @@ export default {
       let input;try{input=JSON.parse(text);}catch{return json({error:'META_REQUEST_INVALID'},422);}
       try{return json(await verifyProductionMeta(env,owner,input));}catch(e){const code=e instanceof Error?e.message:'';return json({error:['META_NOT_CONFIGURED','META_REQUEST_INVALID','REQUEST_REUSED','META_BUSY'].includes(code)?code:'META_CHECK_UNAVAILABLE'},code==='REQUEST_REUSED'?409:422);}
     }
-    if(request.method==='GET'&&url.pathname==='/api/management')return json(await managementData(env));
+    if(url.pathname==='/api/management'||url.pathname.startsWith('/api/management/')){
+      if(request.method!=='GET')return json({error:'METHOD_NOT_ALLOWED'},405);
+      try{
+        if(url.pathname==='/api/management'&&!url.search)return json(await managementSummary(env));
+        if(url.pathname==='/api/management/posts'&&[...url.searchParams.keys()].every(k=>k==='cursor')&&url.searchParams.getAll('cursor').length<=1)return json(await managementPostPage(env,url.searchParams.get('cursor')??undefined));
+        const encoded=url.pathname.match(/^\/api\/management\/posts\/([^/]{1,384})$/)?.[1];
+        const id=encoded?decodeURIComponent(encoded):undefined;
+        if(id&&/^[a-zA-Z0-9:-]{1,128}$/.test(id)&&!url.search)return json(await managementPostDetail(env,id));
+        if(['/api/management/library','/api/management/history','/api/management/schedule'].includes(url.pathname)&&!url.search)return json(await managementSection(env,url.pathname.split('/').at(-1)!));
+        return json({error:'READ_REQUEST_INVALID'},422);
+      }catch(e){const code=e instanceof Error?e.message:'';return json({error:/^READ_/.test(code)?code:'READ_UNAVAILABLE'},code==='READ_POST_NOT_FOUND'?404:422);}
+    }
     if(url.pathname==='/api/production/send-preflight'){
       if(request.method!=='POST')return json({error:'METHOD_NOT_ALLOWED'},405);
       try{requireMutation(request,env,owner);}catch{return json({error:'CSRF_REQUIRED'},403);}
@@ -91,9 +102,9 @@ export default {
     }
     if(url.pathname==='/api/production/preview'){
       if(request.method!=='GET')return json({error:'METHOD_NOT_ALLOWED'},405);
-      if([...url.searchParams.keys()].some(k=>k!=='startDate')||url.searchParams.getAll('startDate').length>1)return json({error:'PREVIEW_DATE_INVALID'},422);
-      try{return json(await productionPreview(env,url.searchParams.get('startDate')??undefined));}
-      catch(e){if(e instanceof Error&&e.message==='PREVIEW_DATE_INVALID')return json({error:e.message},422);throw e;}
+      if([...url.searchParams.keys()].some(k=>!['startDate','cursor'].includes(k))||url.searchParams.getAll('startDate').length>1||url.searchParams.getAll('cursor').length>1)return json({error:'PREVIEW_DATE_INVALID'},422);
+      try{return json(await productionPreviewPage(env,{startDate:url.searchParams.get('startDate')??undefined,cursor:url.searchParams.get('cursor')??undefined}));}
+      catch(e){if(e instanceof Error&&(e.message==='PREVIEW_DATE_INVALID'||e.message.startsWith('READ_')))return json({error:e.message},422);throw e;}
     }
     if(request.method==='GET'&&/^\/api\/library\/files\/[a-zA-Z0-9-]{1,128}$/.test(url.pathname))return await productionFile(env,url.pathname.split('/').at(-1)!);
     if(request.method==='GET'&&(url.pathname==='/'||url.pathname==='/management.js')) {
