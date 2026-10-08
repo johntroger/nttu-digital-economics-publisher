@@ -24,3 +24,17 @@ test('F4 harness preserves real publisher phases but routes every Graph call to 
 test('F4 mock has no anonymous or real-Graph forwarding path',async()=>{
  const f=await fixture();try{assert.equal((await mockFetch(new Request('https://isolated.invalid/v26.0/me'),f.env)).status,401);assert.equal((await mockFetch(new Request('https://isolated.invalid/unrecognized',{headers:{Authorization:'Bearer '+f.env.CPU_TEST_TOKEN}}),f.env)).status,404);}finally{f.db.close();}
 });
+
+test('F4 closed harness exercises signed management pages and read-only preparation without production secrets',async()=>{
+ const f=await fixture();try{
+  const env={...f.env,SESSION_SIGNING_KEY:undefined},wire=async(url,init)=>mockFetch(new Request(url,init),env);
+  const reset=await (await cpuFetch(request('/reset',{scenario:'closed'}),env,wire)).json();
+  for(const path of ['/summary','/posts','/library','/detail']){
+   const r=await cpuFetch(request(path,{key:reset.postId}),env,wire);assert.equal(r.status,200,await r.text());
+  }
+  const preview=await cpuFetch(request('/preview'),env,wire);assert.equal(preview.status,200,await preview.text());
+  let receipt;for(const phase of ['content','image','connection','finalize']){
+   const r=await cpuFetch(request('/preparation/'+phase,{key:reset.versionId,receipt}),env,wire),body=await r.json();assert.equal(r.status,200,JSON.stringify(body));assert.equal(body.phase,phase);receipt=body.nextReceipt;
+  }
+ }finally{f.db.close();}
+});

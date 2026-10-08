@@ -12,5 +12,5 @@
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts", "tests/helpers/production-cpu-worker.ts", "tests/helpers/production-cpu-mock.ts"]
 }
