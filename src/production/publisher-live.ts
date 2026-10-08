@@ -15,17 +15,18 @@ const one=(e:ManagementBindings,q:string,...v:Value[])=>s(e,q,...v).first<Row>()
 const rows=async(e:ManagementBindings,q:string,...v:Value[])=>(await s(e,q,...v).all!<Row>()).results;
 const batch=(e:ManagementBindings,q:ReturnType<typeof s>[])=>e.DB!.batch!(q);
 const day=(n:number)=>businessDate(new Date(n));
-async function imageBytes(e:ManagementBindings,file:Row){
+export async function publisherImageBytes(e:ManagementBindings,file:Row){
  let timer:ReturnType<typeof setTimeout>|undefined;
  try{return await Promise.race([verifiedBytes(e,file),new Promise<never>((_,reject)=>{timer=setTimeout(()=>reject(Error('R2_READ_TIMEOUT')),5000);})]);}
  finally{if(timer)clearTimeout(timer);}
 }
-async function identity(e:PublisherBindings){
+export async function publisherIdentity(e:PublisherBindings){
  assertPublisherBoundary(e.APP_ENV??'',e.META_PAGE_ID??'',e.PRODUCTION_DATABASE_ID??'',e.PRODUCTION_ASSET_BUCKET??'');
  if(e.INTEGRATION_MODE!=='management'||!e.DB?.batch||e.DAILY_PUBLISHING_ENABLED!=='false'||! /^[a-f0-9]{40}$/.test(e.RELEASE_SHA??''))throw Error('LIVE_PUBLISHER_BOUNDARY_INVALID');
  const i=await one(e,"SELECT i.database_id,a.paused_by_user,a.maintenance_owner,a.blocked_reasons,a.operation_generation,(SELECT count(*) FROM schema_migrations) migrations,(SELECT count(*) FROM schema_migrations WHERE name='0014_production_publisher.sql') publisher_schema FROM production_identity i JOIN application_state a ON a.environment=i.environment WHERE i.id=1 AND i.environment='production' AND i.schema_version=1");
  if(!i||i.database_id!==e.PRODUCTION_DATABASE_ID||i.migrations!==14||i.publisher_schema!==1)throw Error('LIVE_PUBLISHER_SCHEMA_INVALID');return i;
 }
+const identity=publisherIdentity;
 const runtimeGate=(e:PublisherBindings,c:Row,a:Row)=>e.PRODUCTION_PUBLISHER_ENABLED==='true'&&c.enabled===1&&a.paused_by_user===0&&a.maintenance_owner===null&&a.blocked_reasons==='[]'&&!c.blocked;
 function event(e:ManagementBindings,id:string,kind:string,guard:string,args:Value[]=[],extra:Row={}){
  return s(e,`INSERT INTO notification_outbox(event_id,payload_json) SELECT ?,? WHERE ${guard} ON CONFLICT(event_id) DO NOTHING`,id,JSON.stringify({kind,environment:'production',page:'Ngành Kinh tế số - NTTU',...extra}),...args);
@@ -40,6 +41,8 @@ async function finalize(e:ManagementBindings,j:Row,attempt:string,result:Publica
    s(e,"UPDATE production_publisher_attempts SET state='confirmed' WHERE id=? AND EXISTS(SELECT 1 FROM production_publisher_usage WHERE job=?)",attempt,j.id),
    event(e,'published:'+j.id,'published','EXISTS(SELECT 1 FROM production_publisher_usage WHERE job=?)',[j.id],{url:'https://www.facebook.com/'+result.remoteId,time:new Date(result.confirmedAt).toISOString()}),
    s(e,'UPDATE production_publisher_evidence SET applied=1 WHERE attempt=? AND EXISTS(SELECT 1 FROM production_publisher_usage WHERE job=?)',attempt,j.id),
+   s(e,"UPDATE production_publisher_config SET enabled=0 WHERE id=1 AND EXISTS(SELECT 1 FROM production_send_permits p JOIN production_publisher_usage u ON u.job=? WHERE p.id=? AND p.mode='test')",j.id,j.permit),
+   s(e,"UPDATE application_state SET paused_by_user=1 WHERE environment='production' AND EXISTS(SELECT 1 FROM production_send_permits p JOIN production_publisher_usage u ON u.job=? WHERE p.id=? AND p.mode='test')",j.id,j.permit),
    s(e,'UPDATE production_publisher_config SET active_job=NULL,stock_pending=1 WHERE active_job=? AND EXISTS(SELECT 1 FROM production_publisher_usage WHERE job=?)',j.id,j.id)]);return 'confirmed';
  }
  const retry=result.kind==='retryable'&&j.tries<3,state=retry?'retry_wait':result.kind==='unknown'?'unknown':'failed';
@@ -96,7 +99,7 @@ async function operation(e:PublisherBindings,provider:ProductionMetaPublisher,cl
  if(j&&j.day!==day(now)){await batch(e,[s(e,"UPDATE production_publisher_jobs SET state='cancelled',next_at=NULL WHERE id=? AND state IN ('held','retry_wait')",j.id),s(e,'UPDATE production_publisher_config SET active_job=NULL WHERE active_job=?',j.id)]);return {state:'expired',sends:0};}
  const permit=j?permits.find(p=>p.id===j!.permit):permits[0];if(!permit){if(j){await batch(e,[s(e,"UPDATE production_publisher_jobs SET state='cancelled',next_at=NULL WHERE id=? AND state IN ('held','retry_wait')",j.id),s(e,'UPDATE production_publisher_config SET active_job=NULL WHERE active_job=?',j.id)]);}return {state:'publication_approval_required',sends:0};}
  if(day(permit.due_at)!==permit.business_date||permit.mode==='normal'&&permit.due_at!==scheduledInstant(permit.business_date).getTime())return {state:'invalid_permit_time',sends:0};
- const items=await approvedProductionItems(e,now),item=items.find(p=>p.versionId===permit.version_id);
+ const items=await approvedProductionItems(e,now,permit.version_id),item=items.find(p=>p.versionId===permit.version_id);
  if(!item?.approvalValid||item.caption!==permit.caption||item.imageChecksum!==permit.checksum)return {state:'review_required',sends:0};
  const used=await rows(e,'SELECT post FROM production_publisher_usage');
  if(used.some(p=>p.post===item.postId)||item.prerequisites.some(id=>!used.some(p=>p.post===id)))return {state:'prerequisites_required',sends:0};
@@ -109,11 +112,11 @@ async function operation(e:PublisherBindings,provider:ProductionMetaPublisher,cl
   j=await one(e,'SELECT * FROM production_publisher_jobs WHERE id=?',id);if(!j)return {state:'claim_lost',sends:0};
  }
  const file=await one(e,"SELECT * FROM cloud_library WHERE id=? AND state='complete' AND checksum=?",item.imageUrl!.split('/').at(-1)!,j.checksum);if(!file)return {state:'image_unavailable',sends:0};
- const bytes=await imageBytes(e,file),proof=await provider.verify(clock());
+ const bytes=await publisherImageBytes(e,file),proof=await provider.verify(clock());
  if(!proof.verified||proof.fingerprint!==c.connection_hash)return {state:'connection_error',sends:0};
  now=clock();if(day(now)!==j.day||now>=permit.expires_at)return {state:'not_due',sends:0};
  // Recompute approved sources after asynchronous R2/Meta reads, then SQL-fence current eligibility.
- const current=(await approvedProductionItems(e,now)).find(p=>p.versionId===j!.version);
+ const current=(await approvedProductionItems(e,now,j!.version)).find(p=>p.versionId===j!.version);
  if(!current?.approvalValid||JSON.stringify(current)!==j.snapshot)return {state:'review_required',sends:0};
  const attempt='production-attempt:'+crypto.randomUUID();
  await batch(e,[s(e,`INSERT INTO production_publisher_attempts SELECT ?,id,tries+1,'intent',? FROM production_publisher_jobs WHERE id=? AND state IN ('held','retry_wait') AND tries<3 AND (next_at IS NULL OR next_at<=?) AND EXISTS(SELECT 1 FROM production_publisher_config WHERE active_job=? AND enabled=1 AND revision=? AND blocked IS NULL) AND EXISTS(SELECT 1 FROM application_state WHERE environment='production' AND paused_by_user=0 AND maintenance_owner IS NULL AND blocked_reasons='[]' AND operation_generation=?) AND EXISTS(SELECT 1 FROM production_send_permits WHERE id=production_publisher_jobs.permit AND revoked=0 AND expires_at>?) AND ${versionGuard('production_publisher_jobs.version',now).replace('WHERE old.post_id=q.prerequisite_id)', 'WHERE old.post_id=q.prerequisite_id UNION ALL SELECT 1 FROM production_publisher_usage pu WHERE pu.post=q.prerequisite_id)')}`,attempt,now,j.id,now,j.id,j.config_revision,j.operation_generation,now),s(e,"UPDATE production_publisher_jobs SET state='requested',tries=tries+1,next_at=NULL,lease_until=? WHERE id=? AND EXISTS(SELECT 1 FROM production_publisher_attempts WHERE id=?)",now+60000,j.id,attempt)]);
