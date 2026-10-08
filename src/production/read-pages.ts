@@ -9,18 +9,19 @@ export async function readSnapshot(e:ManagementBindings,now=Date.now()){
  const specs=[
  ['posts','id,content_key,topic_group,pool'],
  ['content_entries','post_id,active_version_id,stage,stable_order'],
- ['post_versions','id,check_version,status,review_due_at,asset_id'],
- ['sources','id,revision,status,reviewed_at,review_due_at'],
- ['facts','id,status,review_due_at,source_id'],
- ['version_sources','version_id,source_id,location'],
- ['version_facts','version_id,fact_id'],
+ ['post_versions','id,check_version,status,review_due_at'],
+ ['sources','id,status,reviewed_at,review_due_at'],
+ ['facts','id,status,review_due_at'],
  ['post_prerequisites','post_id,prerequisite_id'],
- ['assets','id,checksum,status,width,height,size_bytes,content_type'],
+ ['assets','id,status'],
  ['asset_bindings','version_id,asset_id,checksum,check_version'],
- ['cloud_library','id,checksum,state,kind,source_key,size_bytes'],
+ ['cloud_library','id,state'],
  ['cloud_reviews','id,version_id,check_version'],
  ['application_state','environment,operation_generation,paused_by_user,maintenance_owner,blocked_reasons'],
  ] as const;
+ // Source/fact revisions and complete library/asset metadata cannot be edited.
+ // Ref INSERT/UPDATE/DELETE and asset edits bump post_versions.check_version.
+ // Keep mutable bindings explicitly; omit duplicated immutable bytes and long ref text.
  const expiryTables=['post_versions','sources','facts'];
  const parts=specs.map(([table,fields])=>`(SELECT json_group_array(json(row)) FROM (SELECT json_array(${fields}${expiryTables.includes(table)?",CASE WHEN review_due_at IS NULL THEN 0 WHEN julianday(review_due_at)*86400000-210866760000000<=? THEN 1 ELSE 0 END":''}) row FROM ${table} ORDER BY ${fields}))`);
  const row=await e.DB!.prepare('SELECT json_array('+parts.join(',')+') snapshot').bind(now,now,now).first<{snapshot:string}>();
