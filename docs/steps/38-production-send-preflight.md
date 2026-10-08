@@ -39,14 +39,19 @@ Số đo thực ngày 07/10/2026, telemetry đã lọc bỏ headers/token/logs:
 
 **Chưa đạt nghiệm thu tài nguyên:** 23 ms vượt ngân sách Free 10 ms. Việc request trả thành công không bảo đảm vận hành ổn định trong ngân sách. Preview và trang quản lý cũng cần xử lý. Tham chiếu: [Workers limits](https://developers.cloudflare.com/workers/platform/limits/) và [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/).
 
-Snapshot cuối ngày 07/10: 40 bài, 56 assets, schema14; permit/job/intent/publication/slot đều 0, config publisher tắt, application paused, publisher heartbeat0. Telegram HTTP heartbeat475; không gửi thêm tin kiểm thử trong bước này. Secret PRODUCTION_PUBLISHER_TOKEN chưa được tạo. Staging giữ release `556db22c45e1dcdc76b9628a51415730d007da42` và lịch 10:00 trên Tập Viết.
+Snapshot cuối ngày 07/10: 40 bài, 56 assets, schema 14; permit/job/intent/publication/slot đều 0, config publisher tắt, application paused, publisher heartbeat0. Telegram HTTP heartbeat475; không gửi thêm tin kiểm thử trong bước này. Secret PRODUCTION_PUBLISHER_TOKEN chưa được tạo. Staging giữ release `556db22c45e1dcdc76b9628a51415730d007da42` và lịch 10:00 trên Tập Viết.
 
 ## Quyết định còn chờ
 
-Xem [phương án nghiệm thu tài nguyên](38-resource-acceptance-plan.md). Đã trình hai lựa chọn: người quản lý tự nâng Workers Paid (phí nền hiện tại 5 USD/tháng cộng sử dụng), hoặc giữ Free và thiết kế lại các request vượt ngân sách. Chưa nhận lựa chọn; không tự phát sinh phí, không triển khai kiến trúc mới hoặc chuyển bước tiếp theo.
+Người quản lý đã chọn giữ Workers Free ngày 08/10/2026 và yêu cầu xem phương án xử lý. Đã lập [thiết kế Free F1–F4](38-resource-acceptance-plan.md), bắt đầu bằng phân trang/tải theo tab và đo nền, sau đó chia chuẩn bị và publisher thành các giai đoạn có kiểm soát. Chưa được duyệt code thiết kế này; không phát sinh phí, không triển khai kiến trúc mới hoặc chuyển bước tiếp theo.
 
 ## Điều kiện trước thử thật
 
 Chỉ sau khi kiểm tra CPU, UI và dữ liệu cloud đạt mới trình hồ sơ còn hiệu lực để người quản lý duyệt cụ thể bài, ảnh/version/hash, Page và thời điểm. Hồ sơ/screenshot ngày 07/10 đã hết hạn, không dùng làm quyền đăng ngày 08/10; phải tạo lại trước review thử thật.
 
 Còn phải triển khai và nghiệm thu giao diện owner cấp/kích hoạt/pause/đối soát, trạng thái quản lý và giám sát khi có lượt thử được cấp quyền hợp lệ, nguồn publisher riêng và đo đường gửi thật theo phê duyệt cụ thể. Các helper kiểm thử chưa thay thế các giao diện vận hành này. Chưa bật lịch thường 10:00, chưa cấp publisher token hoặc nguồn kích hoạt ngoài. Phê duyệt code không tự cấp phê duyệt đăng.
+
+
+## Tiếp nối F1 (08/10/2026)
+
+Đã hoàn tất phạm vi giao diện đọc và số đo F1; số đo Bước38 phía trên là lịch sử trước tối ưu. Runtime/kiểm thử/CPU mới và các giới hạn còn mở nằm trong [báo cáo F1](38-f1-free-management.md). Chưa sửa dry-run 23 ms hoặc mở cửa publisher; F2–F4 chờ phê duyệt riêng.

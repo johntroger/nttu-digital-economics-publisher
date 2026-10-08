@@ -45,7 +45,7 @@ try{
  assert.equal(readFileSync(resolve(directory,'bundle/worker.js'),'utf8').includes('production_fixture_jobs'),false);
  for(const path of ['/api/me','/api/management','/api/production/preview','/api/production/preflight','/management.js','/manager.html'])assert.equal((await mf.dispatchFetch(origin+path)).status,401);
  const manager=await mf.dispatchFetch(origin+'/',{headers:{Cookie:cookie}});assert.equal(manager.status,200);assert.match(await manager.text(),/Kho nội dung/);
- const read=await mf.dispatchFetch(origin+'/api/management',{headers:{Cookie:cookie}});assert.equal(read.status,200);const data=await read.json();assert.deepEqual(data.posts,[]);assert.deepEqual(data.history,[]);assert.equal(data.paused,true);
+ const read=await mf.dispatchFetch(origin+'/api/management',{headers:{Cookie:cookie}});assert.equal(read.status,200);const data=await read.json();assert.equal(data.counts.posts,0);assert.equal(data.posts,undefined);assert.equal(data.history,undefined);assert.equal(data.paused,true);
  assert.equal((await mf.dispatchFetch(origin+'/api/meta/check',{method:'POST',headers:{Cookie:cookie},body:'{}'})).status,403);
  const requestId=randomUUID(),verification=await mf.dispatchFetch(origin+'/api/meta/check',{method:'POST',headers:{Cookie:cookie,Origin:origin,'Content-Type':'application/json','X-CSRF-Token':'c'.repeat(64)},body:JSON.stringify({requestId})});assert.equal(verification.status,200);assert.equal((await verification.json()).verifiedReadOnly,true);assert.equal(metaReads,2);
  for(const table of ['page_connections','publish_jobs','schedule_slots','publications','notification_outbox'])assert.equal((await db.prepare('SELECT count(*) n FROM '+table).first()).n,0);
@@ -65,9 +65,13 @@ try{
  const preflight=await mf.dispatchFetch(origin+'/api/production/preflight',{headers:{Cookie:cookie}});assert.equal(preflight.status,200);const gates=await preflight.json();assert.equal(gates.schemaReady,true);assert.equal(gates.state,'closed');assert.ok(Object.values(gates.gates).every(v=>v===false));
  for(const token of ['b','d'])assert.equal((await mf.dispatchFetch(origin+'/api/production/publisher/tick',{method:'POST',headers:{Authorization:'Bearer '+token.repeat(64)}})).status,401);
  assert.equal((await db.prepare('SELECT heartbeat_count FROM production_publisher_runtime').first()).heartbeat_count,0);
- const previewResponse=await mf.dispatchFetch(origin+'/api/production/preview',{headers:{Cookie:cookie}});assert.equal(previewResponse.status,200);const preview=await previewResponse.json();assert.equal(preview.valid,40);assert.equal(preview.calendar.length,30);assert.equal(preview.reserves.length,10);assert.equal(preview.publishingEnabled,false);
+ let previewPath='/api/production/preview',previewItems=[],previewSnapshot;do{const previewResponse=await mf.dispatchFetch(origin+previewPath,{headers:{Cookie:cookie}});const preview=await previewResponse.json();assert.equal(previewResponse.status,200,JSON.stringify(preview));previewSnapshot??=preview.snapshot;assert.equal(preview.snapshot,previewSnapshot);assert.ok(preview.items.length<=1);assert.equal(preview.valid,undefined);assert.equal(preview.publishingEnabled,false);previewItems.push(...preview.items);previewPath=preview.nextCursor?'/api/production/preview?cursor='+encodeURIComponent(preview.nextCursor):null;}while(previewPath);
+ assert.equal(previewItems.length,40);assert.equal(previewItems.filter(p=>p.approvalValid).length,40);assert.equal(previewItems.filter(p=>p.pool==='scheduled').length,30);assert.equal(previewItems.filter(p=>p.pool==='reserve').length,10);
  assert.equal((await mf.dispatchFetch(origin+'/api/production/preview',{method:'POST',headers:{Cookie:cookie},body:'{}'})).status,405);
- const warehouse=await(await mf.dispatchFetch(origin+'/api/management',{headers:{Cookie:cookie}})).json();assert.equal(warehouse.posts.length,40);assert.ok(warehouse.posts.every(p=>p.contentDesignApproved&&p.imageUrl));assert.deepEqual(warehouse.schedule,[]);assert.deepEqual(warehouse.history,[]);assert.equal(warehouse.publishingEnabled,false);
+ const warehouse=await(await mf.dispatchFetch(origin+'/api/management',{headers:{Cookie:cookie}})).json();assert.equal(warehouse.counts.posts,40);assert.equal(warehouse.posts,undefined);assert.equal(warehouse.publishingEnabled,false);
+ const list=await(await mf.dispatchFetch(origin+'/api/management/posts',{headers:{Cookie:cookie}})).json();assert.equal(list.items.length,5);assert.ok(list.items.every(p=>p.caption===undefined&&p.body===undefined));
+ const detail=await(await mf.dispatchFetch(origin+'/api/management/posts/'+encodeURIComponent(list.items[0].id),{headers:{Cookie:cookie}})).json();assert.ok(detail.contentDesignApproved&&detail.imageUrl&&detail.caption.includes('============'));
+ for(const section of ['schedule','history'])assert.deepEqual((await(await mf.dispatchFetch(origin+'/api/management/'+section,{headers:{Cookie:cookie}})).json()).items,[]);
  await assert.rejects(db.batch(productionWarehouseStatements(pack,library,'f'.repeat(64),'2026-10-07T03:00:00Z').map(sql=>db.prepare(sql))));
  assert.equal((await db.prepare('SELECT count(*) n FROM posts').first()).n,40);
  assert.equal((await db.prepare('PRAGMA foreign_key_check').all()).results.length,0);
@@ -85,5 +89,3 @@ try{
  await db.prepare("UPDATE application_state SET paused_by_user=0 WHERE environment='production'").run();assert.equal((await mf.dispatchFetch(origin+'/api/management',{headers:{Cookie:cookie}})).status,503);
  console.log('Production workerd smoke passed: complete schema, isolated identity, owner/session privacy, ASSETS, disabled publication routes, logout CSRF, OAuth native exchange and fail-closed unpause. No external provider request.');
 }finally{sqlite.close();await mf.dispose();}
-
-

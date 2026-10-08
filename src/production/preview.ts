@@ -1,15 +1,16 @@
 import type {ManagementBindings} from './management.ts';
-import {productionState} from './management.ts';
+import {productionState,assertProductionEnvironment,assertProductionState,PRODUCTION_STATE_SQL} from './management.ts';
 import {composeCaption,FOOTER_VERSION} from '../domain/footer.ts';
 import {businessDate,scheduledInstant,POLICY} from '../domain/policy.ts';
 import {SOURCE_REGISTRY} from '../cloud/source-registry.ts';
 import {PUBLISHER_RESOURCES,assertPublisherBoundary} from './publisher-boundary.ts';
+import {digest,readSnapshot,readSnapshotStatement,readCursor,initialCursor,signCursor} from './read-pages.ts';
 type Row=Record<string,any>;
 const parse=(s:unknown)=>{try{return JSON.parse(String(s));}catch{return null;}};
 const hash=async(s:string)=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s))),b=>b.toString(16).padStart(2,'0')).join('');
 const same=(a:unknown,b:unknown)=>JSON.stringify(a)===JSON.stringify(b);
 const future=(s:unknown,n:number)=>s==null||Number.isFinite(Date.parse(String(s)))&&Date.parse(String(s))>n;
-async function rows(env:ManagementBindings,sql:string,values:string[]=[]){return (await env.DB!.prepare(sql).bind(...values).all!<Row>()).results;}
+async function rows(env:ManagementBindings,sql:string,values:(string|number)[]=[]){return (await env.DB!.prepare(sql).bind(...values).all!<Row>()).results;}
 // All SQL is SELECT. This projection never grants readiness or consumes stock.
 export async function productionPreview(env:ManagementBindings,startDate?:string,now=Date.now()){
  await productionState(env);
@@ -28,21 +29,43 @@ export async function productionPreview(env:ManagementBindings,startDate?:string
   note:'Bản xem trước không lưu lịch và không cấp quyền đăng bài. Ngày bắt đầu cần được duyệt riêng.'};
 }
 
-export async function approvedProductionItems(env:ManagementBindings,now:number,versionId?:string){
- const [posts,sources,facts,documents,prerequisites]=await Promise.all([
- rows(env,`SELECT p.id,p.content_key,p.topic_group,p.pool,e.stable_order,e.stage,v.id version_id,v.body,v.caption_title,v.status,v.check_version,v.review_due_at,v.metadata_json,
+function approvalQueries(selection?:string,values:(string|number)[]=[]){
+ const query=(sql:string,values:(string|number)[]=[])=>({sql,values});
+ return [
+ query(`SELECT p.id,p.content_key,p.topic_group,p.pool,e.stable_order,e.stage,v.id version_id,v.body,v.caption_title,v.status,v.check_version,v.review_due_at,v.metadata_json,
  a.id asset_id,a.checksum,a.width,a.height,a.content_type,a.size_bytes,a.status asset_status,b.asset_id binding_id,b.checksum binding_checksum,b.check_version binding_version,
  l.id image_id,l.checksum library_checksum,l.state library_state,
  r.id review_id,r.check_version reviewed_version,r.asset_checksum,r.footer_version,r.body_snapshot,r.caption_snapshot,r.source_snapshot,r.rubric_json,r.reviewer actor,r.checked_at
  FROM posts p JOIN content_entries e ON e.post_id=p.id JOIN post_versions v ON v.id=e.active_version_id
  LEFT JOIN assets a ON a.id=v.asset_id LEFT JOIN asset_bindings b ON b.version_id=v.id
  LEFT JOIN cloud_library l ON v.asset_id='library-'||l.id
- LEFT JOIN cloud_reviews r ON r.version_id=v.id AND r.check_version=v.check_version ${versionId?'WHERE v.id=?':''} ORDER BY e.stable_order,p.id`,versionId?[versionId]:[]),
- rows(env,'SELECT x.version_id,x.location ref_json,s.* FROM version_sources x JOIN sources s ON s.id=x.source_id'+(versionId?' WHERE x.version_id=?':''),versionId?[versionId]:[]),
- rows(env,'SELECT x.version_id,f.* FROM version_facts x JOIN facts f ON f.id=x.fact_id'+(versionId?' WHERE x.version_id=?':''),versionId?[versionId]:[]),
- rows(env,"SELECT source_key,checksum FROM cloud_library WHERE kind='document' AND state='complete' ORDER BY source_key,checksum"),
- rows(env,'SELECT post_id,prerequisite_id FROM post_prerequisites'+(versionId?' WHERE post_id=(SELECT post_id FROM post_versions WHERE id=?)':''),versionId?[versionId]:[]),
- ]);
+ LEFT JOIN cloud_reviews r ON r.version_id=v.id AND r.check_version=v.check_version ${selection?'WHERE v.id IN ('+selection+')':''} ORDER BY e.stable_order,p.id`,values),
+ query('SELECT x.version_id,x.location ref_json,s.* FROM version_sources x JOIN sources s ON s.id=x.source_id'+(selection?' WHERE x.version_id IN ('+selection+')':''),values),
+ query('SELECT x.version_id,f.* FROM version_facts x JOIN facts f ON f.id=x.fact_id'+(selection?' WHERE x.version_id IN ('+selection+')':''),values),
+ query("SELECT source_key,checksum FROM cloud_library WHERE kind='document' AND state='complete' ORDER BY source_key,checksum"),
+ query('SELECT post_id,prerequisite_id FROM post_prerequisites'+(selection?' WHERE post_id IN (SELECT post_id FROM post_versions WHERE id IN ('+selection+'))':''),values),
+ ];
+}
+
+export async function approvedProductionItems(env:ManagementBindings,now:number,versionId?:string|string[]|number[],readMode:'parallel'|'batch'='parallel'){
+ const ids=typeof versionId==='string'?[versionId]:versionId;
+ if(ids&&!ids.length)return [];
+ const placeholders=ids?.map(()=>'?').join(',');
+ // Numeric identities are used only by the F1 manifest; other callers retain IDs.
+ const selection=typeof ids?.[0]==='number'?'SELECT id FROM post_versions WHERE rowid IN ('+placeholders+')':placeholders;
+ const queries=approvalQueries(selection,ids??[]);
+ // HTTP preview batches only SELECTs; existing live/preflight callers keep their read path.
+ const result=readMode==='batch'&&env.DB!.batch
+  ? await env.DB!.batch(queries.map(q=>env.DB!.prepare(q.sql).bind(...q.values))) as {results:Row[]}[]
+  : await Promise.all(queries.map(async q=>({results:await rows(env,q.sql,q.values)})));
+ return projectApprovalRows(now,readMode,result.map(r=>r.results) as ProjectionRows);
+}
+type ProjectionRows=[Row[],Row[],Row[],Row[],Row[]];
+async function projectApprovalRows(now:number,readMode:'parallel'|'batch',data:ProjectionRows){
+ const [posts,sources,facts,documents,prerequisites]=data;
+ // F1 IDs use a byte-stable order without constructing an ICU collation per comparison.
+ // Full/live callers retain their existing projection order for compatibility.
+ const compareIds=readMode==='batch'?(a:string,b:string)=>a===b?0:a<b?-1:1:(a:string,b:string)=>a.localeCompare(b);
  const items=await Promise.all(posts.map(async p=>{
   const reasons:string[]=[],meta=parse(p.metadata_json),approval=meta?.ownerApproval,receipt=parse(p.source_snapshot),refs=meta?.sourceRefs;
   const caption=composeCaption(p.body);
@@ -53,7 +76,7 @@ export async function approvedProductionItems(env:ManagementBindings,now:number,
   const rubric=parse(p.rubric_json);if(!rubric||['accuracy','usefulness','clarity','originality','visual_quality'].some(k=>rubric[k]!==true))reasons.push('REVIEW_RUBRIC_INVALID');
   if(p.asset_status!=='complete'||p.library_state!=='complete'||p.library_checksum!==p.checksum||p.binding_id!==p.asset_id||p.binding_checksum!==p.checksum||p.asset_checksum!==p.checksum||p.binding_version!==p.check_version
     ||p.width!==1080||p.height!==1080||p.content_type!=='image/png'||p.size_bytes<=0||p.size_bytes>5242880)reasons.push('IMAGE_BINDING_INVALID');
-  const linked=sources.filter(s=>s.version_id===p.version_id).sort((a,b)=>String(a.id).localeCompare(String(b.id))||String(a.ref_json).localeCompare(String(b.ref_json)));
+  const linked=sources.filter(s=>s.version_id===p.version_id).sort((a,b)=>compareIds(String(a.id),String(b.id))||String(a.ref_json).localeCompare(String(b.ref_json)));
   if(!Array.isArray(refs)||!refs.length||!Array.isArray(receipt)||linked.length!==refs.length||receipt.length!==refs.length)reasons.push('SOURCES_MISSING');
   else for(const ref of refs){
    const def=SOURCE_REGISTRY.find(s=>s.id===ref.id),source=linked.find(s=>same(parse(s.ref_json),ref)),r=receipt.find((s:Row)=>s.id===ref.id);
@@ -63,11 +86,62 @@ export async function approvedProductionItems(env:ManagementBindings,now:number,
      ||def.authority==='document'&&!documents.some(d=>d.source_key===def.id&&d.checksum===def.sha256))reasons.push('SOURCE_RECEIPT_INVALID');
    if(!Array.isArray(ref.pages)||ref.pages.some((n:unknown)=>!Number.isInteger(n)||Number(n)<1||Number(n)>(def?.pages??0)))reasons.push('SOURCE_PAGE_INVALID');
   }
-  const linkedFacts=facts.filter(f=>f.version_id===p.version_id).sort((a,b)=>String(a.id).localeCompare(String(b.id)));
+  const linkedFacts=facts.filter(f=>f.version_id===p.version_id).sort((a,b)=>compareIds(String(a.id),String(b.id)));
   if(linkedFacts.some(f=>f.status!=='verified'||!future(f.review_due_at,now)||f.cohort!=null&&f.cohort!==2026||!linked.some(s=>s.id===f.source_id&&s.status==='verified')))reasons.push('FACT_INVALID');
   if(p.topic_group==='I'&&[['training_duration_years','3.5'],['cohort','2026']].some(([key,value])=>!linkedFacts.some(f=>f.fact_key===key&&f.value_json===value&&linked.some(s=>s.id===f.source_id&&parse(s.ref_json)?.id==='OWNER-2026'))))reasons.push('PROGRAM_FACTS_INVALID');
   return {postId:p.id,key:p.content_key,versionId:p.version_id,title:p.caption_title,pool:p.pool,order:p.stable_order,caption,imageUrl:p.image_id?'/api/library/files/'+p.image_id:null,
    imageChecksum:p.checksum,checkVersion:p.check_version,receiptDigest:await hash(JSON.stringify([p,linked,linkedFacts,documents])),sourceRefs:refs??[],approvalValid:reasons.length===0,reasons:[...new Set(reasons)],prerequisites:prerequisites.filter(q=>q.post_id===p.id).map(q=>q.prerequisite_id)};
  }));
  return items;
+}
+
+// Bounded read-only HTTP projection. Full projection remains a fixture/live-adapter helper.
+export async function productionPreviewPage(env:ManagementBindings,input:{cursor?:string|undefined;startDate?:string|undefined},now=Date.now()){
+ assertProductionEnvironment(env);if(!env.DB!.batch)await productionState(env);assertPublisherBoundary('production',env.META_PAGE_ID??'',env.PRODUCTION_DATABASE_ID??'',env.PRODUCTION_ASSET_BUCKET??'');
+ const cursor=await readCursor(env,input.cursor,'preview',now);
+ if(cursor&&input.startDate!==undefined)throw Error('PREVIEW_DATE_INVALID');
+ const start=cursor?.startDate??input.startDate??businessDate(new Date(now+86400000));
+ try{scheduledInstant(start!);}catch{throw Error('PREVIEW_DATE_INVALID');}
+ if(start!<businessDate(new Date(now))||scheduledInstant(start!).getTime()>now+366*86400000)throw Error('PREVIEW_DATE_INVALID');
+ const manifestSQL='SELECT p.rowid postRow,p.pool,v.rowid versionRow,e.stable_order FROM posts p JOIN content_entries e ON e.post_id=p.id JOIN post_versions v ON v.id=e.active_version_id ORDER BY e.stable_order,p.id';
+ const deadlineSQL="SELECT min(julianday(review_due_at)*86400000-210866760000000) deadline FROM (SELECT review_due_at FROM post_versions UNION ALL SELECT review_due_at FROM sources UNION ALL SELECT review_due_at FROM facts) WHERE julianday(review_due_at)*86400000-210866760000000>?";
+ let bundled:{results:Row[]}[]|undefined;
+ if(env.DB!.batch){
+  const statements=[env.DB!.prepare(PRODUCTION_STATE_SQL),env.DB!.prepare(manifestSQL)];
+  if(cursor?.phase==='item'){
+   const selector='SELECT v.id FROM posts p JOIN content_entries e ON e.post_id=p.id JOIN post_versions v ON v.id=e.active_version_id ORDER BY e.stable_order,p.id LIMIT 1 OFFSET ?';
+   statements.push(...approvalQueries(selector,[cursor.offset]).map(q=>env.DB!.prepare(q.sql).bind(...q.values)));
+  }else{
+   if(cursor&&cursor.phase!=='finalize')throw Error('READ_CURSOR_INVALID');
+   statements.push(readSnapshotStatement(env,now));
+   if(!cursor)statements.push(env.DB!.prepare(deadlineSQL).bind(now));
+  }
+  // D1 batch is a single transaction: identity, manifest and approval rows share a read view.
+  bundled=await env.DB!.batch(statements) as {results:Row[]}[];
+  assertProductionState(env,bundled[0]?.results[0]);
+ }
+ const manifest=bundled?bundled[1]!.results:await rows(env,manifestSQL);
+ const manifestText=JSON.stringify(manifest),manifestHash=await digest(manifestText);
+ if(cursor&&cursor.manifestHash!==manifestHash)throw Error('READ_SNAPSHOT_CHANGED');
+ const snapshotText=()=>{const value=bundled?.[2]?.results[0]?.snapshot;if(typeof value!=='string')throw Error('READ_SNAPSHOT_UNAVAILABLE');return value;};
+ const snapshot=cursor?.snapshot??await digest(bundled?snapshotText():await readSnapshot(env,now));
+ let c=cursor??{...initialCursor(env,'preview',snapshot,now,start),manifestHash,phase:manifest.length?'item' as const:'finalize' as const};
+ const header={environment:'production',previewOnly:true,publishingEnabled:false,realPublication:'NOT_RUN',snapshot,checkedAt:c.checkedAt,startDate:start,timeZone:POLICY.timeZone,publishTime:POLICY.publishTime,total:manifest.length,main:manifest.filter(p=>p.pool==='scheduled').length,reserve:manifest.filter(p=>p.pool==='reserve').length,note:'Xem trước theo từng bài; chưa lưu lịch hoặc cấp quyền đăng. Chỉ kết luận toàn kho sau đối chiếu snapshot cuối.'};
+ if(!cursor){
+  const due=bundled?bundled[3]!.results[0]:await env.DB!.prepare(deadlineSQL).bind(now).first<{deadline:number|null}>();
+  if(due?.deadline!=null)c={...c,eligibilityDeadline:Math.floor(due.deadline)};
+  // No global approval is claimed until the final snapshot matches the initial one.
+  return {...header,phase:'initialize',checkedThrough:0,complete:false,items:[],nextCursor:await signCursor(env,c)};
+ }
+ if(c.phase==='finalize'){
+  if(c.offset!==manifest.length||await digest(bundled?snapshotText():await readSnapshot(env,now))!==snapshot)throw Error('READ_SNAPSHOT_CHANGED');
+  return {...header,phase:'finalize',checkedThrough:c.offset,complete:true,items:[],nextCursor:null};
+ }
+ if(c.phase!=='item'||c.offset>=manifest.length)throw Error('READ_CURSOR_INVALID');
+ const page=manifest.slice(c.offset,c.offset+1),items=bundled?await projectApprovalRows(c.checkedAt,'batch',bundled.slice(2).map(r=>r.results) as ProjectionRows):await approvedProductionItems(env,c.checkedAt,page.map(p=>p.versionRow),'batch');
+ if(!bundled){const after=await rows(env,manifestSQL);if(JSON.stringify(after)!==manifestText)throw Error('READ_SNAPSHOT_CHANGED');}
+ const projected=items.map(p=>{const index=manifest.slice(0,c.offset).filter(m=>m.pool==='scheduled').length;const day=p.pool==='scheduled'?new Date(Date.parse(start!+'T00:00:00Z')+index*86400000).toISOString().slice(0,10):null;
+  return {...p,...(day?{day,publishAt:scheduledInstant(day).toISOString()}:{}),prerequisitePreviewSatisfied:null};});
+ const next=c.offset+page.length;
+ return {...header,phase:'item',checkedThrough:next,complete:false,items:projected,nextCursor:await signCursor(env,{...c,offset:next,phase:next===manifest.length?'finalize':'item'})};
 }
