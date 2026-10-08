@@ -1,6 +1,6 @@
 # Bước 38 — Nghiệm thu chuẩn bị gửi trên cloud và hồ sơ bài thử
 
-Trạng thái ngày 08/10/2026: người quản lý đã phê duyệt Bước 38; chức năng đã triển khai và qua kiểm thử, nhưng chưa đạt nghiệm thu tài nguyên (dry-run 23 ms CPU, Workers Free 10 ms). Người quản lý đã chọn giữ Free và yêu cầu xem phương án xử lý; đã phê duyệt và hoàn tất phạm vi F1; F2–F4 chưa được duyệt code. Xem [báo cáo F1](38-f1-free-management.md). Cửa đăng vẫn đóng. Xem [báo cáo](38-production-send-preflight.md) và [phương án Free](38-resource-acceptance-plan.md).
+Trạng thái ngày 08/10/2026: người quản lý đã phê duyệt Bước 38; dry-run ban đầu qua kiểm thử chức năng nhưng vượt tài nguyên (23 ms CPU so với ngân sách Workers Free 10 ms). F2 hiện đã chia chuẩn bị thành bốn lượt, với 39 mẫu CPU thực đều dưới 10 ms; toàn đường đăng vẫn cần nghiệm thu F3–F4. Người quản lý đã chọn giữ Free và yêu cầu xem phương án xử lý; đã phê duyệt và hoàn tất phạm vi F1; F2 đã được phê duyệt và hoàn tất phạm vi chia lượt chuẩn bị; F3–F4 chưa được duyệt code. Xem [báo cáo F2](38-f2-free-preparation.md). Xem [báo cáo F1](38-f1-free-management.md). Cửa đăng vẫn đóng. Xem [báo cáo](38-production-send-preflight.md) và [phương án Free](38-resource-acceptance-plan.md).
 
 Bước37 hoàn thành adapter và preflight khi mọi cửa đăng đóng. Trước khi gửi thử cần đo toàn đường chuẩn bị và có hồ sơ phê duyệt bài/phiên bản/ảnh/Page/thời điểm cụ thể.
 

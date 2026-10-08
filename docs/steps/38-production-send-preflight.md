@@ -55,3 +55,8 @@ Còn phải triển khai và nghiệm thu giao diện owner cấp/kích hoạt/p
 ## Tiếp nối F1 (08/10/2026)
 
 Đã hoàn tất phạm vi giao diện đọc và số đo F1; số đo Bước38 phía trên là lịch sử trước tối ưu. Runtime/kiểm thử/CPU mới và các giới hạn còn mở nằm trong [báo cáo F1](38-f1-free-management.md). Chưa sửa dry-run 23 ms hoặc mở cửa publisher; F2–F4 chờ phê duyệt riêng.
+
+
+## Tiếp nối F2 (08/10/2026)
+
+Trạng thái và số đo phía trên ghi nhận khi hoàn tất giai đoạn này. F2 nay đã hoàn tất phần chuẩn bị theo bốn request; xem [báo cáo F2](38-f2-free-preparation.md). F3–F4 vẫn chờ phê duyệt; publisher chưa được mở.

@@ -1,6 +1,6 @@
 # Bước 38 — Phương án nghiệm thu ngân sách CPU
 
-Ngày 08/10/2026: người quản lý chọn **giữ Workers Free**, chấp nhận làm chậm để ổn định. Không nâng gói. Phương án B dưới đây là hướng được chọn, F1 đã được phê duyệt và triển khai kiểm thử; F2–F4 vẫn cần phê duyệt riêng theo quy trình từng bước. Bằng chứng và phạm vi đã triển khai nằm trong [báo cáo Bước 38](38-production-send-preflight.md).
+Ngày 08/10/2026: người quản lý chọn **giữ Workers Free**, chấp nhận làm chậm để ổn định. Không nâng gói. Phương án B dưới đây là hướng được chọn, F1 đã được phê duyệt và triển khai kiểm thử; F2 đã được phê duyệt và hoàn tất phạm vi chuẩn bị; F3–F4 vẫn cần phê duyệt riêng theo quy trình từng bước. Bằng chứng và phạm vi đã triển khai nằm trong [báo cáo Bước 38](38-production-send-preflight.md).
 
 ## Phương án A — Workers Paid
 
@@ -28,13 +28,15 @@ Rà soát code cho thấy `managementData` trả cả 40 caption/metadata và d�
 
 ### Giai đoạn F1 — giao diện và đo nền
 
-F1 đã hoàn thành phạm vi đọc và số đo hiện tại; xem [báo cáo F1](38-f1-free-management.md). Preview gồm khởi tạo, một bài mỗi request và đối chiếu snapshot cuối; chỉ kết luận toàn kho khi pha cuối đạt. F2 chưa code.
+F1 đã hoàn thành phạm vi đọc và số đo hiện tại; xem [báo cáo F1](38-f1-free-management.md). Preview gồm khởi tạo, một bài mỗi request và đối chiếu snapshot cuối; chỉ kết luận toàn kho khi pha cuối đạt. F2 đã hoàn thành; xem [báo cáo F2](38-f2-free-preparation.md).
 
 Tách management thành summary gọn, danh sách bài theo cursor (khởi đầu năm bài/trang), chi tiết một bài, thư viện và lịch sử tải khi mở tab. Giữ xác thực owner trên mọi request. Không gửi body/metadata/caption của cả kho khi chỉ cần tiêu đề. Preview kiểm từng trang nhỏ, cursor do server ràng buộc; hiển thị tiến độ và chỉ ghi kết quả kiểm cho những bài đã đọc. Không hiển thị “40/40 đạt” khi mới kiểm một trang; nếu thay snapshot hoặc phiên bản trong lúc đọc phải làm lại.
 
 Đo baseline xác thực, SELECT và serialization riêng trên cloud để chọn kích thước trang theo ngân sách, không ấn định năm bài là chắc đạt. Giữ các endpoint cũ trong fixture so sánh đủ 40 bài; đổi production UI và routes đồng bộ sau kiểm thử. Chưa sửa publisher hoặc cấp quyền ở F1.
 
 ### Giai đoạn F2 — chuẩn bị bài qua nhiều request
+
+Đã hoàn tất phạm vi bốn lượt chuẩn bị và số đo hiện tại; xem [báo cáo F2](38-f2-free-preparation.md). F3 chưa được phê duyệt, chưa code.
 
 1. Kiểm phiên bản, nguồn/facts, biên nhận duyệt và trạng thái ban đầu của một bài.
 2. Đọc và kiểm byte ảnh R2 gắn đúng checksum/version.
