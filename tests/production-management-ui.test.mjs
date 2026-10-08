@@ -42,3 +42,25 @@ test('F1 UI discards partial approval results when the final snapshot has change
  const page={snapshot:'same',startDate:'2026-10-09',total:1,main:1,reserve:0,checkedThrough:1,complete:false,nextCursor:'final',items:[{key:'P01',title:'One',pool:'scheduled',versionId:'v1',approvalValid:true}]};
  const h=harness(async path=>path==='/api/management/schedule'?{items:[]}:path==='/api/production/preview'?page:path.includes('cursor=')?{httpError:'READ_SNAPSHOT_CHANGED'}:assert.fail(path));await flush();await h.click('schedule');await flush();assert.match(h.ids.error.text,/Dữ liệu đã đổi/);assert.equal(h.ids.error.hidden,false);assert.ok(!h.ids.panel.text.includes('1/1 bài khớp'));assert.match(h.ids.panel.text,/Đã kiểm 0\/1/);
 });
+
+test('F2 UI shows progress but no verified dossier until all four requests finish',async()=>{
+ let finish;const pending=new Promise(r=>finish=r),requests=[];
+ const page={snapshot:'same',startDate:'2026-10-09',total:1,main:1,reserve:0,checkedThrough:1,complete:true,nextCursor:null,items:[{key:'P01',title:'One',pool:'scheduled',versionId:'v1',approvalValid:true}]};
+ const h=harness(async(path,opts)=>{
+  if(path==='/api/management/schedule')return {items:[]};if(path==='/api/production/preview')return page;if(path==='/api/production/preflight')return {schemaReady:false};
+  if(path==='/api/production/send-preflight'){requests.push(JSON.parse(opts.body));const step=requests.length-1;return step===3?pending:{phase:['content','image','connection'][step],complete:false,nextReceipt:'receipt-'+step,preparationVerified:false};}assert.fail(path);
+ });await flush();await h.click('schedule');
+ h.find(h.ids.panel,e=>e.tag==='select')[0].value='v1';const checking=h.find(h.ids.panel,e=>e.textContent==='Kiểm tra chuẩn bị gửi')[0].emit('click');await flush();
+ assert.match(h.ids.panel.text,/Đang đối chiếu/);assert.ok(!h.ids.panel.text.includes('Chuẩn bị đã kiểm tra'));assert.equal(h.find(h.ids.panel,e=>e.textContent==='Kiểm tra chuẩn bị gửi')[0].disabled,true);
+ finish({phase:'finalize',complete:true,preparationVerified:true,nextReceipt:null,note:'read only',dossierHash:'digest',dossier:{versionId:'v1',key:'P01',title:'One',pageName:'NTTU',pageId:'817593604765443',dueAt:1,reviewExpiresAt:2,caption:'approved\n============\nfooter',imageUrl:'/fixture.png'}});await checking;await flush();
+ assert.match(h.ids.panel.text,/Chuẩn bị đã kiểm tra · chưa được phép đăng/);assert.deepEqual(requests,[{versionId:'v1'},{receipt:'receipt-0'},{receipt:'receipt-1'},{receipt:'receipt-2'}]);
+});
+
+test('F2 UI clears failed preparation and ignores late responses after switching tabs',async()=>{
+ for(const changeView of [false,true]){let finish;const pending=new Promise(r=>finish=r);
+ const page={snapshot:'same',startDate:'2026-10-09',total:1,main:1,reserve:0,checkedThrough:1,complete:true,nextCursor:null,items:[{key:'P01',title:'One',pool:'scheduled',versionId:'v1',approvalValid:true}]};
+ const h=harness(async path=>path==='/api/management/schedule'?{items:[]}:path==='/api/production/preview'?page:path==='/api/production/preflight'?{schemaReady:false}:path==='/api/production/send-preflight'?pending:assert.fail(path));await flush();await h.click('schedule');h.find(h.ids.panel,e=>e.tag==='select')[0].value='v1';const checking=h.find(h.ids.panel,e=>e.textContent==='Kiểm tra chuẩn bị gửi')[0].emit('click');await flush();
+ if(changeView)await h.click('overview');finish({httpError:'SEND_REVIEW_CHANGED'});await checking;await flush();assert.ok(!h.ids.panel.text.includes('Chuẩn bị đã kiểm tra'));
+ if(changeView){assert.match(h.ids.panel.text,/Chuẩn bị fanpage chính thức/);assert.equal(h.ids.error.hidden,true);}else{assert.match(h.ids.error.text,/SEND_REVIEW_CHANGED/);assert.equal(h.find(h.ids.panel,e=>e.textContent==='Kiểm tra chuẩn bị gửi')[0].disabled,false);}
+ }
+});

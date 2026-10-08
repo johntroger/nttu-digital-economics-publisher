@@ -29,7 +29,7 @@ export async function productionPreview(env:ManagementBindings,startDate?:string
   note:'Bản xem trước không lưu lịch và không cấp quyền đăng bài. Ngày bắt đầu cần được duyệt riêng.'};
 }
 
-function approvalQueries(selection?:string,values:(string|number)[]=[]){
+export function approvalQueries(selection?:string,values:(string|number)[]=[]){
  const query=(sql:string,values:(string|number)[]=[])=>({sql,values});
  return [
  query(`SELECT p.id,p.content_key,p.topic_group,p.pool,e.stable_order,e.stage,v.id version_id,v.body,v.caption_title,v.status,v.check_version,v.review_due_at,v.metadata_json,
@@ -60,8 +60,8 @@ export async function approvedProductionItems(env:ManagementBindings,now:number,
   : await Promise.all(queries.map(async q=>({results:await rows(env,q.sql,q.values)})));
  return projectApprovalRows(now,readMode,result.map(r=>r.results) as ProjectionRows);
 }
-type ProjectionRows=[Row[],Row[],Row[],Row[],Row[]];
-async function projectApprovalRows(now:number,readMode:'parallel'|'batch',data:ProjectionRows){
+export type ProjectionRows=[Row[],Row[],Row[],Row[],Row[]];
+export async function projectApprovalRows(now:number,readMode:'parallel'|'batch',data:ProjectionRows){
  const [posts,sources,facts,documents,prerequisites]=data;
  // F1 IDs use a byte-stable order without constructing an ICU collation per comparison.
  // Full/live callers retain their existing projection order for compatibility.

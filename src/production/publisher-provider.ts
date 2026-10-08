@@ -31,7 +31,7 @@ export class ProductionMetaPublisher {
  async fingerprint(){return metaFingerprint(this.env);}
  async verify(now:number){
   if(!this.configured())return {verified:false,fingerprint:await this.fingerprint()};
-  try{const proof=await bounded(signal=>inspectMetaConnection(this.env,{now,transport:(input,init)=>this.transport(input,{...init,signal})}),8000);return {verified:proof.state==='verified_read_only',reason:proof.reason,fingerprint:await this.fingerprint()};}
+  try{const proof=await bounded(signal=>inspectMetaConnection(this.env,{now,transport:(input,init)=>this.transport(input,{...init,signal})}),8000);return {verified:proof.state==='verified_read_only',reason:proof.reason,fingerprint:await this.fingerprint(),expiresAt:proof.expires,dataAccessExpiresAt:proof.dataExpires};}
   catch{return {verified:false,fingerprint:await this.fingerprint()};}
  }
  private endpoint(id:string){return 'https://graph.facebook.com/'+this.env.META_API_VERSION+'/'+id;}

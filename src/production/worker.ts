@@ -1,7 +1,7 @@
 import {publisherPreflight,publisherAuthorized,runProductionPublisher} from './publisher-live.ts';
 import type {PublisherBindings} from './publisher-live.ts';
 import {ProductionMetaPublisher} from './publisher-provider.ts';
-import {productionSendPreflight} from './send-preflight.ts';
+import {productionPreparation} from './preparation.ts';
 import type {ManagementBindings} from './management.ts';
 import {productionState,managementSummary,managementPostPage,managementPostDetail,managementSection,productionFile} from './management.ts';
 import {productionPreviewPage} from './preview.ts';
@@ -31,7 +31,7 @@ export default {
     // F1 read functions validate database identity themselves before reading content.
     // Keep the outer guard for all other routes; do not repeat the same D1 read.
     const guardedRead=request.method==='GET'&&(url.pathname==='/api/production/preview'||url.pathname==='/api/management'||url.pathname.startsWith('/api/management/'));
-    if(!guardedRead)await productionState(env);
+    if(!guardedRead&&!(request.method==='POST'&&url.pathname==='/api/production/send-preflight'))await productionState(env);
     if(url.pathname==='/api/production/tick'){
       if(request.method!=='POST')return json({error:'METHOD_NOT_ALLOWED'},405);
       if(url.search||!await triggerAuthorized(request,env))return json({error:'TRIGGER_AUTH_REQUIRED'},401);
@@ -92,11 +92,11 @@ export default {
     if(url.pathname==='/api/production/send-preflight'){
       if(request.method!=='POST')return json({error:'METHOD_NOT_ALLOWED'},405);
       try{requireMutation(request,env,owner);}catch{return json({error:'CSRF_REQUIRED'},403);}
-      if(url.search||Number(request.headers.get('Content-Length'))>1024)return json({error:'SEND_REVIEW_INVALID'},422);
-      const text=await request.text();if(text.length>1024)return json({error:'SEND_REVIEW_INVALID'},422);
+      if(url.search||Number(request.headers.get('Content-Length'))>6144)return json({error:'SEND_REVIEW_INVALID'},422);
+      const text=await request.text();if(text.length>6144)return json({error:'SEND_REVIEW_INVALID'},422);
       let input;try{input=JSON.parse(text);}catch{return json({error:'SEND_REVIEW_INVALID'},422);}
-      try{return json(await productionSendPreflight(env,input,fetch));}
-      catch(e){const code=e instanceof Error?e.message:'';return json({error:/^(SEND_|PREFLIGHT_|FILE_)/.test(code)?code:'SEND_PREFLIGHT_UNAVAILABLE'},422);}
+      try{return json(await productionPreparation(env,input,fetch));}
+      catch(e){const code=e instanceof Error?e.message:'';if(code.startsWith('PRODUCTION_'))throw e;return json({error:/^(SEND_|PREFLIGHT_|FILE_)/.test(code)?code:'SEND_PREFLIGHT_UNAVAILABLE'},422);}
     }
     if(url.pathname==='/api/production/preflight'){
       if(request.method!=='GET')return json({error:'METHOD_NOT_ALLOWED'},405);
