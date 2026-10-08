@@ -22,7 +22,7 @@ export function productionMigrations(databaseId,{publisherStages=false}={}) {
   return files.map((file,i)=>{const checksum=createHash('sha256').update(file.sql).digest('hex');return {...file,checksum,
     sql:(i===0?'CREATE TABLE schema_migrations(name TEXT PRIMARY KEY,checksum TEXT NOT NULL);\n':'')+file.sql+`\nINSERT INTO schema_migrations VALUES('${file.name}','${checksum}');\n`};});
 }
-export function prepareProductionManagement(settings,{output='tmp/production-management',clientId}={}) {
+export function prepareProductionManagement(settings,{output='tmp/production-management',clientId,publisherStages=false}={}) {
   if(typeof clientId!=='string'||! /^[\w-]+\.apps\.googleusercontent\.com$/.test(clientId))throw Error('Google Client ID required');
   const result=prepareProduction(settings,{output});const {directory,config}=result;
   config.main=relative(directory,resolve('src/production/worker.ts')).split(sep).join('/');
@@ -32,7 +32,7 @@ export function prepareProductionManagement(settings,{output='tmp/production-man
     TELEGRAM_CHAT_ID:'1548618770',TELEGRAM_ENABLED:'true'};
   config.triggers={crons:['*/5 * * * *']};
   mkdirSync(resolve(directory,'migrations'),{recursive:true});
-  for(const file of productionMigrations(settings.databaseId))writeFileSync(resolve(directory,'migrations',file.name),file.sql);
+  for(const file of productionMigrations(settings.databaseId,{publisherStages}))writeFileSync(resolve(directory,'migrations',file.name),file.sql);
   config.d1_databases[0].migrations_dir='./migrations';
   mkdirSync(resolve(directory,'assets/fonts'),{recursive:true});
   for(const [from,to] of [['ui/production/manager.html','assets/manager.html'],['ui/production/management.js','assets/management.js'],['ui/production/management.css','assets/management.css'],
