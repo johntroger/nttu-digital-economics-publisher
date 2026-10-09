@@ -39,6 +39,21 @@ test('F5 every data group denies rows when the approval changes after claim',asy
   }finally{await f.dispose();}
  }
 });
+test('F5 compact data gate never returns rows after pause, revoke, generation or lease changes',async()=>{
+ for(const mode of ['pause','permit','generation','lease','release','owner','identity']){
+  const f=await runnerFixture();try{
+   const runner=randomUUID(),held=await (await f.request('/runner/claim',{runner})).json();assert.equal(held.state,'held');
+   if(mode==='pause')f.db.exec("UPDATE application_state SET paused_by_user=1 WHERE environment='production'");
+   if(mode==='permit')f.db.exec('UPDATE production_send_permits SET revoked=1');
+   if(mode==='generation')f.db.exec('UPDATE application_state SET operation_generation=operation_generation+1');
+   if(mode==='lease')f.setTime(now+180001);
+   if(mode==='release')f.env.RELEASE_SHA='f'.repeat(40);
+   if(mode==='identity')f.env.PRODUCTION_DATABASE_ID='aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+   const response=await f.request('/runner/data',{job:held.job,runner:mode==='owner'?randomUUID():runner,group:1,offset:0}),body=await response.json();
+   assert.ok(response.status>=400,mode);assert.equal(body.rows,undefined,mode);assert.equal(f.postCount(),0);assert.equal(count(f,'production_publisher_attempts'),0);
+  }finally{await f.dispose();}
+ }
+});
 test('F5 pause/revocation and source/version changes before or after intent never POST',async()=>{
  for(const stage of ['before_intent','after_intent'])for(const mode of ['pause','permit','source','version','generation','release']){
   const f=await runnerFixture();try{const r=await run({...f.options,hook:async point=>{if(point!==stage)return;if(mode==='pause')f.db.exec("UPDATE application_state SET paused_by_user=1 WHERE environment='production'");if(mode==='permit')f.db.exec('UPDATE production_send_permits SET revoked=1');if(mode==='source')f.db.exec("UPDATE sources SET status='blocked'");if(mode==='version')f.db.exec('UPDATE post_versions SET check_version=check_version+1');if(mode==='generation')f.db.exec('UPDATE application_state SET operation_generation=operation_generation+1');if(mode==='release')f.env.RELEASE_SHA='f'.repeat(40);}});assert.equal(f.postCount(),0,stage+mode+JSON.stringify(r));assert.equal(count(f,'production_publisher_attempts'),stage==='before_intent'?0:1);}finally{await f.dispose();}

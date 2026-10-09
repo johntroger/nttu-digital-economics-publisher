@@ -58,6 +58,12 @@ const JOB_SQL=`SELECT j.*,s.runner,s.release,s.expires_at,s.caption_hash,s.image
  l.id image_id,l.storage_key,l.size_bytes,l.checksum file_checksum FROM production_publisher_jobs j
  JOIN production_runner_sessions s ON s.job=j.id JOIN post_versions v ON v.id=j.version
  JOIN cloud_library l ON v.asset_id='library-'||l.id WHERE j.id=?`;
+const CLAIM_VIEW_SQL=`SELECT j.id,j.version,j.caption,j.checksum,j.day,s.release,s.caption_hash,l.size_bytes
+ FROM production_publisher_jobs j JOIN production_runner_sessions s ON s.job=j.id
+ JOIN post_versions v ON v.id=j.version JOIN cloud_library l ON v.asset_id='library-'||l.id WHERE j.id=?`;
+const CLAIM_PERMIT_SQL=`SELECT p.id,p.mode,p.due_at,p.business_date FROM production_send_permits p JOIN post_versions v ON v.id=p.version_id
+ WHERE p.page_id=? AND p.business_date=? AND p.revoked=0 AND p.due_at<=? AND p.expires_at>? AND p.approved_at<=?
+ AND NOT EXISTS(SELECT 1 FROM production_publisher_jobs j WHERE j.permit=p.id) ORDER BY p.due_at,p.id LIMIT 1`;
 async function job(e:RunnerBindings,id:unknown){
  if(typeof id!=='string'||!/^runner-job:[a-f0-9-]{36}$/.test(id))fail('RUNNER_JOB_INVALID',400);
  const row=await first(e,JOB_SQL,id);if(!row)fail('RUNNER_JOB_UNKNOWN',404);return row;
@@ -68,7 +74,7 @@ async function recovery(e:RunnerBindings,j:Row,n:number){
  LEFT JOIN production_publisher_evidence ev ON ev.attempt=t.id WHERE t.job=? ORDER BY t.ordinal DESC LIMIT 1`,j.id);
  return {state:j.state,...requestView(j,n),attempt:row?.attempt??null,sentAt:row?.sentAt??null,remoteId:row?.response?JSON.parse(row.response).remoteId??null:null,applied:row?.applied??null};
 }
-async function claim(e:RunnerBindings,b:Row,n:number,state:Row){
+async function claim(e:RunnerBindings,b:Row,n:number,state:Row,p:Row|undefined){
  only(b,['runner']);if(!uid(b.runner))fail('RUNNER_ID_INVALID',400);
  if(state.active_job){
   const j=await job(e,state.active_job);
@@ -87,9 +93,6 @@ async function claim(e:RunnerBindings,b:Row,n:number,state:Row){
  }
  if(!live(state)||!state.start_date||day(n)<state.start_date)return answer({state:'closed'});
  if(state.today_used>0)return answer({state:'day_complete'});
- const p=await first(e,`SELECT p.id,p.mode,p.due_at,p.business_date FROM production_send_permits p JOIN post_versions v ON v.id=p.version_id
- WHERE p.page_id=? AND p.business_date=? AND p.revoked=0 AND p.due_at<=? AND p.expires_at>? AND p.approved_at<=?
- AND NOT EXISTS(SELECT 1 FROM production_publisher_jobs j WHERE j.permit=p.id) ORDER BY p.due_at,p.id LIMIT 1`,PRODUCTION_PAGE,day(n),n,n,n);
  if(!p)return answer({state:'publication_approval_required'});
  if(day(p.due_at)!==p.business_date||p.mode==='normal'&&p.due_at!==scheduledInstant(p.business_date).getTime())fail('RUNNER_PERMIT_TIME_INVALID');
  const id='runner-job:'+crypto.randomUUID();
@@ -100,7 +103,7 @@ async function claim(e:RunnerBindings,b:Row,n:number,state:Row){
  AND a.paused_by_user=0 AND a.maintenance_owner IS NULL AND a.blocked_reasons='[]' AND ${eligible('v.id',n)}
  AND NOT EXISTS(SELECT 1 FROM production_publisher_usage WHERE day=p.business_date OR post=v.post_id)`,id,n+180000,n,p.id,n,n),
  q(e,`INSERT INTO production_runner_sessions(job,runner,release,snapshot,expires_at) SELECT ?,?,?,snapshot,? FROM (${SNAPSHOT_SQL}) WHERE EXISTS(SELECT 1 FROM production_publisher_jobs WHERE id=?)`,id,b.runner,e.RELEASE_SHA!,n+180000,n,n,n,id),
- q(e,'UPDATE production_publisher_config SET active_job=? WHERE id=1 AND active_job IS NULL AND EXISTS(SELECT 1 FROM production_runner_sessions WHERE job=?) RETURNING active_job',id,id),q(e,JOB_SQL,id)]);
+ q(e,'UPDATE production_publisher_config SET active_job=? WHERE id=1 AND active_job IS NULL AND EXISTS(SELECT 1 FROM production_runner_sessions WHERE job=?) RETURNING active_job',id,id),q(e,CLAIM_VIEW_SQL,id)]);
  const receipt=created[2] as {results?:Row[]}|undefined;
  if(receipt?.results?.[0]?.active_job!==id)return answer({state:'claim_lost'});
  const claimed=(created[3] as {results?:Row[]}|undefined)?.results?.[0];if(!claimed)fail('RUNNER_JOB_UNKNOWN',404);
@@ -109,7 +112,6 @@ async function claim(e:RunnerBindings,b:Row,n:number,state:Row){
 async function route(r:Request,e:RunnerBindings,b:Row,n:number,state:Row){
  const path=new URL(r.url).pathname;
  if(path==='/runner/status'){only(b,[]);const blocked=['requested','unknown'].includes(state.job_state);return answer({state:blocked?state.job_state:live(state)?'armed':'closed',enabled:live(state)&&!blocked,armed:live(state),paused:state.paused_by_user===1,revision:state.revision,generation:state.operation_generation,release:e.RELEASE_SHA,serverNow:n,activeJob:state.active_job,counts:await first(e,"SELECT (SELECT count(*) FROM posts) posts,(SELECT count(*) FROM assets) assets,(SELECT count(*) FROM production_publisher_usage) publications,(SELECT count(*) FROM production_publisher_jobs WHERE state='unknown') unknown")});}
- if(path==='/runner/claim')return claim(e,b,n,state);
  only(b,path==='/runner/image'?['job','runner']:path==='/runner/proof'?['job','runner','checksum','bytes','checkVersion','connection']:path==='/runner/intent'?['job','runner']:path==='/runner/authorize'?['job','runner','attempt','grant']:path==='/runner/evidence'?['job','runner','attempt','result']:path==='/runner/finalize'?['job','runner','attempt']:[]);
  if(!uid(b.runner))fail('RUNNER_ID_INVALID',400);
  const j=await job(e,b.job);
@@ -180,21 +182,27 @@ async function dataPage(e:RunnerBindings,b:Row,n:number){
  if(!uid(b.runner))fail('RUNNER_ID_INVALID',400);
  if(typeof b.job!=='string'||!/^runner-job:[a-f0-9-]{36}$/.test(b.job))fail('RUNNER_JOB_INVALID',400);
  if(!Number.isInteger(b.group)||b.group<0||b.group>4||!Number.isInteger(b.offset)||b.offset<0||b.offset>120||b.offset%8!==0)fail('RUNNER_PAGE_INVALID',400);
- const select=approvalQueries('SELECT version FROM production_publisher_jobs WHERE id=?',[b.job])[b.group]!;
- // One read-only transaction: identity, leased job, fresh approval fence and
- // bounded raw rows. Never reuse an earlier request's eligibility result.
- const result=await batch(e,[q(e,identitySQL,day(n)),q(e,JOB_SQL,b.job),
-  q(e,`SELECT 1 ok FROM production_publisher_jobs j WHERE j.id=? AND j.state='held' AND ${fenceSQL(n)}`,b.job,...fenceArgs(e,b.runner,n)),
-  q(e,select.sql+' LIMIT 8 OFFSET ?',...select.values,b.offset)]) as {results:Row[]}[];
- const state=result[0]?.results[0],j=result[1]?.results[0];
+ const select=DATA_QUERIES[b.group]!;
+ // Two bounded SELECTs in one transaction. The first returns only the gate
+ // fields this route needs, rather than the caption and entire leased job.
+ const result=await batch(e,[q(e,`SELECT i.database_id,a.paused_by_user,a.maintenance_owner,a.blocked_reasons,c.enabled,c.blocked,
+  (SELECT count(*) FROM schema_migrations) migrations,(SELECT count(*) FROM schema_migrations WHERE name='0016_production_publisher_runner.sql') runner_schema,
+  j.id,j.state job_state,s.runner,s.release,s.expires_at,${fenceSQL(n)} approval_ok
+  FROM production_identity i JOIN application_state a ON a.environment=i.environment JOIN production_publisher_config c ON c.id=1
+  LEFT JOIN production_publisher_jobs j ON j.id=? LEFT JOIN production_runner_sessions s ON s.job=j.id
+  WHERE i.id=1 AND i.environment='production' AND i.schema_version=1`,...fenceArgs(e,b.runner,n),b.job),
+  q(e,select.sql+' LIMIT 8 OFFSET ?',...(b.group===3?[]:[b.job]),b.offset)]) as {results:Row[]}[];
+ const state=result[0]?.results[0];
  if(!state||state.database_id!==e.PRODUCTION_DATABASE_ID||state.migrations!==16||state.runner_schema!==1)fail('RUNNER_SCHEMA_INVALID');
- if(!j)fail('RUNNER_JOB_UNKNOWN',404);
- if(j.runner!==b.runner)fail('RUNNER_LEASE_OWNER');
- if(j.state!=='held')fail('RUNNER_PHASE_INVALID');
- if(j.expires_at<=n||j.release!==e.RELEASE_SHA||!live(state))fail('RUNNER_CLOSED_OR_EXPIRED');
- if(!result[2]?.results[0])fail('RUNNER_APPROVAL_CHANGED');
- const rows=result[3]!.results;return answer({rows,next:rows.length===8?b.offset+8:null,serverNow:n});
+ if(!state.id)fail('RUNNER_JOB_UNKNOWN',404);
+ if(state.runner!==b.runner)fail('RUNNER_LEASE_OWNER');
+ if(state.job_state!=='held')fail('RUNNER_PHASE_INVALID');
+ if(state.expires_at<=n||state.release!==e.RELEASE_SHA||!live(state))fail('RUNNER_CLOSED_OR_EXPIRED');
+ if(state.approval_ok!==1)fail('RUNNER_APPROVAL_CHANGED');
+ const rows=result[1]!.results;return answer({rows,next:rows.length===8?b.offset+8:null,serverNow:n});
 }
+// Cache only query text. Bind the current job and offset on every request.
+const DATA_QUERIES=approvalQueries('SELECT version FROM production_publisher_jobs WHERE id=?');
 export async function runnerAPI(request:Request,e:RunnerBindings,clock:()=>number=Date.now,reportError:(error:unknown)=>void=()=>{}):Promise<Response>{
  try{
   if(e.PRODUCTION_RUNNER_ENABLED!=='true'||e.PRODUCTION_PUBLISHER_ENABLED!=='false')return answer({error:'RUNNER_DISABLED'},503);
@@ -206,6 +214,12 @@ export async function runnerAPI(request:Request,e:RunnerBindings,clock:()=>numbe
   const reader=request.body?.getReader();let size=0,text='';const decoder=new TextDecoder();if(reader)while(true){const part=await reader.read();if(part.done)break;size+=part.value.length;if(size>8192){await reader.cancel();fail('RUNNER_BODY_TOO_LARGE',413);}text+=decoder.decode(part.value,{stream:true});}text+=decoder.decode();
   let input:Row;try{input=JSON.parse(text||'{}');}catch{return answer({error:'RUNNER_JSON_INVALID'},400);}if(!input||typeof input!=='object'||Array.isArray(input))fail('RUNNER_JSON_INVALID',400);
   const n=time(clock);if(new URL(request.url).pathname==='/runner/data')return await dataPage(e,input,n);
+  if(new URL(request.url).pathname==='/runner/claim'){
+   only(input,['runner']);if(!uid(input.runner))fail('RUNNER_ID_INVALID',400);
+   const date=day(n),read=await batch(e,[q(e,identitySQL,date),q(e,CLAIM_PERMIT_SQL,PRODUCTION_PAGE,date,n,n,n)]) as {results:Row[]}[];
+   const state=read[0]?.results[0];if(!state||state.database_id!==e.PRODUCTION_DATABASE_ID||state.migrations!==16||state.runner_schema!==1)fail('RUNNER_SCHEMA_INVALID');
+   return await claim(e,input,n,state,read[1]?.results[0]);
+  }
   const state=await first(e,identitySQL,day(n));if(!state||state.database_id!==e.PRODUCTION_DATABASE_ID||state.migrations!==16||state.runner_schema!==1)fail('RUNNER_SCHEMA_INVALID');
   return await route(request,e,input,n,state);
  }catch(error){reportError(error);return answer({error:error instanceof ProtocolError?error.message:'RUNNER_OPERATION_FAILED'},error instanceof ProtocolError?error.status:500);}
