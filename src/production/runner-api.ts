@@ -109,18 +109,18 @@ async function claim(e:RunnerBindings,b:Row,n:number,state:Row,p:Row|undefined){
  const claimed=(created[3] as {results?:Row[]}|undefined)?.results?.[0];if(!claimed)fail('RUNNER_JOB_UNKNOWN',404);
  return answer({state:'held',...requestView(claimed,n)});
 }
-async function route(r:Request,e:RunnerBindings,b:Row,n:number,state:Row){
+async function route(r:Request,e:RunnerBindings,b:Row,n:number,state:Row,loadedJob?:Row){
  const path=new URL(r.url).pathname;
  if(path==='/runner/status'){only(b,[]);const blocked=['requested','unknown'].includes(state.job_state);return answer({state:blocked?state.job_state:live(state)?'armed':'closed',enabled:live(state)&&!blocked,armed:live(state),paused:state.paused_by_user===1,revision:state.revision,generation:state.operation_generation,release:e.RELEASE_SHA,serverNow:n,activeJob:state.active_job,counts:await first(e,"SELECT (SELECT count(*) FROM posts) posts,(SELECT count(*) FROM assets) assets,(SELECT count(*) FROM production_publisher_usage) publications,(SELECT count(*) FROM production_publisher_jobs WHERE state='unknown') unknown")});}
  only(b,path==='/runner/image'?['job','runner']:path==='/runner/proof'?['job','runner','checksum','bytes','checkVersion','connection']:path==='/runner/intent'?['job','runner']:path==='/runner/authorize'?['job','runner','attempt','grant']:path==='/runner/evidence'?['job','runner','attempt','result']:path==='/runner/finalize'?['job','runner','attempt']:[]);
  if(!uid(b.runner))fail('RUNNER_ID_INVALID',400);
- const j=await job(e,b.job);
+ const j=loadedJob??await job(e,b.job);
  if(!['/runner/evidence','/runner/finalize'].includes(path)&&j.runner!==b.runner)fail('RUNNER_LEASE_OWNER');
  if(path==='/runner/image'||path==='/runner/proof'||path==='/runner/intent'){
   if(j.state!=='held')fail('RUNNER_PHASE_INVALID');
   if(j.expires_at<=n||j.release!==e.RELEASE_SHA||!live(state))fail('RUNNER_CLOSED_OR_EXPIRED');
   if(path!=='/runner/proof'){
-   const good=await first(e,`SELECT 1 ok FROM production_publisher_jobs j WHERE j.id=? AND ${fenceSQL(n)}`,j.id,...fenceArgs(e,b.runner,n));if(!good)fail('RUNNER_APPROVAL_CHANGED');
+   if(j.approval_ok!==1)fail('RUNNER_APPROVAL_CHANGED');
   }
  }
  if(path==='/runner/image'){
@@ -235,6 +235,25 @@ export async function runnerAPI(request:Request,e:RunnerBindings,clock:()=>numbe
    const date=day(n),read=await batch(e,[q(e,identitySQL,date),q(e,CLAIM_PERMIT_SQL,PRODUCTION_PAGE,date,n,n,n)]) as {results:Row[]}[];
    const state=read[0]?.results[0];if(!state||state.database_id!==e.PRODUCTION_DATABASE_ID||state.migrations!==16||state.runner_schema!==1)fail('RUNNER_SCHEMA_INVALID');
    return await claim(e,input,n,state,read[1]?.results[0]);
+  }
+  const path=new URL(request.url).pathname;
+  if(['/runner/image','/runner/proof','/runner/intent','/runner/authorize','/runner/evidence'].includes(path)){
+   if(!uid(input.runner))fail('RUNNER_ID_INVALID',400);
+   if(typeof input.job!=='string'||!/^runner-job:[a-f0-9-]{36}$/.test(input.job))fail('RUNNER_JOB_INVALID',400);
+   const fenced=path==='/runner/image'||path==='/runner/intent';
+   // One fresh read joins the environment gate and leased job. Image/intent
+   // also read the approval fence here; their later write still fences again.
+   const row=await first(e,`SELECT i.database_id,a.paused_by_user,a.maintenance_owner,a.blocked_reasons,c.enabled,c.blocked,c.connection_hash,
+    (SELECT count(*) FROM schema_migrations) migrations,(SELECT count(*) FROM schema_migrations WHERE name='0016_production_publisher_runner.sql') runner_schema,
+    ${path==='/runner/image'?'j.id,j.state,j.checksum':'j.*'},s.runner,s.release,s.expires_at,s.caption_hash,s.image_bytes,s.proof_until,s.fingerprint,
+    l.id image_id,l.storage_key,l.size_bytes,l.checksum file_checksum${fenced?','+fenceSQL(n)+' approval_ok':''}
+    FROM production_identity i JOIN application_state a ON a.environment=i.environment JOIN production_publisher_config c ON c.id=1
+    LEFT JOIN production_publisher_jobs j ON j.id=? LEFT JOIN production_runner_sessions s ON s.job=j.id
+    LEFT JOIN post_versions v ON v.id=j.version LEFT JOIN cloud_library l ON v.asset_id='library-'||l.id
+    WHERE i.id=1 AND i.environment='production' AND i.schema_version=1`,...(fenced?fenceArgs(e,input.runner,n):[]),input.job);
+   if(!row||row.database_id!==e.PRODUCTION_DATABASE_ID||row.migrations!==16||row.runner_schema!==1)fail('RUNNER_SCHEMA_INVALID');
+   if(!row.id||!row.runner||!row.image_id)fail('RUNNER_JOB_UNKNOWN',404);
+   return await route(request,e,input,n,row,row);
   }
   const state=await first(e,identitySQL,day(n));if(!state||state.database_id!==e.PRODUCTION_DATABASE_ID||state.migrations!==16||state.runner_schema!==1)fail('RUNNER_SCHEMA_INVALID');
   return await route(request,e,input,n,state);
