@@ -10,11 +10,27 @@ Luồng sáu giai đoạn và trạng thái quản lý/giám sát đạt kiểm 
 
 Bản `d180a35` giảm SDK/database overhead, đạt 450 kiểm thử local và CI Windows/Linux [37880594581](https://github.com/johntroger/nttu-digital-economics-publisher/actions/runs/37880594581). Probe 19 request chạy đúng toàn chuỗi nhưng vẫn có mẫu CPU vượt mục tiêu. Bằng chứng riêng được giữ trong `tmp/step38/f4/probe-1791517680812-{requests,tail}.json`. Số đo này không được gộp với phiên bản tối ưu tiếp theo.
 
+Bản `7114240` đạt 453 kiểm thử và [CI Windows/Linux](https://github.com/johntroger/nttu-digital-economics-publisher/actions/runs/37882130612). CF version `91da11b7-126a-41e7-8a90-2a3c4c5ddd8d`, deployment đo 5. Sau khi deploy có một probe nhận content từ release cũ: hàng rào release hủy job ở pha ảnh, không POST. Probe sau lan truyền chạy đúng toàn chuỗi. Lượt đo đầy đủ `publish-1791519150983` có 2.242 request / 706 sự kiện, đủ ít nhất 30 warm cho mọi pha, **vẫn chưa đạt CPU**:
+
+| Pha | Warm | Trung bình ms | p95 ms | Cao nhất ms |
+| --- | ---: | ---: | ---: | ---: |
+| Nội dung | 33 | 7,6 | 13 | 15 |
+| Ảnh | 35 | 6,1 | 12 | 12 |
+| Kết nối | 35 | 6,2 | 11 | 11 |
+| Gửi mock POST | 45 | 10,5 | 22 | 22 |
+| Đối soát GET | 37 | 6,0 | 12 | 14 |
+| Chốt evidence | 30 | 4,7 | 10 | 11 |
+| Monitor | 221 | 5,0 | 9 | 15 |
+
+Chỉ tính warm có `outcome=ok`, đúng CF version và deployment. Các request lỗi, cold, fixture reset và dữ liệu thô đã bỏ bí mật được giữ riêng; không bỏ đỉnh cao để làm đẹp kết quả. Không dùng số liệu phiên bản này để nghiệm thu ứng viên kế tiếp.
+
 ## Tối ưu tiếp theo trong F4
 
 Chốt projection phê duyệt và snapshot các trường điều kiện trong cùng transaction SELECT của D1. Ghi snapshot bất biến vào journal schema15 chưa phát hành. Trước intent và ngay trước POST, SQL so sánh lại snapshot cùng điều kiện hiện hành, khóa ngày/Page, lease, generation, revision, hạn proof và permit. Request POST vẫn đọc/xác minh bytes R2; nội dung phiên bản, review và file hoàn tất vẫn được bảo vệ bằng trigger bất biến. Không tin biên nhận do client tạo và không chuyển phép duyệt thành quyền đăng.
 
 Monitor tải thống kê cần thiết thay vì lịch sử thông báo và kiểm Meta cũ không dùng; giảm lượt đọc trạng thái trùng. Kiểm thử bổ sung: snapshot không sửa được; nguồn/phiên bản/hạn duyệt thay đổi; thay đổi trước claim và sau intent đều không POST. Thay đổi schema15 trong vòng lặp đo chỉ áp dụng lên clone; production hiện chưa có schema15.
+
+Ứng viên tiếp theo giảm leased read từ chín response D1 xuống hai, bỏ job snapshot và library metadata không dùng; giữ một transaction và fresh fences trước outbound. SHA/Blob dùng đúng lát ArrayBuffer, giữ checksum và bản sao bất biến của native API, tránh copy PNG thêm lần nữa. 454 kiểm thử local đạt, gồm upload/hash không đọc bytes nằm ngoài lát ảnh; còn phải qua CI và đo cloud của đúng phiên bản.
 
 ## Việc còn lại trước nghiệm thu
 

@@ -2,8 +2,18 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {liveFixture,LIVE_TEST_TIME as now} from './helpers/production-live-fixture.mjs';
 import {runProductionPublisher,publisherPreflight,pauseProductionPublisher,publisherAuthorized,reconcileProductionPublisher} from '../src/production/publisher-live.ts';
-import {ProductionMetaPublisher} from '../src/production/publisher-provider.ts';
+import {ProductionMetaPublisher,publicationHash,PRODUCTION_PAGE} from '../src/production/publisher-provider.ts';
 const sends=f=>f.calls.filter(c=>c.method==='POST').length;
+
+test('publisher hashes and uploads only the exact image slice, excluding surrounding buffer bytes',async()=>{
+ const f=await liveFixture();try{
+  const image=f.imageBytes.get(f.item.key);assert.ok(image);const backing=new Uint8Array(image.length+2);backing.fill(99);backing.set(image,1);const bytes=backing.subarray(1,-1),checksum=await publicationHash(image);
+  assert.equal(await publicationHash(bytes),checksum);assert.notEqual(await publicationHash(backing),checksum);
+  let uploads=0;const provider=new ProductionMetaPublisher(f.env,async(url,init)=>{uploads++;assert.equal(init.method,'POST');assert.deepEqual(new Uint8Array(await init.body.get('source').arrayBuffer()),new Uint8Array(image));return Response.json({post_id:f.remote});});
+  assert.equal((await provider.dispatch({attemptId:'image-slice',pageId:PRODUCTION_PAGE,caption:f.item.caption,checksum,bytes,sentAt:now})).kind,'unknown');assert.equal(uploads,1);
+  if(typeof SharedArrayBuffer!=='undefined'){const shared=new SharedArrayBuffer(backing.length);new Uint8Array(shared).set(backing);assert.equal(await publicationHash(new Uint8Array(shared,1,image.length)),checksum);}
+ }finally{f.db.close();}
+});
 test('Live schema migration remains disabled, empty and transactional; closed tick never touches a provider',async()=>{
  const f=await liveFixture();try{
   const before=f.db.prepare('SELECT total_changes() n').get().n,p=await publisherPreflight(f.env,now);assert.equal(p.state,'closed');assert.equal(p.counts.permits,0);assert.equal(f.db.prepare('SELECT total_changes() n').get().n,before);

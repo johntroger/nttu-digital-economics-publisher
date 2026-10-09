@@ -40,6 +40,32 @@ async function stock(e:PublisherBindings,c:Row,now:number){
  return result('day_complete');
 }
 type Initial={now:number;a:Row;c:Row;ev:Row|null;j:Row|null;p:Row|null;file:Row|null;permit:Row|null;used:Row|null};
+// A flat leased read avoids nine D1 response envelopes, repeated immutable job
+// snapshots, and unused library metadata. All gates still share one transaction.
+const groups={
+ a:['database_id','paused_by_user','maintenance_owner','blocked_reasons','operation_generation','migrations','publisher_schema','staged_schema'],
+ c:['enabled','revision','start_date','connection_hash','active_job','blocked','stock_pending','stock_level','stock_episode'],
+ ev:['attempt','response','sent_at','observed_at','job_id'],
+ j:['id','permit','day','post','version','caption','checksum','config_revision','operation_generation','state','tries','next_at','lease_until'],
+ p:['job','phase','revision','release','fingerprint','image_bytes','verified_at','proof_expires_at','approval_recorded'],
+ file:['id','storage_key','size_bytes','checksum'],
+ permit:['id','version_id','caption','checksum','business_date','due_at','expires_at','mode'],
+} as const;
+const aliases={a:'i',c:'c',ev:'ev',j:'j',p:'p',file:'l',permit:'q'} as const;
+const projection=Object.entries(groups).flatMap(([group,fields])=>fields.map(field=>{
+ const alias=aliases[group as keyof typeof aliases];
+ const value=group==='p'&&field==='approval_recorded'?'p.approval_snapshot IS NOT NULL':group==='permit'&&field==='caption'?'CASE WHEN c.active_job IS NULL THEN q.caption ELSE NULL END':`${alias}.${field}`;
+ return `${value} ${group}_${field}`;
+})).join(',');
+const initialReadSQL=`SELECT ${projection},EXISTS(SELECT 1 FROM production_publisher_usage WHERE day=?) used
+ FROM (${PUBLISHER_IDENTITY_SQL}) i JOIN production_publisher_config c ON c.id=1
+ LEFT JOIN (SELECT e.*,j.id job_id FROM production_publisher_evidence e JOIN production_publisher_attempts t ON t.id=e.attempt JOIN production_publisher_jobs j ON j.id=t.job WHERE e.applied=0 ORDER BY e.observed_at,e.attempt LIMIT 1) ev ON 1
+ LEFT JOIN production_publisher_jobs j ON j.id=coalesce(ev.job_id,c.active_job)
+ LEFT JOIN production_publisher_preparation p ON p.job=c.active_job
+ LEFT JOIN post_versions v ON v.id=j.version
+ LEFT JOIN cloud_library l ON v.asset_id='library-'||l.id AND j.id=c.active_job AND l.state='complete' AND l.checksum=j.checksum
+ LEFT JOIN production_send_permits q ON q.id=(SELECT permit.id FROM production_send_permits permit WHERE permit.page_id=? AND permit.business_date=? AND permit.revoked=0 AND permit.due_at<=? AND permit.expires_at>? AND permit.approved_at<=? AND (CASE WHEN c.active_job IS NOT NULL THEN permit.id=(SELECT permit FROM production_publisher_jobs WHERE id=c.active_job) ELSE NOT EXISTS(SELECT 1 FROM production_publisher_jobs consumed WHERE consumed.permit=permit.id AND consumed.state IN ('failed','cancelled','confirmed')) END) ORDER BY permit.due_at,permit.id LIMIT 1)`;
+function initialGroup(row:Row,group:keyof typeof groups,key:string){return row[group+'_'+key]==null?null:Object.fromEntries(groups[group].map(field=>[field,row[group+'_'+field]]));}
 async function operation(e:PublisherBindings,provider:ProductionMetaPublisher,clock:()=>number,initial:Initial){
  let now=validTime(clock()),a=assertPublisherIdentity(e,initial.a),c=initial.c;
  if(day(now)!==day(initial.now))return result('not_due');
@@ -128,16 +154,11 @@ export async function runStagedProductionPublisher(e:PublisherBindings,provider:
  const now=validTime(clock()),lease=crypto.randomUUID();
  // D1 batch keeps the leased read view atomic and avoids separate SDK/HTTP
  // response decoding for every small gate read. Intent still rechecks live SQL.
- const initialStatements=[s(e,'UPDATE production_publisher_runtime SET lease_id=?,lease_until=?,last_received_at=?,heartbeat_count=heartbeat_count+1,last_bucket=? WHERE id=1 AND (lease_until IS NULL OR lease_until<=?) AND (last_bucket IS NULL OR last_bucket<?) RETURNING id',lease,now+60000,now,Math.floor(now/60000),now,Math.floor(now/60000)),s(e,PUBLISHER_IDENTITY_SQL),s(e,'SELECT * FROM production_publisher_config WHERE id=1'),
- s(e,'SELECT e.*,j.id job_id FROM production_publisher_evidence e JOIN production_publisher_attempts t ON t.id=e.attempt JOIN production_publisher_jobs j ON j.id=t.job WHERE e.applied=0 ORDER BY e.observed_at,e.attempt LIMIT 1'),
- s(e,'SELECT * FROM production_publisher_jobs WHERE id=coalesce((SELECT t.job FROM production_publisher_evidence e JOIN production_publisher_attempts t ON t.id=e.attempt WHERE e.applied=0 ORDER BY e.observed_at,e.attempt LIMIT 1),(SELECT active_job FROM production_publisher_config WHERE id=1))'),
- s(e,'SELECT job,phase,revision,release,fingerprint,image_bytes,verified_at,proof_expires_at,approval_snapshot IS NOT NULL approval_recorded FROM production_publisher_preparation WHERE job=(SELECT active_job FROM production_publisher_config WHERE id=1)'),
- s(e,"SELECT l.* FROM production_publisher_jobs j JOIN post_versions v ON v.id=j.version JOIN cloud_library l ON v.asset_id='library-'||l.id WHERE j.id=(SELECT active_job FROM production_publisher_config WHERE id=1) AND l.state='complete' AND l.checksum=j.checksum"),
- s(e,`SELECT * FROM production_send_permits p WHERE p.page_id=? AND p.business_date=? AND p.revoked=0 AND p.due_at<=? AND p.expires_at>? AND p.approved_at<=? AND (CASE WHEN (SELECT active_job FROM production_publisher_config WHERE id=1) IS NOT NULL THEN p.id=(SELECT permit FROM production_publisher_jobs WHERE id=(SELECT active_job FROM production_publisher_config WHERE id=1)) ELSE NOT EXISTS(SELECT 1 FROM production_publisher_jobs j WHERE j.permit=p.id AND j.state IN ('failed','cancelled','confirmed')) END) ORDER BY p.due_at,p.id LIMIT 1`,PRODUCTION_PAGE,day(now),now+180000,now,now),s(e,'SELECT 1 FROM production_publisher_usage WHERE day=?',day(now))];
+ const initialStatements=[s(e,'UPDATE production_publisher_runtime SET lease_id=?,lease_until=?,last_received_at=?,heartbeat_count=heartbeat_count+1,last_bucket=? WHERE id=1 AND (lease_until IS NULL OR lease_until<=?) AND (last_bucket IS NULL OR last_bucket<?) RETURNING id',lease,now+60000,now,Math.floor(now/60000),now,Math.floor(now/60000)),s(e,initialReadSQL,day(now),PRODUCTION_PAGE,day(now),now+180000,now,now)];
  const initialRows=await batch(e,initialStatements) as {results:Row[]}[],claimed=initialRows[0]?.results[0];
  if(!claimed)return result('coalesced');
- const at=(index:number)=>initialRows[index]?.results[0]??null;
- const initial:Initial={now,a:at(1)!,c:at(2)!,ev:at(3),j:at(4),p:at(5),file:at(6),permit:at(7),used:at(8)};
+ const view=initialRows[1]?.results[0];if(!view)throw Error('BROKEN_PUBLISHER_IDENTITY');
+ const initial:Initial={now,a:initialGroup(view,'a','database_id')!,c:initialGroup(view,'c','enabled')!,ev:initialGroup(view,'ev','attempt'),j:initialGroup(view,'j','id'),p:initialGroup(view,'p','job'),file:initialGroup(view,'file','id'),permit:initialGroup(view,'permit','id'),used:view.used?{used:1}:null};
  const original=e.DB!,started=performance.now();let queries=1+initialStatements.length,state='failed';
  const counted:StagedBindings={...e,__publisherLease:lease,DB:{prepare(q){if(++queries>36)throw Error('PUBLISHER_QUERY_BUDGET');return original.prepare(q);},batch:q=>original.batch!(q)}};
  try{const r=await operation(counted,provider,clock,initial);state=r.state;return {...r,queries:queries+1};}

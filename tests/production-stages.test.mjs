@@ -119,7 +119,7 @@ test('F4 SQL approval receipt cannot change and detects eligibility edits before
   if(mode==='version')f.db.prepare("UPDATE post_versions SET status='quarantined' WHERE id=?").run(f.item.versionId);
   if(mode==='source')f.db.exec("UPDATE sources SET status='blocked'");
   if(mode==='expiry')f.db.exec("UPDATE sources SET review_due_at='2026-10-08T02:02:30.000Z'");
-  if(mode==='after-intent'){const original=f.env.DB.batch;f.env.DB.batch=async q=>{const r=await original(q);if(q.length===2)f.db.exec("UPDATE sources SET status='blocked'");return r;};}
+  if(mode==='after-intent'){const original=f.env.DB.batch;f.env.DB.batch=async q=>{const r=await original(q);if(f.db.prepare('SELECT count(*) n FROM production_publisher_attempts').get().n)f.db.exec("UPDATE sources SET status='blocked'");return r;};}
   await f.tick();assert.equal(sends(f),0);
   assert.equal(f.db.prepare('SELECT count(*) n FROM production_publisher_attempts').get().n,mode==='after-intent'?1:0);
  }finally{f.db.close();}}
