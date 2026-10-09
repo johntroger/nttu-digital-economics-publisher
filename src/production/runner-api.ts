@@ -110,21 +110,16 @@ async function route(r:Request,e:RunnerBindings,b:Row,n:number,state:Row){
  const path=new URL(r.url).pathname;
  if(path==='/runner/status'){only(b,[]);const blocked=['requested','unknown'].includes(state.job_state);return answer({state:blocked?state.job_state:live(state)?'armed':'closed',enabled:live(state)&&!blocked,armed:live(state),paused:state.paused_by_user===1,revision:state.revision,generation:state.operation_generation,release:e.RELEASE_SHA,serverNow:n,activeJob:state.active_job,counts:await first(e,"SELECT (SELECT count(*) FROM posts) posts,(SELECT count(*) FROM assets) assets,(SELECT count(*) FROM production_publisher_usage) publications,(SELECT count(*) FROM production_publisher_jobs WHERE state='unknown') unknown")});}
  if(path==='/runner/claim')return claim(e,b,n,state);
- only(b,path==='/runner/data'?['job','runner','group','offset']:path==='/runner/image'?['job','runner']:path==='/runner/proof'?['job','runner','checksum','bytes','checkVersion','connection']:path==='/runner/intent'?['job','runner']:path==='/runner/authorize'?['job','runner','attempt','grant']:path==='/runner/evidence'?['job','runner','attempt','result']:path==='/runner/finalize'?['job','runner','attempt']:[]);
+ only(b,path==='/runner/image'?['job','runner']:path==='/runner/proof'?['job','runner','checksum','bytes','checkVersion','connection']:path==='/runner/intent'?['job','runner']:path==='/runner/authorize'?['job','runner','attempt','grant']:path==='/runner/evidence'?['job','runner','attempt','result']:path==='/runner/finalize'?['job','runner','attempt']:[]);
  if(!uid(b.runner))fail('RUNNER_ID_INVALID',400);
  const j=await job(e,b.job);
  if(!['/runner/evidence','/runner/finalize'].includes(path)&&j.runner!==b.runner)fail('RUNNER_LEASE_OWNER');
- if(path==='/runner/data'||path==='/runner/image'||path==='/runner/proof'||path==='/runner/intent'){
+ if(path==='/runner/image'||path==='/runner/proof'||path==='/runner/intent'){
   if(j.state!=='held')fail('RUNNER_PHASE_INVALID');
   if(j.expires_at<=n||j.release!==e.RELEASE_SHA||!live(state))fail('RUNNER_CLOSED_OR_EXPIRED');
   if(path!=='/runner/proof'){
    const good=await first(e,`SELECT 1 ok FROM production_publisher_jobs j WHERE j.id=? AND ${fenceSQL(n)}`,j.id,...fenceArgs(e,b.runner,n));if(!good)fail('RUNNER_APPROVAL_CHANGED');
   }
- }
- if(path==='/runner/data'){
-  if(!Number.isInteger(b.group)||b.group<0||b.group>4||!Number.isInteger(b.offset)||b.offset<0||b.offset>120||b.offset%8!==0)fail('RUNNER_PAGE_INVALID',400);
-  const select=approvalQueries('?',[j.version])[b.group]!,rows=(await q(e,select.sql+' LIMIT 8 OFFSET ?',...select.values,b.offset).all!<Row>()).results;
-  return answer({rows,next:rows.length===8?b.offset+8:null,serverNow:n});
  }
  if(path==='/runner/image'){
   const file=await e.MEDIA!.get(j.storage_key);if(!file||file.size!==j.size_bytes||file.size<1||file.size>5242880)fail('RUNNER_FILE_INVALID');
@@ -180,6 +175,26 @@ async function route(r:Request,e:RunnerBindings,b:Row,n:number,state:Row){
  }
  return answer({error:'RUNNER_ROUTE_UNKNOWN'},404);
 }
+async function dataPage(e:RunnerBindings,b:Row,n:number){
+ only(b,['job','runner','group','offset']);
+ if(!uid(b.runner))fail('RUNNER_ID_INVALID',400);
+ if(typeof b.job!=='string'||!/^runner-job:[a-f0-9-]{36}$/.test(b.job))fail('RUNNER_JOB_INVALID',400);
+ if(!Number.isInteger(b.group)||b.group<0||b.group>4||!Number.isInteger(b.offset)||b.offset<0||b.offset>120||b.offset%8!==0)fail('RUNNER_PAGE_INVALID',400);
+ const select=approvalQueries('SELECT version FROM production_publisher_jobs WHERE id=?',[b.job])[b.group]!;
+ // One read-only transaction: identity, leased job, fresh approval fence and
+ // bounded raw rows. Never reuse an earlier request's eligibility result.
+ const result=await batch(e,[q(e,identitySQL,day(n)),q(e,JOB_SQL,b.job),
+  q(e,`SELECT 1 ok FROM production_publisher_jobs j WHERE j.id=? AND j.state='held' AND ${fenceSQL(n)}`,b.job,...fenceArgs(e,b.runner,n)),
+  q(e,select.sql+' LIMIT 8 OFFSET ?',...select.values,b.offset)]) as {results:Row[]}[];
+ const state=result[0]?.results[0],j=result[1]?.results[0];
+ if(!state||state.database_id!==e.PRODUCTION_DATABASE_ID||state.migrations!==16||state.runner_schema!==1)fail('RUNNER_SCHEMA_INVALID');
+ if(!j)fail('RUNNER_JOB_UNKNOWN',404);
+ if(j.runner!==b.runner)fail('RUNNER_LEASE_OWNER');
+ if(j.state!=='held')fail('RUNNER_PHASE_INVALID');
+ if(j.expires_at<=n||j.release!==e.RELEASE_SHA||!live(state))fail('RUNNER_CLOSED_OR_EXPIRED');
+ if(!result[2]?.results[0])fail('RUNNER_APPROVAL_CHANGED');
+ const rows=result[3]!.results;return answer({rows,next:rows.length===8?b.offset+8:null,serverNow:n});
+}
 export async function runnerAPI(request:Request,e:RunnerBindings,clock:()=>number=Date.now,reportError:(error:unknown)=>void=()=>{}):Promise<Response>{
  try{
   if(e.PRODUCTION_RUNNER_ENABLED!=='true'||e.PRODUCTION_PUBLISHER_ENABLED!=='false')return answer({error:'RUNNER_DISABLED'},503);
@@ -190,7 +205,8 @@ export async function runnerAPI(request:Request,e:RunnerBindings,clock:()=>numbe
   // Actual bytes are bounded, not just the untrusted Content-Length header.
   const reader=request.body?.getReader();let size=0,text='';const decoder=new TextDecoder();if(reader)while(true){const part=await reader.read();if(part.done)break;size+=part.value.length;if(size>8192){await reader.cancel();fail('RUNNER_BODY_TOO_LARGE',413);}text+=decoder.decode(part.value,{stream:true});}text+=decoder.decode();
   let input:Row;try{input=JSON.parse(text||'{}');}catch{return answer({error:'RUNNER_JSON_INVALID'},400);}if(!input||typeof input!=='object'||Array.isArray(input))fail('RUNNER_JSON_INVALID',400);
-  const n=time(clock),state=await first(e,identitySQL,day(n));if(!state||state.database_id!==e.PRODUCTION_DATABASE_ID||state.migrations!==16||state.runner_schema!==1)fail('RUNNER_SCHEMA_INVALID');
+  const n=time(clock);if(new URL(request.url).pathname==='/runner/data')return await dataPage(e,input,n);
+  const state=await first(e,identitySQL,day(n));if(!state||state.database_id!==e.PRODUCTION_DATABASE_ID||state.migrations!==16||state.runner_schema!==1)fail('RUNNER_SCHEMA_INVALID');
   return await route(request,e,input,n,state);
  }catch(error){reportError(error);return answer({error:error instanceof ProtocolError?error.message:'RUNNER_OPERATION_FAILED'},error instanceof ProtocolError?error.status:500);}
 }

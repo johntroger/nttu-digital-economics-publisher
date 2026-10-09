@@ -28,7 +28,9 @@ Bản `810af6f` giảm hai round trip D1 ở claim, max warm8ms. Lượt đo `mo
 
 `88396a3` dùng CTE nguyên tử cho proof, kiểm version/snapshot/gate ngay trong UPDATE và giảm hai lượt đọc; token capability cố định64 ký tự được so sánh đủ64 vị trí thay vì hash hai lần. 468 kiểm thử,13 nhóm runner và native đạt; CI Windows/Linux37906088097 đạt. Lượt `mock-1791535402823` hoàn thành61 pipeline mock nhưng dừng vì claim warm11ms; còn thiếu30 warm ở một số API. Không nghiệm thu, không gộp mẫu.
 
-Ứng viên tiếp theo đọc job ngay trong transaction claim, chỉ lấy bốn cột permit cần dùng và cache chuỗi SQL snapshot; kết quả dữ liệu/phê duyệt và thời gian vẫn được đọc mới. Kết quả cuối cập nhật sau CI và đo cloud đúng release. Chưa có phép mở cửa production từ hồ sơ này.
+`e5530e0` đọc job ngay trong transaction claim, chỉ lấy bốn cột permit cần dùng và cache chuỗi SQL snapshot; kết quả dữ liệu/phê duyệt và thời gian vẫn được đọc mới. 468 kiểm thử/native và CI37908445760 đạt. Lượt `mock-1791536848585` bị ngắt khi OAuth đọc tail hết hạn; tiếp tục cùng CF version58c86fe6 trong `mock-1791537164375`, giữ mẫu đúng deployment và ghi riêng gap hạ tầng. Lượt tiếp tục hoàn thành42 pipeline mock nhưng data cold13/11ms, chưa đạt. Helper đã bổ sung refresh OAuth, thu hồi tail bị bỏ lại và lưu kết quả ngay cả khi cleanup tail lỗi.
+
+Ứng viên tiếp theo gộp identity/job/fence/raw data trong một transaction SELECT cho mỗi trang, giữ giới hạn8 dòng và kiểm mới; bỏ đường đọc dữ liệu trùng. 14 nhóm runner đạt, gồm năm nhóm dữ liệu đều không trả rows khi nguồn đổi sau claim. Kết quả cuối cập nhật sau CI và đo cloud đúng release. Chưa có phép mở cửa production từ hồ sơ này. Phạm vi tích hợp đề nghị ở [F6](38-f6-closed-integration-proposal.md) chưa được duyệt.
 
 ## Hồ sơ triển khai đóng cho bước tiếp theo
 

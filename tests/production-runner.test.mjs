@@ -30,6 +30,15 @@ test('F5 proof rechecks mutable approval at the write even after earlier reads s
   }finally{await f.dispose();}
  }
 });
+test('F5 every data group denies rows when the approval changes after claim',async()=>{
+ for(let group=0;group<5;group++){
+  const f=await runnerFixture();try{
+   const runner=randomUUID(),claim=await f.request('/runner/claim',{runner}),held=await claim.json();assert.equal(held.state,'held');
+   f.db.exec("UPDATE sources SET status='blocked'");
+   const response=await f.request('/runner/data',{job:held.job,runner,group,offset:0}),body=await response.json();assert.equal(response.status,409);assert.equal(body.error,'RUNNER_APPROVAL_CHANGED');assert.equal(body.rows,undefined);assert.equal(f.postCount(),0);assert.equal(count(f,'production_publisher_attempts'),0);
+  }finally{await f.dispose();}
+ }
+});
 test('F5 pause/revocation and source/version changes before or after intent never POST',async()=>{
  for(const stage of ['before_intent','after_intent'])for(const mode of ['pause','permit','source','version','generation','release']){
   const f=await runnerFixture();try{const r=await run({...f.options,hook:async point=>{if(point!==stage)return;if(mode==='pause')f.db.exec("UPDATE application_state SET paused_by_user=1 WHERE environment='production'");if(mode==='permit')f.db.exec('UPDATE production_send_permits SET revoked=1');if(mode==='source')f.db.exec("UPDATE sources SET status='blocked'");if(mode==='version')f.db.exec('UPDATE post_versions SET check_version=check_version+1');if(mode==='generation')f.db.exec('UPDATE application_state SET operation_generation=operation_generation+1');if(mode==='release')f.env.RELEASE_SHA='f'.repeat(40);}});assert.equal(f.postCount(),0,stage+mode+JSON.stringify(r));assert.equal(count(f,'production_publisher_attempts'),stage==='before_intent'?0:1);}finally{await f.dispose();}
