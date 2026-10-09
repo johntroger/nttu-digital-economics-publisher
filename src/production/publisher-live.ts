@@ -1,5 +1,5 @@
 import type {ManagementBindings} from './management.ts';
-import {productionState} from './management.ts';
+import {productionState,productionPublishingEnabled} from './management.ts';
 import {approvedProductionItems} from './preview.ts';
 import {assertPublisherBoundary} from './publisher-boundary.ts';
 import {ProductionMetaPublisher,PRODUCTION_PAGE,publicationHash} from './publisher-provider.ts';
@@ -20,12 +20,13 @@ export async function publisherImageBytes(e:ManagementBindings,file:Row){
  try{return await Promise.race([verifiedBytes(e,file),new Promise<never>((_,reject)=>{timer=setTimeout(()=>reject(Error('R2_READ_TIMEOUT')),5000);})]);}
  finally{if(timer)clearTimeout(timer);}
 }
-export async function publisherIdentity(e:PublisherBindings){
+export const PUBLISHER_IDENTITY_SQL="SELECT i.database_id,a.paused_by_user,a.maintenance_owner,a.blocked_reasons,a.operation_generation,(SELECT count(*) FROM schema_migrations) migrations,(SELECT count(*) FROM schema_migrations WHERE name='0014_production_publisher.sql') publisher_schema,(SELECT count(*) FROM schema_migrations WHERE name='0015_production_publisher_stages.sql') staged_schema FROM production_identity i JOIN application_state a ON a.environment=i.environment WHERE i.id=1 AND i.environment='production' AND i.schema_version=1";
+export function assertPublisherIdentity(e:PublisherBindings,i:Row|null|undefined){
  assertPublisherBoundary(e.APP_ENV??'',e.META_PAGE_ID??'',e.PRODUCTION_DATABASE_ID??'',e.PRODUCTION_ASSET_BUCKET??'');
  if(e.INTEGRATION_MODE!=='management'||!e.DB?.batch||e.DAILY_PUBLISHING_ENABLED!=='false'||! /^[a-f0-9]{40}$/.test(e.RELEASE_SHA??''))throw Error('LIVE_PUBLISHER_BOUNDARY_INVALID');
- const i=await one(e,"SELECT i.database_id,a.paused_by_user,a.maintenance_owner,a.blocked_reasons,a.operation_generation,(SELECT count(*) FROM schema_migrations) migrations,(SELECT count(*) FROM schema_migrations WHERE name='0014_production_publisher.sql') publisher_schema FROM production_identity i JOIN application_state a ON a.environment=i.environment WHERE i.id=1 AND i.environment='production' AND i.schema_version=1");
  if(!i||i.database_id!==e.PRODUCTION_DATABASE_ID||![14,15].includes(i.migrations)||i.publisher_schema!==1)throw Error('LIVE_PUBLISHER_SCHEMA_INVALID');return i;
 }
+export async function publisherIdentity(e:PublisherBindings){return assertPublisherIdentity(e,await one(e,PUBLISHER_IDENTITY_SQL));}
 const identity=publisherIdentity;
 const runtimeGate=(e:PublisherBindings,c:Row,a:Row)=>e.PRODUCTION_PUBLISHER_ENABLED==='true'&&c.enabled===1&&a.paused_by_user===0&&a.maintenance_owner===null&&a.blocked_reasons==='[]'&&!c.blocked;
 function event(e:ManagementBindings,id:string,kind:string,guard:string,args:Value[]=[],extra:Row={}){
@@ -61,10 +62,11 @@ async function saveEvidence(e:ManagementBindings,j:Row,attempt:string,result:Pub
 }
 // No permit creation/activation operation is exposed in B37.
 export async function publisherPreflight(e:PublisherBindings,now=Date.now()){
- await productionState(e);const schema=await one(e,"SELECT 1 FROM schema_migrations WHERE name='0014_production_publisher.sql'");
+ const state=await productionState(e);const schema=await one(e,"SELECT 1 FROM schema_migrations WHERE name='0014_production_publisher.sql'");
  if(!schema)return {schemaReady:false,state:'closed',publishingEnabled:false};
  const [config,runtime,counts]=await Promise.all([one(e,'SELECT enabled,revision,start_date,blocked,publish_time,timezone FROM production_publisher_config WHERE id=1'),one(e,'SELECT last_received_at,last_complete_at,heartbeat_count,state,last_queries,last_duration_ms FROM production_publisher_runtime WHERE id=1'),one(e,"SELECT (SELECT count(*) FROM production_send_permits WHERE revoked=0) permits,(SELECT count(*) FROM production_publisher_jobs WHERE state IN ('held','requested','retry_wait')) in_flight,(SELECT count(*) FROM production_publisher_jobs WHERE state='unknown') unknown,(SELECT count(*) FROM production_publisher_usage) publications")]);
- return {schemaReady:true,state:counts!.unknown?'unknown':counts!.in_flight?'in_flight':'closed',publishingEnabled:false,checkedAt:new Date(now).toISOString(),serverDate:day(now),publishTime:POLICY.publishTime,timeZone:POLICY.timeZone,config,runtime,counts,
+ const publishingEnabled=productionPublishingEnabled(e,state,config!.enabled,config!.blocked);
+ return {schemaReady:true,state:counts!.unknown?'unknown':counts!.in_flight?'in_flight':publishingEnabled?'armed':'closed',publishingEnabled,paused:state.paused_by_user===1,checkedAt:new Date(now).toISOString(),serverDate:day(now),publishTime:POLICY.publishTime,timeZone:POLICY.timeZone,config,runtime,counts,
   gates:{deployment:e.PRODUCTION_PUBLISHER_ENABLED==='true',database:config!.enabled===1,ownerPublicationApproval:counts!.permits>0,httpPublisher:!!e.PRODUCTION_PUBLISHER_TOKEN},realPublication:counts!.publications===0?'NOT_RUN':'RECORDED'};
 }
 export async function publisherAuthorized(request:Request,e:PublisherBindings){

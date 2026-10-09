@@ -19,6 +19,8 @@ test('F4 harness preserves real publisher phases but routes every Graph call to 
   const reset=await cpuFetch(request('/reset'),f.env,wire);assert.equal(reset.status,200,await reset.text());
   for(const [i,state] of ['content_prepared','image_prepared','connection_prepared','evidence_recorded','evidence_verified','confirmed'].entries()){
    const r=await cpuFetch(request('/tick/'+i,{at:at+i*60000}),f.env,wire),body=await r.json();assert.equal(r.status,200,JSON.stringify(body));assert.equal(body.state,state);
+   const summary=await (await cpuFetch(request('/summary',{at:at+i*60000}),f.env,wire)).json();assert.equal(summary.publishingEnabled,state!=='confirmed');assert.equal(summary.paused,state==='confirmed');
+   const monitor=await cpuFetch(request('/monitor',{at:at+i*60000}),f.env,wire),status=await monitor.json();assert.equal(monitor.status,200,JSON.stringify(status));assert.equal(status.publishingEnabled,summary.publishingEnabled);assert.equal(status.paused,summary.paused);
   }assert.equal(posts,1);assert.equal(f.db.prepare('SELECT count(*) n FROM production_publisher_usage').get().n,1);
   assert.equal(f.db.prepare("SELECT count(*) n FROM notification_outbox WHERE event_id='copied-history'").get().n,1);
   assert.equal((await cpuFetch(request('/reset'),f.env,wire)).status,200);

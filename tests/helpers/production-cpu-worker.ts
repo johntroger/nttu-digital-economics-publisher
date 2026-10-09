@@ -9,6 +9,7 @@ import {productionPreparation} from '../../src/production/preparation.ts';
 import {managementSummary,managementPostPage,managementPostDetail,managementSection} from '../../src/production/management.ts';
 import {metaFingerprint} from '../../src/cloud/meta.ts';
 import {businessDate} from '../../src/domain/policy.ts';
+import {productionMonitorStatus} from '../../src/production/operations.ts';
 type Env=PublisherBindings&{CPU_TEST_MODE?:string;CPU_TEST_DATABASE_ID?:string;CPU_TEST_TOKEN?:string;CPU_MOCK_ORIGIN?:string;CPU_DEPLOYMENT?:string};
 let first=true;
 const val=(e:Env,q:string,...v:(string|number|null)[])=>e.DB!.prepare(q).bind(...v);
@@ -47,10 +48,11 @@ export async function cpuFetch(request:Request,e:Env,transport:typeof fetch=fetc
  const closedEnv={...env,PRODUCTION_PUBLISHER_ENABLED:'false'};
  if(url.pathname==='/preview'||url.pathname.startsWith('/preview/'))return Response.json({...await productionPreviewPage(closedEnv,input.cursor?{cursor:input.cursor}:{},input.at),cold});
  if(url.pathname.startsWith('/preparation/')){const phase=url.pathname.split('/').at(-1)!;return Response.json({...await productionPreparation(closedEnv,input.receipt?{receipt:input.receipt}:{versionId:input.key},wire,()=>input.at,phase),cold});}
- if(url.pathname==='/summary')return Response.json({...await managementSummary(closedEnv),cold});
- if(url.pathname==='/posts')return Response.json({...await managementPostPage(closedEnv,input.cursor,input.at),cold});
- if(url.pathname==='/detail')return Response.json({...await managementPostDetail(closedEnv,input.key!),cold});
- if(url.pathname==='/library')return Response.json({...await managementSection(closedEnv,'library'),cold});
+ if(url.pathname==='/summary')return Response.json({...await managementSummary(env),cold});
+ if(url.pathname==='/posts')return Response.json({...await managementPostPage(env,input.cursor,input.at),cold});
+ if(url.pathname==='/detail')return Response.json({...await managementPostDetail(env,input.key!),cold});
+ if(url.pathname==='/library')return Response.json({...await managementSection(env,'library'),cold});
+ if(url.pathname==='/monitor')return Response.json({...await productionMonitorStatus(env,{now:input.at,transport:wire}),cold});
  throw Error('F4_ROUTE_UNKNOWN');
  }catch(error){return Response.json({error:error instanceof Error?error.message:'F4_FAILURE'},{status:500});}
 }

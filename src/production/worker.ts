@@ -4,7 +4,7 @@ import type {PublisherBindings} from './publisher-live.ts';
 import {ProductionMetaPublisher} from './publisher-provider.ts';
 import {productionPreparation} from './preparation.ts';
 import type {ManagementBindings} from './management.ts';
-import {productionState,managementSummary,managementPostPage,managementPostDetail,managementSection,productionFile} from './management.ts';
+import {productionState,productionRuntimeState,managementSummary,managementPostPage,managementPostDetail,managementSection,productionFile} from './management.ts';
 import {productionPreviewPage} from './preview.ts';
 import {startGoogle,completeGoogle,ownerSession,requireMutation,clearSessionCookie,authConfigured} from '../cloud/auth.ts';
 import {productionMetaStatus,verifyProductionMeta} from './meta.ts';
@@ -33,7 +33,7 @@ export default {
     // Keep the outer guard for all other routes; do not repeat the same D1 read.
     const guardedRead=request.method==='GET'&&(url.pathname==='/api/production/preview'||url.pathname==='/api/management'||url.pathname.startsWith('/api/management/'));
     const preparationRoute=/^\/api\/production\/send-preflight(?:\/(content|image|connection|finalize))?$/.exec(url.pathname);
-    if(!guardedRead&&!(request.method==='POST'&&preparationRoute))await productionState(env);
+    const outerState=!guardedRead&&!(request.method==='POST'&&preparationRoute)?await productionState(env):null;
     if(url.pathname==='/api/production/tick'){
       if(request.method!=='POST')return json({error:'METHOD_NOT_ALLOWED'},405);
       if(url.search||!await triggerAuthorized(request,env))return json({error:'TRIGGER_AUTH_REQUIRED'},401);
@@ -42,7 +42,7 @@ export default {
       try{return json(await runProductionHttpTick(env));}catch{return json({error:'TRIGGER_UNAVAILABLE'},503);}
     }
     if(url.pathname==='/health'&&request.method==='GET')return json({environment:'production',phase:'management',release:env.RELEASE_SHA,
-      databaseChecked:true,publisherAdapterImplemented:true,publishingImplemented:false,publishingEnabled:false,schedulerImplemented:false,operationsSchedulerImplemented:true,ownerLoginConfigured:authConfigured(env)});
+      databaseChecked:true,publisherAdapterImplemented:true,publishingImplemented:false,...await productionRuntimeState(env,outerState!),schedulerImplemented:false,operationsSchedulerImplemented:true,ownerLoginConfigured:authConfigured(env)});
     if(url.pathname==='/api/production/monitor'&&request.method==='GET'){
       if(!await monitorAuthorized(request,env))return json({error:'MONITOR_AUTH_REQUIRED'},401);
       return json(await productionMonitorStatus(env));
