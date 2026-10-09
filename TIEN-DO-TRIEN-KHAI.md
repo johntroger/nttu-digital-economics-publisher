@@ -159,3 +159,7 @@ F3 được phê duyệt; HTTP publisher chuyển sang một giai đoạn mỗi 
 ### 09/10/2026 — F4 đã duyệt, đang tối ưu và đo cloud
 
 Luồng giả lập sáu pha đạt chức năng, nhưng CPU gửi/monitor và một mẫu finalizer vượt mục tiêu; chưa nghiệm thu. Đang giảm SDK/database overhead và dùng snapshot phê duyệt bất biến để kiểm lại trong SQL. Bản d180a35 đạt 450 kiểm thử và CI Windows/Linux; phiên bản tiếp theo phải kiểm thử/đo lại riêng. Production vẫn F2/schema14 với cửa đóng; không Facebook POST thật hoặc nâng gói. Báo cáo hiện hành: docs/steps/38-f4-cloud-acceptance.md; draft PR14. F4 không cấp phép đăng bài thật.
+
+### 09/10/2026 — kết quả F4 và đề xuất F5 chờ duyệt
+
+Bản47c59d7 đạt455 kiểm thử local, kiểm tra ảnh và CI Windows/Linux37896741427. Cloud clone chạy đúng chức năng nhưng content15/send15/monitor17 ms, chưa đạt ngân sách10 ms; đã dừng đo và xóa hai Worker/mock cùng D1 clone, thu hồi token đo. Giữ backup SQL thật và bằng chứng đã bỏ bí mật. Đọc lại production:40 bài/56 asset/schema14, permit/job/intent/publication0, enabled0/paused1; không rollout. F4 chưa nghiệm thu. Đề xuất runner Node GitHub Actions + API Worker nhỏ tại docs/steps/38-f5-free-runner-proposal.md; F5 chưa duyệt, chưa code, chưa di chuyển secret hay thay cron/main.

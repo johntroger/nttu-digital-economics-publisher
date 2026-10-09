@@ -36,6 +36,10 @@ Bản `7343e6f` đã đạt [CI Windows/Linux 37884100902](https://github.com/jo
 
 Ứng viên mới đóng gói multipart bằng Blob một lần thay vì serialize FormData thêm lần nữa; giữ nguyên bytes/checksum, kiểm lại UTF-8 caption và dữ liệu nguồn bằng HTTP parser cho cả send/dispatch. 455 kiểm thử local đạt. Bộ đo dừng sớm khi vượt 10 ms, vẫn yêu cầu ít nhất 30 warm mỗi endpoint để đạt, và làm mới tail cả lượt reads/stock. Chưa có kết quả CPU cloud cho ứng viên này; không coi thay đổi đóng gói là đã giải quyết lỗi.
 
+Bản multipart `47c59d7` đạt [CI Windows/Linux 37896741427](https://github.com/johntroger/nttu-digital-economics-publisher/actions/runs/37896741427). Deployment7 đo trong `publish-1791529657845`: 19 request chức năng đúng, 16 sự kiện, nhưng content15/image11/send15/monitor17 ms. Max22 gồm fixture; không quy con số22 cho publisher. Bộ đo đã dừng, tự đóng tail và dọn cache. Chưa đủ30 warm và **không đạt** ngay vì có mẫu vượt10 ms; không tiếp tục lặp để tìm một lượt đẹp hơn. Production được đọc lại sau lượt đo: 40 bài, 56 asset, schema14, permit/job/intent/publication0, enabled0, paused1. Không rollout. Đề xuất thay đổi phạm vi tại `38-f5-free-runner-proposal.md` chờ duyệt.
+
+Đã xóa hai Worker đo/mock và D1 clone thuộc F4; ledger giữ ID kiểm toán nhưng bỏ token và đánh dấu deleted. Giữ backup thật, log triển khai/CI và số đo đã bỏ bí mật. Cấu hình clone/SQL fixture và helper tạm được dọn sau khi tiến trình đóng. F4 vẫn chưa hoàn tất nghiệm thu; kế hoạch rollout bên dưới là điều kiện còn thiếu, không phải thao tác đã thực hiện.
+
 ## Việc còn lại trước nghiệm thu
 
 1. Chốt kiểm thử local, native và CI của đúng phiên bản ứng viên.
