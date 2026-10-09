@@ -64,7 +64,12 @@ async function saveEvidence(e:ManagementBindings,j:Row,attempt:string,result:Pub
 export async function publisherPreflight(e:PublisherBindings,now=Date.now()){
  const state=await productionState(e);const schema=await one(e,"SELECT 1 FROM schema_migrations WHERE name='0014_production_publisher.sql'");
  if(!schema)return {schemaReady:false,state:'closed',publishingEnabled:false};
- const [config,runtime,counts]=await Promise.all([one(e,'SELECT enabled,revision,start_date,blocked,publish_time,timezone FROM production_publisher_config WHERE id=1'),one(e,'SELECT last_received_at,last_complete_at,heartbeat_count,state,last_queries,last_duration_ms FROM production_publisher_runtime WHERE id=1'),one(e,"SELECT (SELECT count(*) FROM production_send_permits WHERE revoked=0) permits,(SELECT count(*) FROM production_publisher_jobs WHERE state IN ('held','requested','retry_wait')) in_flight,(SELECT count(*) FROM production_publisher_jobs WHERE state='unknown') unknown,(SELECT count(*) FROM production_publisher_usage) publications")]);
+ // A single read snapshot avoids decoding three separate D1 SDK responses.
+ const view=await one(e,`SELECT
+ (SELECT json_object('enabled',enabled,'revision',revision,'start_date',start_date,'blocked',blocked,'publish_time',publish_time,'timezone',timezone) FROM production_publisher_config WHERE id=1) config,
+ (SELECT json_object('last_received_at',last_received_at,'last_complete_at',last_complete_at,'heartbeat_count',heartbeat_count,'state',state,'last_queries',last_queries,'last_duration_ms',last_duration_ms) FROM production_publisher_runtime WHERE id=1) runtime,
+ json_object('permits',(SELECT count(*) FROM production_send_permits WHERE revoked=0),'in_flight',(SELECT count(*) FROM production_publisher_jobs WHERE state IN ('held','requested','retry_wait')),'unknown',(SELECT count(*) FROM production_publisher_jobs WHERE state='unknown'),'publications',(SELECT count(*) FROM production_publisher_usage)) counts`);
+ const config=JSON.parse(view!.config),runtime=JSON.parse(view!.runtime),counts=JSON.parse(view!.counts);
  const publishingEnabled=productionPublishingEnabled(e,state,config!.enabled,config!.blocked);
  return {schemaReady:true,state:counts!.unknown?'unknown':counts!.in_flight?'in_flight':publishingEnabled?'armed':'closed',publishingEnabled,paused:state.paused_by_user===1,checkedAt:new Date(now).toISOString(),serverDate:day(now),publishTime:POLICY.publishTime,timeZone:POLICY.timeZone,config,runtime,counts,
   gates:{deployment:e.PRODUCTION_PUBLISHER_ENABLED==='true',database:config!.enabled===1,ownerPublicationApproval:counts!.permits>0,httpPublisher:!!e.PRODUCTION_PUBLISHER_TOKEN},realPublication:counts!.publications===0?'NOT_RUN':'RECORDED'};

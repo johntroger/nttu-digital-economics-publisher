@@ -1,7 +1,7 @@
 import {publisherPreflight} from './publisher-live.ts';
 import type {ManagementBindings} from './management.ts';
 import {productionState,productionRuntimeState} from './management.ts';
-import {productionMetaStatus} from './meta.ts';
+import {productionMetaConfigured} from './meta.ts';
 import {telegramConfigured,dispatchTelegramQueue} from '../cloud/telegram.ts';
 import {inspectMetaConnection} from '../cloud/meta.ts';
 
@@ -65,11 +65,18 @@ export async function runProductionHttpTick(env:ManagementBindings,options:Param
  }
 }
 export async function productionMonitorStatus(env:ManagementBindings,options:{now?:number;transport?:typeof fetch}={}){
- const ops=await operationsStatus(env),meta=await productionMetaStatus(env);
- const live=meta.configured?await inspectMetaConnection(env,options):null,publisher=await publisherPreflight(env,options.now??Date.now());
- return{environment:'production',databaseChecked:true,publishingEnabled:publisher.publishingEnabled,paused:ops.paused,schemaReady:ops.schemaReady,telegramConfigured:ops.configured,runtime:ops.runtime,http:ops.http,triggerSource:ops.triggerSource,
-  publisher,metaConfigured:meta.configured,metaVerified:live?.state==='verified_read_only',metaExpiresAt:live?.expires??null,
+ const state=await productionState(env),migrations=Number(state.migration_count),schemaReady=migrations>=12;
+ // The monitor needs counts, not the latest 100 notification payload rows or a
+ // historical Meta check. Read only the fields returned to its scoped caller.
+ const view=await env.DB!.prepare(`SELECT
+ ${schemaReady?"(SELECT json_object('last_scheduled_at',last_scheduled_at,'heartbeat_count',heartbeat_count,'last_dispatch_state',last_dispatch_state) FROM production_operations WHERE id=1)":"NULL"} runtime,
+ ${migrations>=13?"(SELECT json_object('enabled',enabled,'last_http_at',last_http_at,'heartbeat_count',heartbeat_count,'last_complete_at',last_complete_at,'last_dispatch_state',last_dispatch_state) FROM production_http_trigger WHERE id=1)":"NULL"} http,
+ (SELECT count(*) FROM (SELECT state FROM notification_outbox ORDER BY rowid DESC LIMIT 100) WHERE state!='delivered') pending,
+ (SELECT count(*) FROM (SELECT state FROM notification_outbox ORDER BY rowid DESC LIMIT 100) WHERE state IN ('needs_action','delivery_unknown')) blocked`).first<Record<string,any>>();
+ const runtime=view!.runtime?JSON.parse(view!.runtime):null,http=view!.http?JSON.parse(view!.http):null,configured=productionMetaConfigured(env);
+ const live=configured?await inspectMetaConnection(env,options):null,publisher=await publisherPreflight(env,options.now??Date.now());
+ return{environment:'production',databaseChecked:true,publishingEnabled:publisher.publishingEnabled,paused:state.paused_by_user===1,schemaReady,telegramConfigured:telegramConfigured(env)&&env.TELEGRAM_CHAT_ID==='1548618770',runtime,http,triggerSource:http?.enabled===1?'http':'cron',
+  publisher,metaConfigured:configured,metaVerified:live?.state==='verified_read_only',metaExpiresAt:live?.expires??null,
   dataAccessExpiresAt:live?.dataExpires??null,
-  notificationsPending:ops.events.filter((e:any)=>!['delivered'].includes(e.state)).length,
-  notificationsBlocked:ops.events.filter((e:any)=>['needs_action','delivery_unknown'].includes(e.state)).length};
+  notificationsPending:view!.pending,notificationsBlocked:view!.blocked};
 }

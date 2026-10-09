@@ -100,11 +100,17 @@ async function operation(e:PublisherBindings,provider:ProductionMetaPublisher,cl
  const lease=(e as StagedBindings).__publisherLease!;
  await batch(e,[s(e,`INSERT INTO production_publisher_attempts SELECT ?,id,tries+1,'intent',? FROM production_publisher_jobs WHERE id=? AND state='held' AND tries<3 AND EXISTS(SELECT 1 FROM production_publisher_runtime WHERE lease_id=? AND lease_until>?) AND EXISTS(SELECT 1 FROM production_publisher_config WHERE active_job=? AND enabled=1 AND revision=? AND blocked IS NULL) AND EXISTS(SELECT 1 FROM application_state WHERE environment='production' AND paused_by_user=0 AND maintenance_owner IS NULL AND blocked_reasons='[]' AND operation_generation=?) AND EXISTS(SELECT 1 FROM production_send_permits WHERE id=production_publisher_jobs.permit AND revoked=0 AND expires_at>?) AND EXISTS(SELECT 1 FROM production_publisher_preparation WHERE job=? AND phase='send' AND revision=? AND proof_expires_at>?) AND (SELECT due_at FROM production_send_permits WHERE id=production_publisher_jobs.permit)<=? AND NOT EXISTS(SELECT 1 FROM production_publisher_usage WHERE day=? OR post=?) AND ${eligible('production_publisher_jobs.version',now)}`,attempt,now,j.id,lease,now,j.id,j.config_revision,j.operation_generation,now,j.id,p.revision,now,now,j.day,j.post),
   s(e,"UPDATE production_publisher_jobs SET state='requested',tries=tries+1,lease_until=? WHERE id=? AND EXISTS(SELECT 1 FROM production_publisher_attempts WHERE id=?)",now+60000,j.id,attempt)]);
- if(!await one(e,'SELECT 1 FROM production_publisher_attempts WHERE id=?',attempt))return result('intent_blocked');
  // A pause after durable intent preserves unknown; never automatically resends.
- const fenceAt=validTime(clock()),fences=await batch(e,[s(e,PUBLISHER_IDENTITY_SQL),s(e,'SELECT * FROM production_publisher_config WHERE id=1'),s(e,`SELECT 1 FROM production_send_permits WHERE id=? AND revoked=0 AND due_at<=? AND expires_at>? AND ${eligible('production_send_permits.version_id',fenceAt)}`,permit.id,fenceAt,fenceAt),s(e,'SELECT 1 FROM production_publisher_runtime WHERE lease_id=? AND lease_until>?',lease,fenceAt)]) as {results:Row[]}[];
- a=assertPublisherIdentity(e,fences[0]?.results[0]);c=fences[1]!.results[0]!;
- const fence=fences[2]?.results[0],active=fences[3]?.results[0];
+ // Keep the post-intent read separate from the intent transaction, so an owner
+ // pause in between remains observable. One SQL snapshot returns every fence.
+ const fenceAt=validTime(clock()),fences=await one(e,`SELECT i.*,c.enabled,c.blocked,c.active_job,c.revision,
+ EXISTS(SELECT 1 FROM production_publisher_attempts WHERE id=? AND job=?) attempt_owned,
+ EXISTS(SELECT 1 FROM production_send_permits WHERE id=? AND revoked=0 AND due_at<=? AND expires_at>? AND ${eligible('production_send_permits.version_id',fenceAt)}) permit_ok,
+ EXISTS(SELECT 1 FROM production_publisher_runtime WHERE lease_id=? AND lease_until>?) lease_ok
+ FROM (${PUBLISHER_IDENTITY_SQL}) i JOIN production_publisher_config c ON c.id=1`,attempt,j.id,permit.id,fenceAt,fenceAt,lease,fenceAt);
+ a=assertPublisherIdentity(e,fences);c=fences!;
+ if(c.attempt_owned!==1)return result('intent_blocked');
+ const fence=c.permit_ok===1,active=c.lease_ok===1;
  const allowed=gate(e,c,a)&&c.active_job===j.id&&c.revision===j.config_revision&&a.operation_generation===j.operation_generation&&day(clock())===j.day&&clock()<p.proof_expires_at&&fence&&active&&await metaFingerprint(e)===p.fingerprint;
  const response=allowed?await provider.dispatch({attemptId:attempt,pageId:PRODUCTION_PAGE,caption:j.caption,checksum:j.checksum,bytes,sentAt:now}):{kind:'unknown'};
  // Failure/crash here leaves requested+intent; subsequent ticks never repeat POST.

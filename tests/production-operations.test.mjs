@@ -57,3 +57,13 @@ test('monitor credential is read-only and cannot obtain owner content or send Te
  await assert.rejects(runProductionOperations({cron:'0 3 * * *',scheduledTime:now},f.env));f.db.exec("UPDATE application_state SET paused_by_user=0");await assert.rejects(productionMonitorStatus(f.env));
  }finally{f.db.close();}});
 
+test('bounded monitor counts and runtime match the owner view without returning notification contents',async()=>{const f=fixture();try{
+ for(let i=0;i<105;i++)f.db.prepare('INSERT INTO notification_outbox(event_id,payload_json,state,message_id) VALUES(?,?,?,?)').run('monitor-'+i,JSON.stringify({private:'caption '+i}),i%3===0?'delivered':i%3===1?'pending':'needs_action',i%3===0?String(i+1):null);
+ const owner=await operationsStatus(f.env),monitor=await productionMonitorStatus(f.env,{now});
+ assert.deepEqual(monitor.runtime,{...owner.runtime});assert.deepEqual(monitor.http,{...owner.http});
+ assert.equal(monitor.notificationsPending,owner.events.filter(e=>e.state!=='delivered').length);
+ assert.equal(monitor.notificationsBlocked,owner.events.filter(e=>['needs_action','delivery_unknown'].includes(e.state)).length);
+ assert.equal(monitor.triggerSource,owner.triggerSource);assert.equal(monitor.paused,owner.paused);
+ assert.ok(!JSON.stringify(monitor).includes('caption '));assert.equal(monitor.publishingEnabled,false);
+ }finally{f.db.close();}});
+
