@@ -31,7 +31,9 @@ async function authorized(r:Request,e:RunnerBindings){
  const status=new URL(r.url).pathname==='/runner/status',received=r.headers.get('Authorization');
  const secret=status&&received==='Bearer '+e.PRODUCTION_MONITOR_TOKEN?e.PRODUCTION_MONITOR_TOKEN:e.PRODUCTION_RUNNER_TOKEN;
  if(!hash(secret)||(secret===e.PRODUCTION_RUNNER_TOKEN?[e.PRODUCTION_PUBLISHER_TOKEN,e.PRODUCTION_MONITOR_TOKEN,e.PRODUCTION_TRIGGER_TOKEN].includes(secret):secret===e.PRODUCTION_TRIGGER_TOKEN||secret===e.PRODUCTION_PUBLISHER_TOKEN)||received?.length!==71||!received.startsWith('Bearer '))return false;
- const a=await publicationHash(secret),b=await publicationHash(received.slice(7));let difference=0;for(let i=0;i<a.length;i++)difference|=a.charCodeAt(i)^b.charCodeAt(i);return difference===0;
+ // Both operands are fixed-size hexadecimal capabilities. Compare every byte;
+ // hashing both first adds async crypto work without improving this comparison.
+ let difference=0;for(let i=0;i<64;i++)difference|=secret.charCodeAt(i)^received.charCodeAt(i+7);return difference===0;
 }
 const identitySQL=`SELECT i.database_id,a.paused_by_user,a.maintenance_owner,a.blocked_reasons,a.operation_generation,
  (SELECT count(*) FROM production_publisher_usage WHERE day=?) today_used,
@@ -110,7 +112,9 @@ async function route(r:Request,e:RunnerBindings,b:Row,n:number,state:Row){
  if(path==='/runner/data'||path==='/runner/image'||path==='/runner/proof'||path==='/runner/intent'){
   if(j.state!=='held')fail('RUNNER_PHASE_INVALID');
   if(j.expires_at<=n||j.release!==e.RELEASE_SHA||!live(state))fail('RUNNER_CLOSED_OR_EXPIRED');
-  const good=await first(e,`SELECT 1 ok FROM production_publisher_jobs j WHERE j.id=? AND ${fenceSQL(n)}`,j.id,...fenceArgs(e,b.runner,n));if(!good)fail('RUNNER_APPROVAL_CHANGED');
+  if(path!=='/runner/proof'){
+   const good=await first(e,`SELECT 1 ok FROM production_publisher_jobs j WHERE j.id=? AND ${fenceSQL(n)}`,j.id,...fenceArgs(e,b.runner,n));if(!good)fail('RUNNER_APPROVAL_CHANGED');
+  }
  }
  if(path==='/runner/data'){
   if(!Number.isInteger(b.group)||b.group<0||b.group>4||!Number.isInteger(b.offset)||b.offset<0||b.offset>120||b.offset%8!==0)fail('RUNNER_PAGE_INVALID',400);
@@ -127,8 +131,10 @@ async function route(r:Request,e:RunnerBindings,b:Row,n:number,state:Row){
   only(c,['verified','fingerprint','expiresAt','dataAccessExpiresAt']);
   if(c.verified!==true||!hash(c.fingerprint)||c.fingerprint!==state.connection_hash)fail('RUNNER_CONNECTION_CHANGED');
   const expiry=[n+60000,...[c.expiresAt,c.dataAccessExpiresAt].filter(x=>x!=null)];if(expiry.some(x=>!Number.isSafeInteger(x)||x<=n))fail('RUNNER_CONNECTION_EXPIRED');
-  const version=await first(e,'SELECT check_version FROM post_versions WHERE id=?',j.version);if(version?.check_version!==b.checkVersion)fail('RUNNER_VERSION_CHANGED');
-  await q(e,'UPDATE production_runner_sessions SET image_bytes=?,caption_hash=?,proof_until=?,fingerprint=? WHERE job=? AND runner=?',b.bytes,await publicationHash(j.caption),Math.min(...expiry),c.fingerprint,j.id,b.runner).run();return answer({state:'prepared'});
+  const saved=await first(e,`WITH allowed AS(SELECT j.id FROM production_publisher_jobs j JOIN post_versions v ON v.id=j.version
+ WHERE j.id=? AND j.state='held' AND v.check_version=? AND ${fenceSQL(n)})
+ UPDATE production_runner_sessions SET image_bytes=?,caption_hash=?,proof_until=?,fingerprint=? WHERE job IN(SELECT id FROM allowed) AND runner=? RETURNING job`,j.id,b.checkVersion,...fenceArgs(e,b.runner,n),b.bytes,await publicationHash(j.caption),Math.min(...expiry),c.fingerprint,b.runner);
+  if(!saved)fail('RUNNER_APPROVAL_CHANGED');return answer({state:'prepared'});
  }
  if(path==='/runner/intent'){
   const attempt='runner-attempt:'+crypto.randomUUID(),grant=crypto.randomUUID();

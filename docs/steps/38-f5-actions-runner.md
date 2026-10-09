@@ -4,7 +4,7 @@ Ngày 09/10/2026. Phê duyệt của chủ dự án: «GitHub Actions: theo đ�
 
 ## Phần đã thực hiện
 
-`scripts/production-actions-runner.mjs` thực hiện kiểm nội dung đã duyệt, PNG/checksum, kiểm kết nối Meta giả lập, multipart POST, GET đối soát và callback từ Node. Client chỉ cho phép HTTP loopback, dùng credential giả cố định; không đọc secret môi trường, không có chế độ gửi thật. Một tiến trình có ngân sách tối đa ba phút và giữ lại intent khi bị ngắt.
+`scripts/production-actions-runner.mjs` thực hiện kiểm nội dung đã duyệt, PNG/checksum, kiểm kết nối Meta giả lập, multipart POST, GET đối soát và callback từ Node. Client chỉ cho phép HTTP loopback, dùng credential giả cố định; không đọc secret môi trường, không có chế độ gửi thật. Runner kiểm ngân sách ba phút tại các checkpoint và giữ lại intent khi bị ngắt; giới hạn này chưa phải một watchdog toàn tiến trình. Workflow giả lập có timeout năm phút. Workflow live sau này phải có giới hạn cứng phù hợp ngân sách.
 
 `src/production/runner-api.ts` cung cấp claim, dữ liệu phân trang tối đa tám dòng, stream ảnh R2, proof, intent, authorize một lần, evidence và finalize. D1 quyết định Page, đồng hồ, quyền gửi, ngày, revision/generation, lease và snapshot nguồn/phê duyệt. API không nhận Page, caption, SQL hoặc thời gian thay thế từ caller. Token monitor chỉ đọc status; token trigger và publisher không được thao tác runner.
 
@@ -22,7 +22,11 @@ Native smoke biên dịch Worker và chạy workerd + D1/R2 cục bộ; Worker k
 
 Kho fixture giữ40 bài và toàn bộ asset đã nhập fixture; fixture không đại diện cho mọi56 asset production. Đo cloud riêng dùng bản sao SQL schema14 có40 bài/56 asset; bản gốc và bucket production chỉ đọc. Mọi POST Meta trong thử nghiệm là mock loopback; không gửi Telegram thật. Không coi thời gian chạy cục bộ là CPU cloud hoặc phút tính phí GitHub.
 
-Kết quả cập nhật sau kiểm thử cuối và CI. Chưa nghiệm thu CPU cloud; không có phép mở cửa production từ hồ sơ này.
+467 kiểm thử local và sáu kịch bản native đạt; CI Windows/Linux của `810af6f` đạt tại run37904088313. Probe `f7e1448` hoàn thành một pipeline mock nhưng claim12ms. Relay HTTP ban đầu giữ header nén sau khi Node đã giải nén; đã sửa header, lỗi kết nối này không được tính là kết quả CPU.
+
+Bản `810af6f` giảm hai round trip D1 ở claim, max warm8ms. Lượt đo `mock-1791534267322` đã hoàn thành21 pipeline mock, giữ40 bài/56 mục thư viện, nhưng data cold13ms, proof warm12ms và status cold11ms. Bộ đo dừng ngay; chưa đủ30 warm mỗi API, không nghiệm thu hoặc gộp mẫu với ứng viên sau. Các mẫu cold phát sinh cả giữa chuỗi request khi Cloudflare khởi tạo isolate mới; không bỏ chúng để báo cáo đẹp hơn.
+
+Ứng viên tiếp theo dùng CTE nguyên tử cho proof, kiểm version/snapshot/gate ngay trong UPDATE và giảm hai lượt đọc; token capability cố định64 ký tự được so sánh đủ64 vị trí thay vì hash hai lần. Kiểm thêm race thay pause/nguồn/version ngay lúc ghi proof. Kết quả cuối cập nhật sau CI và đo cloud đúng release. Chưa có phép mở cửa production từ hồ sơ này.
 
 ## Hồ sơ triển khai đóng cho bước tiếp theo
 

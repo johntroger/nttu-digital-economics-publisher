@@ -16,6 +16,20 @@ test('F5 HTTP multipart + native SQLite publishes one mock post and retains all 
 test('F5 concurrent HTTP runners produce one intent and one POST',async()=>{
  const f=await runnerFixture();try{const results=await Promise.all([run(f.options),run(f.options)]);assert.equal(results.filter(x=>x.state==='confirmed').length,1,JSON.stringify(results));assert.equal(f.postCount(),1);assert.equal(count(f,'production_publisher_attempts'),1);}finally{await f.dispose();}
 });
+test('F5 proof rechecks mutable approval at the write even after earlier reads succeeded',async()=>{
+ for(const mode of ['pause','source','version']){
+  const f=await runnerFixture();try{
+   const prepare=f.env.DB.prepare.bind(f.env.DB);let changed=false;
+   f.env.DB.prepare=sql=>{if(!changed&&sql.includes('UPDATE production_runner_sessions SET image_bytes=')){
+    changed=true;
+    if(mode==='pause')f.db.exec("UPDATE application_state SET paused_by_user=1 WHERE environment='production'");
+    if(mode==='source')f.db.exec("UPDATE sources SET status='blocked'");
+    if(mode==='version')f.db.exec('UPDATE post_versions SET check_version=check_version+1');
+   }return prepare(sql);};
+   const result=await run(f.options);assert.equal(changed,true);assert.equal(result.state,'held_or_closed');assert.equal(f.postCount(),0);assert.equal(count(f,'production_publisher_attempts'),0);assert.equal(f.db.prepare('SELECT image_bytes FROM production_runner_sessions').get().image_bytes,null);
+  }finally{await f.dispose();}
+ }
+});
 test('F5 pause/revocation and source/version changes before or after intent never POST',async()=>{
  for(const stage of ['before_intent','after_intent'])for(const mode of ['pause','permit','source','version','generation','release']){
   const f=await runnerFixture();try{const r=await run({...f.options,hook:async point=>{if(point!==stage)return;if(mode==='pause')f.db.exec("UPDATE application_state SET paused_by_user=1 WHERE environment='production'");if(mode==='permit')f.db.exec('UPDATE production_send_permits SET revoked=1');if(mode==='source')f.db.exec("UPDATE sources SET status='blocked'");if(mode==='version')f.db.exec('UPDATE post_versions SET check_version=check_version+1');if(mode==='generation')f.db.exec('UPDATE application_state SET operation_generation=operation_generation+1');if(mode==='release')f.env.RELEASE_SHA='f'.repeat(40);}});assert.equal(f.postCount(),0,stage+mode+JSON.stringify(r));assert.equal(count(f,'production_publisher_attempts'),stage==='before_intent'?0:1);}finally{await f.dispose();}
