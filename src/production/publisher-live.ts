@@ -1,5 +1,5 @@
 import type {ManagementBindings} from './management.ts';
-import {productionState,productionPublishingEnabled} from './management.ts';
+import {productionState,assertProductionState,productionPublishingEnabled} from './management.ts';
 import {approvedProductionItems} from './preview.ts';
 import {assertPublisherBoundary} from './publisher-boundary.ts';
 import {ProductionMetaPublisher,PRODUCTION_PAGE,publicationHash} from './publisher-provider.ts';
@@ -61,14 +61,15 @@ async function saveEvidence(e:ManagementBindings,j:Row,attempt:string,result:Pub
  return finalize(e,j,attempt,JSON.parse(saved.response),saved.sent_at,saved.observed_at);
 }
 // No permit creation/activation operation is exposed in B37.
-export async function publisherPreflight(e:PublisherBindings,now=Date.now()){
- const state=await productionState(e);const schema=await one(e,"SELECT 1 FROM schema_migrations WHERE name='0014_production_publisher.sql'");
- if(!schema)return {schemaReady:false,state:'closed',publishingEnabled:false};
+export async function publisherPreflight(e:PublisherBindings,now=Date.now(),observedState?:Row){
+ const state=observedState?assertProductionState(e,observedState):await productionState(e);
+ if(Number(state.migration_count)<14)return {schemaReady:false,state:'closed',publishingEnabled:false};
  // A single read snapshot avoids decoding three separate D1 SDK responses.
- const view=await one(e,`SELECT
+ const view=await one(e,`SELECT (SELECT count(*) FROM schema_migrations WHERE name='0014_production_publisher.sql') publisher_schema,
  (SELECT json_object('enabled',enabled,'revision',revision,'start_date',start_date,'blocked',blocked,'publish_time',publish_time,'timezone',timezone) FROM production_publisher_config WHERE id=1) config,
  (SELECT json_object('last_received_at',last_received_at,'last_complete_at',last_complete_at,'heartbeat_count',heartbeat_count,'state',state,'last_queries',last_queries,'last_duration_ms',last_duration_ms) FROM production_publisher_runtime WHERE id=1) runtime,
  json_object('permits',(SELECT count(*) FROM production_send_permits WHERE revoked=0),'in_flight',(SELECT count(*) FROM production_publisher_jobs WHERE state IN ('held','requested','retry_wait')),'unknown',(SELECT count(*) FROM production_publisher_jobs WHERE state='unknown'),'publications',(SELECT count(*) FROM production_publisher_usage)) counts`);
+ if(view!.publisher_schema!==1)return {schemaReady:false,state:'closed',publishingEnabled:false};
  const config=JSON.parse(view!.config),runtime=JSON.parse(view!.runtime),counts=JSON.parse(view!.counts);
  const publishingEnabled=productionPublishingEnabled(e,state,config!.enabled,config!.blocked);
  return {schemaReady:true,state:counts!.unknown?'unknown':counts!.in_flight?'in_flight':publishingEnabled?'armed':'closed',publishingEnabled,paused:state.paused_by_user===1,checkedAt:new Date(now).toISOString(),serverDate:day(now),publishTime:POLICY.publishTime,timeZone:POLICY.timeZone,config,runtime,counts,

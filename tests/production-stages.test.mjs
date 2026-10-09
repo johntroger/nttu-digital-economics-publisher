@@ -101,7 +101,7 @@ test('F3 exact retryable errors wait five minutes, reprepare and stop after thre
 });
 test('F3 rejects expired lease, source change after projection and Vietnam midnight before intent',async()=>{
  for(const mode of ['lease','source','midnight']){const f=await fixture({open:true});try{await f.prepare();const original=f.env.DB.batch;
-  f.env.DB.batch=async q=>{if(q.length===5){if(mode==='source'){const r=await original(q);f.db.exec("UPDATE sources SET status='blocked'");return r;}if(mode==='lease')f.db.exec('UPDATE production_publisher_runtime SET lease_until=0');}return original(q);};
+  f.env.DB.batch=async q=>{if(q.length===2){if(mode==='source')f.db.exec("UPDATE sources SET status='blocked'");if(mode==='lease')f.db.exec('UPDATE production_publisher_runtime SET lease_until=0');}return original(q);};
   if(mode==='midnight'){f.setTime(Date.parse('2026-10-08T17:00:00Z'));await run(f.env,f.provider,f.now);}else await f.tick();assert.equal(sends(f),0);assert.equal(f.db.prepare('SELECT count(*) n FROM production_publisher_attempts').get().n,0);
  }finally{f.db.close();}}
 });
@@ -109,5 +109,26 @@ test('F3 stock scans one version per tick, includes current approvals and restar
  const f=await fixture();try{f.db.exec('UPDATE production_publisher_config SET stock_pending=1');assert.equal((await f.tick()).state,'stock_started');assert.equal((await f.tick()).state,'stock_item');assert.equal(f.db.prepare('SELECT cursor,remaining FROM production_publisher_stock_scan').get().remaining,1);
   f.db.exec("UPDATE sources SET status='blocked'");assert.equal((await f.tick()).state,'stock_restart');assert.equal((await f.tick()).state,'stock_started');
   for(let i=0;i<41;i++)await f.tick();assert.equal(f.db.prepare('SELECT stock_pending,stock_level FROM production_publisher_config').get().stock_level,'empty');assert.equal(f.db.prepare('SELECT count(*) n FROM notification_outbox').get().n,1);assert.equal(sends(f),0);assert.equal(f.db.prepare('SELECT count(*) n FROM production_publisher_stock_scan').get().n,0);
+ }finally{f.db.close();}
+});
+
+test('F4 SQL approval receipt cannot change and detects eligibility edits before and after intent',async()=>{
+ for(const mode of ['version','source','expiry','after-intent']){const f=await fixture({open:true});try{await f.prepare();
+  assert.throws(()=>f.db.exec("UPDATE production_publisher_preparation SET approval_snapshot='[]'"),/immutable/);
+  assert.throws(()=>f.db.prepare("UPDATE post_versions SET body=body||' changed' WHERE id=?").run(f.item.versionId),/save a new editor version/);
+  if(mode==='version')f.db.prepare("UPDATE post_versions SET status='quarantined' WHERE id=?").run(f.item.versionId);
+  if(mode==='source')f.db.exec("UPDATE sources SET status='blocked'");
+  if(mode==='expiry')f.db.exec("UPDATE sources SET review_due_at='2026-10-08T02:02:30.000Z'");
+  if(mode==='after-intent'){const original=f.env.DB.batch;f.env.DB.batch=async q=>{const r=await original(q);if(q.length===2)f.db.exec("UPDATE sources SET status='blocked'");return r;};}
+  await f.tick();assert.equal(sends(f),0);
+  assert.equal(f.db.prepare('SELECT count(*) n FROM production_publisher_attempts').get().n,mode==='after-intent'?1:0);
+ }finally{f.db.close();}}
+});
+
+test('F4 approval read and SQL snapshot are atomic; intervening edits cannot create a preparation receipt',async()=>{
+ const f=await fixture({open:true});try{const original=f.env.DB.batch;
+  f.env.DB.batch=async q=>{const r=await original(q);if(q.length===6)f.db.exec("UPDATE sources SET status='blocked'");return r;};
+  assert.equal((await f.tick()).state,'claim_lost');assert.equal(f.db.prepare('SELECT count(*) n FROM production_publisher_preparation').get().n,0);
+  assert.equal(sends(f),0);
  }finally{f.db.close();}
 });

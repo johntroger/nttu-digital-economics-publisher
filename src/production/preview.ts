@@ -61,6 +61,14 @@ export async function approvedProductionItems(env:ManagementBindings,now:number,
  return projectApprovalRows(now,readMode,result.map(r=>r.results) as ProjectionRows);
 }
 export type ProjectionRows=[Row[],Row[],Row[],Row[],Row[]];
+// Capture the immutable approval projection and every mutable eligibility field
+// in the same SELECT-only D1 transaction. A publisher can later compare the SQL
+// snapshot without reloading private source receipts into the POST invocation.
+export async function approvedProductionReceipt(env:ManagementBindings,now:number,versionId:string){
+ const queries=approvalQueries('?',[versionId]);
+ const result=await env.DB!.batch!([...queries.map(q=>env.DB!.prepare(q.sql).bind(...q.values)),readSnapshotStatement(env,now)]) as {results:Row[]}[];
+ return {item:(await projectApprovalRows(now,'batch',result.slice(0,5).map(r=>r.results) as ProjectionRows))[0],snapshot:result[5]!.results[0]!.snapshot as string};
+}
 export async function projectApprovalRows(now:number,readMode:'parallel'|'batch',data:ProjectionRows){
  const [posts,sources,facts,documents,prerequisites]=data;
  // F1 IDs use a byte-stable order without constructing an ICU collation per comparison.

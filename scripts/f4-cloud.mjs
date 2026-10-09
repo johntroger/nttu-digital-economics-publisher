@@ -35,6 +35,12 @@ if(mode==='backup'){
  await query(ledger.databaseId,'DROP TRIGGER production_usage_no_delete');ledger.seeded=true;save();console.log('Isolated clone seeded; test-only reset trigger removed, production untouched.');
 }else if(mode==='deploy-shadow'){
  shadowGuard();const release=tested(),base=JSON.parse(readFileSync('tmp/production-management/wrangler.json'));
+ // Schema15 has not been installed in real production. Upgrade only the owned
+ // acceptance clone when iterating the still-unreleased journal definition.
+ const preparation=await query(ledger.databaseId,'PRAGMA table_info(production_publisher_preparation)');
+ if(!preparation[0]?.results.some(r=>r.name==='approval_snapshot')){
+  await query(ledger.databaseId,"ALTER TABLE production_publisher_preparation ADD COLUMN approval_snapshot TEXT; DROP TRIGGER production_preparation_identity; CREATE TRIGGER production_preparation_identity BEFORE UPDATE OF job,release,fingerprint,approval_snapshot ON production_publisher_preparation BEGIN SELECT RAISE(ABORT,'immutable preparation identity'); END;");
+ }
  ledger.origin='https://'+ledger.worker+'.nttu-kts-johntroger.workers.dev';ledger.mockOrigin='https://'+ledger.mock+'.nttu-kts-johntroger.workers.dev';ledger.release=release;ledger.deployment=(ledger.deployment??0)+1;save();
  for(const [name,entry,label] of [[ledger.mock,'production-cpu-mock.ts','mock'],[ledger.worker,'production-cpu-worker.ts','cpu']]){
   const config={name,account_id:ACCOUNT,compatibility_date:'2026-10-05',compatibility_flags:['global_fetch_strictly_public'],workers_dev:true,preview_urls:false,main:'../../../tests/helpers/'+entry,vars:{...base.vars,RELEASE_SHA:release,CPU_TEST_MODE:'isolated-f4',CPU_TEST_DATABASE_ID:ledger.databaseId,CPU_MOCK_ORIGIN:ledger.mockOrigin,CPU_DEPLOYMENT:String(ledger.deployment)},d1_databases:[{binding:'DB',database_name:ledger.databaseName,database_id:ledger.databaseId}],r2_buckets:label==='cpu'?[{binding:'MEDIA',bucket_name:'nttu-publisher-production-assets'}]:[],observability:{enabled:true,head_sampling_rate:1}};
