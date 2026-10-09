@@ -69,6 +69,17 @@ test('F5 lost callback response and failed finalizer keep durable evidence and n
   const f=await runnerFixture();try{if(mode==='finalizer')f.db.exec("CREATE TRIGGER fail_f5_finalizer BEFORE INSERT ON production_publisher_usage BEGIN SELECT RAISE(ABORT,'rollback'); END");let lost=false;const original=fetch;const transport=async(url,init)=>{const r=await original(url,init);if(mode==='callback'&&new URL(url).pathname==='/runner/evidence'&&!lost){lost=true;throw Error('LOST_CALLBACK');}return r;};const first=await run({...f.options,transport});assert.equal(first.state,'needs_reconciliation',JSON.stringify(first));assert.equal(f.postCount(),1);assert.equal(count(f,'production_publisher_evidence'),1);if(mode==='finalizer')f.db.exec('DROP TRIGGER fail_f5_finalizer');assert.equal((await run(f.options)).state,'confirmed');assert.equal(f.postCount(),1);}finally{await f.dispose();}
  }
 });
+test('F5 compact finalizer binds the receipt to its job and recovers exactly once while paused',async()=>{
+ const f=await runnerFixture();try{
+  await run({...f.options,hook:async stage=>{if(stage==='after_evidence')throw Error('SIMULATED_CRASH');}});
+  const j=f.db.prepare('SELECT id FROM production_publisher_jobs').get().id,t=f.db.prepare('SELECT id FROM production_publisher_attempts').get().id,runner=randomUUID();
+  f.db.exec("UPDATE application_state SET paused_by_user=1 WHERE environment='production'");
+  const missing=await f.request('/runner/finalize',{job:j,runner,attempt:'runner-attempt:'+randomUUID()});assert.equal(missing.status,409);assert.equal(count(f,'production_publisher_usage'),0);
+  const wrong=await f.request('/runner/finalize',{job:'runner-job:'+randomUUID(),runner,attempt:t});assert.equal(wrong.status,404);assert.equal(count(f,'production_publisher_usage'),0);
+  for(let i=0;i<2;i++){const response=await f.request('/runner/finalize',{job:j,runner,attempt:t});assert.equal(response.status,200);assert.equal((await response.json()).state,'confirmed');}
+  assert.equal(count(f,'production_publisher_usage'),1);assert.equal(f.db.prepare("SELECT count(*) n FROM notification_outbox WHERE event_id=?").get('published:'+j).n,1);assert.equal(f.postCount(),1);
+ }finally{await f.dispose();}
+});
 test('F5 explicit retryable outcome waits five minutes; timeouts and mismatches never retry POST',async()=>{
  const f=await runnerFixture({outcome:'retryable'});try{assert.equal((await run(f.options)).state,'retry_wait');f.setTime(now+60000);assert.equal((await run(f.options)).state,'retry_wait');assert.equal(f.postCount(),1);f.setTime(now+300000);f.setOutcome('confirmed');assert.equal((await run(f.options)).state,'confirmed');assert.equal(f.postCount(),2);}finally{await f.dispose();}
  for(const outcome of ['throw','mismatch']){const f=await runnerFixture({outcome});try{assert.equal((await run(f.options)).state,'unknown');f.setTime(now+86400000);assert.equal((await run(f.options)).state,'unknown');assert.equal(f.postCount(),1);}finally{await f.dispose();}}

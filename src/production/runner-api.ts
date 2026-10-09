@@ -170,11 +170,6 @@ async function route(r:Request,e:RunnerBindings,b:Row,n:number,state:Row){
   }else await q(e,'INSERT INTO production_publisher_evidence(attempt,response,sent_at,observed_at) VALUES(?,?,?,?) ON CONFLICT(attempt) DO NOTHING',t.id,JSON.stringify(result),t.created_at,n).run();
   return answer({state:'evidence_recorded'});
  }
- if(path==='/runner/finalize'){
-  const ev=await first(e,'SELECT e.* FROM production_publisher_evidence e JOIN production_publisher_attempts t ON t.id=e.attempt WHERE e.attempt=? AND t.job=?',String(b.attempt),j.id);if(!ev)fail('RUNNER_EVIDENCE_MISSING');
-  if(ev.applied===1)return answer({state:j.state});
-  return answer({state:await finalizePublisherEvidence(e,j,ev.attempt,JSON.parse(ev.response),ev.sent_at,ev.observed_at)});
- }
  return answer({error:'RUNNER_ROUTE_UNKNOWN'},404);
 }
 async function dataPage(e:RunnerBindings,b:Row,n:number){
@@ -203,6 +198,26 @@ async function dataPage(e:RunnerBindings,b:Row,n:number){
 }
 // Cache only query text. Bind the current job and offset on every request.
 const DATA_QUERIES=approvalQueries('SELECT version FROM production_publisher_jobs WHERE id=?');
+async function finalizeRoute(e:RunnerBindings,b:Row){
+ only(b,['job','runner','attempt']);if(!uid(b.runner))fail('RUNNER_ID_INVALID',400);
+ if(typeof b.job!=='string'||!/^runner-job:[a-f0-9-]{36}$/.test(b.job))fail('RUNNER_JOB_INVALID',400);
+ // Recovery is allowed while paused. Read identity, the immutable job payload,
+ // and its correlated durable receipt together; no caption/image lookup needed.
+ const row=await first(e,`SELECT i.database_id,
+  (SELECT count(*) FROM schema_migrations) migrations,(SELECT count(*) FROM schema_migrations WHERE name='0016_production_publisher_runner.sql') runner_schema,
+  j.id,j.post,j.permit,j.tries,j.caption,j.checksum,j.state,s.job runner_job,ev.attempt,ev.response,ev.applied,ev.sent_at,ev.observed_at
+  FROM production_identity i JOIN application_state a ON a.environment=i.environment JOIN production_publisher_config c ON c.id=1
+  LEFT JOIN production_publisher_jobs j ON j.id=?
+  LEFT JOIN production_runner_sessions s ON s.job=j.id
+  LEFT JOIN production_publisher_attempts t ON t.id=? AND t.job=j.id
+  LEFT JOIN production_publisher_evidence ev ON ev.attempt=t.id
+  WHERE i.id=1 AND i.environment='production' AND i.schema_version=1`,b.job,String(b.attempt));
+ if(!row||row.database_id!==e.PRODUCTION_DATABASE_ID||row.migrations!==16||row.runner_schema!==1)fail('RUNNER_SCHEMA_INVALID');
+ if(!row.id||!row.runner_job)fail('RUNNER_JOB_UNKNOWN',404);
+ if(!row.attempt)fail('RUNNER_EVIDENCE_MISSING');
+ if(row.applied===1)return answer({state:row.state});
+ return answer({state:await finalizePublisherEvidence(e,row,row.attempt,JSON.parse(row.response),row.sent_at,row.observed_at)});
+}
 export async function runnerAPI(request:Request,e:RunnerBindings,clock:()=>number=Date.now,reportError:(error:unknown)=>void=()=>{}):Promise<Response>{
  try{
   if(e.PRODUCTION_RUNNER_ENABLED!=='true'||e.PRODUCTION_PUBLISHER_ENABLED!=='false')return answer({error:'RUNNER_DISABLED'},503);
@@ -214,6 +229,7 @@ export async function runnerAPI(request:Request,e:RunnerBindings,clock:()=>numbe
   const reader=request.body?.getReader();let size=0,text='';const decoder=new TextDecoder();if(reader)while(true){const part=await reader.read();if(part.done)break;size+=part.value.length;if(size>8192){await reader.cancel();fail('RUNNER_BODY_TOO_LARGE',413);}text+=decoder.decode(part.value,{stream:true});}text+=decoder.decode();
   let input:Row;try{input=JSON.parse(text||'{}');}catch{return answer({error:'RUNNER_JSON_INVALID'},400);}if(!input||typeof input!=='object'||Array.isArray(input))fail('RUNNER_JSON_INVALID',400);
   const n=time(clock);if(new URL(request.url).pathname==='/runner/data')return await dataPage(e,input,n);
+  if(new URL(request.url).pathname==='/runner/finalize')return await finalizeRoute(e,input);
   if(new URL(request.url).pathname==='/runner/claim'){
    only(input,['runner']);if(!uid(input.runner))fail('RUNNER_ID_INVALID',400);
    const date=day(n),read=await batch(e,[q(e,identitySQL,date),q(e,CLAIM_PERMIT_SQL,PRODUCTION_PAGE,date,n,n,n)]) as {results:Row[]}[];
