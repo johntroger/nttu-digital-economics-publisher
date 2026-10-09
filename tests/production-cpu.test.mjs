@@ -6,6 +6,15 @@ import {cpuFetch} from './helpers/production-cpu-worker.ts';
 import {mockFetch} from './helpers/production-cpu-mock.ts';
 async function fixture(){const f=await liveFixture();f.db.exec(productionMigrations(f.env.PRODUCTION_DATABASE_ID,{publisherStages:true}).at(-1).sql);f.db.exec('DROP TRIGGER production_usage_no_delete');return {...f,env:{...f.env,CPU_TEST_MODE:'isolated-f4',CPU_TEST_DATABASE_ID:'11111111-2222-3333-4444-555555555555',CPU_TEST_TOKEN:'c'.repeat(64),CPU_MOCK_ORIGIN:'https://nttu-f4-mock-123abc.nttu-kts-johntroger.workers.dev'}};}
 const request=(path,body={},token='c'.repeat(64))=>new Request('https://isolated.invalid'+path,{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({at,...body})});
+
+test('F4 monitor observes a pause during network verification without reusing stale application state',async()=>{
+ const f=await fixture();try{
+  assert.equal((await cpuFetch(request('/reset'),f.env)).status,200);
+  const wire=async(url,init)=>{f.db.exec("UPDATE application_state SET paused_by_user=1");return mockFetch(new Request(url,init),f.env);};
+  const response=await cpuFetch(request('/monitor'),f.env,wire),view=await response.json();
+  assert.equal(response.status,200,JSON.stringify(view));assert.equal(view.paused,true);assert.equal(view.publishingEnabled,false);assert.equal(f.calls.length,0);
+ }finally{f.db.close();}
+});
 test('F4 harness requires isolation and a private capability, denying real database identities',async()=>{
  const f=await fixture();try{assert.equal((await cpuFetch(request('/reset',{},'d'.repeat(64)),f.env)).status,401);
   for(const id of ['09cdecc7-36a2-4196-950e-ef68b1ecd834','83881fd7-88e6-4835-b616-6f4f8f2d25cd'])assert.equal((await cpuFetch(request('/reset'),{...f.env,CPU_TEST_DATABASE_ID:id})).status,500);
