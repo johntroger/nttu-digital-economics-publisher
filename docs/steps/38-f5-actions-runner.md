@@ -30,7 +30,29 @@ Bản `810af6f` giảm hai round trip D1 ở claim, max warm8ms. Lượt đo `mo
 
 `e5530e0` đọc job ngay trong transaction claim, chỉ lấy bốn cột permit cần dùng và cache chuỗi SQL snapshot; kết quả dữ liệu/phê duyệt và thời gian vẫn được đọc mới. 468 kiểm thử/native và CI37908445760 đạt. Lượt `mock-1791536848585` bị ngắt khi OAuth đọc tail hết hạn; tiếp tục cùng CF version58c86fe6 trong `mock-1791537164375`, giữ mẫu đúng deployment và ghi riêng gap hạ tầng. Lượt tiếp tục hoàn thành42 pipeline mock nhưng data cold13/11ms, chưa đạt. Helper đã bổ sung refresh OAuth, thu hồi tail bị bỏ lại và lưu kết quả ngay cả khi cleanup tail lỗi.
 
-Ứng viên tiếp theo gộp identity/job/fence/raw data trong một transaction SELECT cho mỗi trang, giữ giới hạn8 dòng và kiểm mới; bỏ đường đọc dữ liệu trùng. 14 nhóm runner đạt, gồm năm nhóm dữ liệu đều không trả rows khi nguồn đổi sau claim. Kết quả cuối cập nhật sau CI và đo cloud đúng release. Chưa có phép mở cửa production từ hồ sơ này. Phạm vi tích hợp đề nghị ở [F6](38-f6-closed-integration-proposal.md) chưa được duyệt.
+Ứng viên cuối `1871c88765607142803930fe746e992e921c2b1b` gộp identity/job/fence/raw data trong một transaction SELECT cho mỗi trang, giữ giới hạn8 dòng và kiểm mới; bỏ đường đọc dữ liệu trùng. 469 kiểm thử local,14 nhóm runner, sáu kịch bản native và13 kiểm tra ảnh đạt. CI Windows/Linux37912824859 đạt. Năm nhóm dữ liệu đều không trả rows khi nguồn đổi sau claim.
+
+Lượt `mock-1791539425707`, CF version `b69cef87-9e1b-4abc-ac0e-401799f1c1f2`, hoàn thành121 pipeline mock nhưng claim warm11ms và data:1 warm12ms. Đã dừng theo tiêu chí10ms; HTTP thành công không thay thế nghiệm thu CPU. Không gộp mẫu với phiên bản trước hoặc tiếp tục đo sau khi vượt ngân sách.
+
+| Pha | Mẫu warm | p95 CPU (ms) | Max warm CPU (ms) |
+| --- | ---: | ---: | ---: |
+| claim | 65 | 6 | 11 |
+| data:0 | 42 | 5 | 7 |
+| data:1 | 31 | 4 | 12 |
+| data:2 | 33 | 4 | 5 |
+| data:3 | 55 | 3 | 3 |
+| data:4 | 29 | 2 | 2 |
+| image | 43 | 6 | 9 |
+| proof | 39 | 7 | 8 |
+| intent | 51 | 7 | 9 |
+| authorize | 40 | 4 | 6 |
+| evidence | 71 | 7 | 8 |
+| finalize | 30 | 8 | 8 |
+| status | 68 | 3 | 3 |
+
+Nhóm data:4 còn thiếu một mẫu warm; không coi bảng này là đã đủ mẫu nghiệm thu. Tail và summary giữ tại `tmp/step38/f5/mock-1791539425707-*`; số mẫu được quan sát không đại diện mọi request hoặc mọi lần khởi tạo isolate trong tương lai.
+
+Đọc lại production sau đo:40 bài,56 mục thư viện,40 ảnh, schema14, permit/job/intent/publication0, enabled0/paused1. Đã xóa Worker/D1 clone riêng và thu hồi token đo; giữ backup SQL thật và bằng chứng. Facebook/Telegram thật đều0, production/staging/main/cron không đổi. F5 hoàn thành phần code và kiểm thử chức năng giả lập, **chưa đạt nghiệm thu CPU và chưa sẵn sàng rollout**. Cần xử lý phần vượt ngân sách trước khi chuyển bước. Phạm vi tích hợp đề nghị ở [F6](38-f6-closed-integration-proposal.md) chưa được duyệt.
 
 ## Hồ sơ triển khai đóng cho bước tiếp theo
 
