@@ -20,6 +20,9 @@ if(mode==='create'){
  writeFileSync(root+'/fixture-journal.sql',productionMigrations('09cdecc7-36a2-4196-950e-ef68b1ecd834',{publisherRunner:true}).slice(14).map(m=>m.sql).join('\n')+'\nDROP TRIGGER production_usage_no_delete;');wrangler(['d1','execute',name,'--remote','--config',root+'/cpu-config.json','--file',root+'/fixture-journal.sql','--yes'],'journal');
  l.seeded=true;save(l);wrangler(['deploy','--config',root+'/cpu-config.json'],'deploy');wrangler(['secret','put','CPU_TEST_TOKEN','--config',root+'/cpu-config.json'],'private-secret',l.token);
  const deployed=await cf('/workers/scripts/'+name+'/deployments');l.cpuVersion=deployed.deployments?.[0]?.versions?.[0]?.version_id;l.origin='https://'+name+'.nttu-kts-johntroger.workers.dev';save(l);console.log(JSON.stringify({worker:l.worker,version:l.cpuVersion,release:l.release}));
+}else if(mode==='redeploy'){
+ const l=read();guard(l);const sha=tested(),config=JSON.parse(readFileSync(root+'/cpu-config.json'));if(config.name!==l.worker||config.d1_databases?.[0]?.database_id!==l.databaseId||config.vars?.CPU_TEST_MODE!=='private-f5')throw Error('F5 clone config mismatch');
+ l.release=sha;l.deployment++;config.vars.RELEASE_SHA=sha;config.vars.CPU_DEPLOYMENT=String(l.deployment);writeFileSync(root+'/cpu-config.json',JSON.stringify(config,null,2));save(l);wrangler(['deploy','--config',root+'/cpu-config.json'],'deploy-'+l.deployment);const deployed=await cf('/workers/scripts/'+l.worker+'/deployments');l.cpuVersion=deployed.deployments?.[0]?.versions?.[0]?.version_id;save(l);console.log(JSON.stringify({worker:l.worker,version:l.cpuVersion,release:l.release,deployment:l.deployment}));
 }else if(mode==='cleanup'){
  const l=read();guard(l);await cf('/workers/scripts/'+l.worker,'DELETE');await cf('/d1/database/'+l.databaseId,'DELETE');l.deleted=true;delete l.token;save(l);console.log('Owned F5 Worker/clone deleted; token removed; evidence retained.');
-}else throw Error('Explicit create or cleanup required');
+}else throw Error('Explicit create, redeploy or cleanup required');

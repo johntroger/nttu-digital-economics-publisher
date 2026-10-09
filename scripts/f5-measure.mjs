@@ -17,11 +17,14 @@ const key=e=>e.path==='/runner/data'?'data:'+e.group:e.path?.replace('/runner/',
 const relevant=()=>events.filter(e=>e.path?.startsWith('/runner/')&&e.version===l.cpuVersion&&String(e.deployment)===String(l.deployment));
 function summary(){return Object.fromEntries(phases.map(k=>{const values=relevant().filter(e=>key(e)===k&&e.cold===false&&e.outcome==='ok'&&typeof e.cpuTime==='number').map(e=>e.cpuTime).sort((a,b)=>a-b);return [k,{warm:values.length,max:values.at(-1)??null,p95:values.length?values[Math.ceil(values.length*.95)-1]:null}];}));}
 function budget(){const bad=relevant().filter(e=>e.outcome!=='ok'||typeof e.cpuTime==='number'&&e.cpuTime>10);if(bad.length)throw Error('F5 CPU budget failed: '+JSON.stringify(bad.map(e=>({phase:key(e),cpu:e.cpuTime,outcome:e.outcome,cold:e.cold}))));}
-async function remote(path,body,group){const start=Date.now(),response=await fetch(l.origin+path,{method:'POST',headers:{Authorization:'Bearer '+l.token,'Content-Type':'application/json',...(group!==undefined?{'X-F5-Group':String(group)}:{})},body,redirect:'error',signal:AbortSignal.timeout(30000)});requests.push({path,status:response.status,wallMs:Date.now()-start});save();return response;}
+async function remote(path,body,group){const start=Date.now(),response=await fetch(l.origin+path,{method:'POST',headers:{Authorization:'Bearer '+l.token,'Content-Type':'application/json',...(group!==undefined?{'X-F5-Group':String(group)}:{})},body,redirect:'error',signal:AbortSignal.timeout(30000)});requests.push({path,status:response.status,wallMs:Date.now()-start});save();
+ // Node fetch has already decompressed remote bytes. Never forward compression
+ // or encoded Content-Length headers through the loopback HTTP relay.
+ const headers=new Headers(response.headers);headers.delete('content-encoding');headers.delete('content-length');headers.delete('transfer-encoding');return new Response(response.body,{status:response.status,headers});}
 let failure;
 try{
  const deployed=await cf('/workers/scripts/'+l.worker+'/deployments');if(deployed.deployments?.[0]?.versions?.[0]?.version_id!==l.cpuVersion)throw Error('F5 version changed');
- await openTail();
+ await openTail();await new Promise(r=>setTimeout(r,5000));
  fixture=await runnerFixture({apiHandler:async request=>{const path=new URL(request.url).pathname,body=await request.text(),data=JSON.parse(body);return remote(path,body,path==='/runner/data'?data.group:undefined);}});
  for(let cycle=0;cycle<150;cycle++){
   if(cycle&&cycle%10===0){await closeTail();await openTail();}
@@ -34,6 +37,6 @@ try{
  }
  await new Promise(r=>setTimeout(r,4000));budget();if(!Object.values(summary()).every(s=>s.warm>=30))throw Error('F5 warm sampling incomplete');
 }catch(error){failure=error instanceof Error?error.message:'F5 measurement failed';}
-finally{await fixture?.dispose();await closeTail();save();writeFileSync(root+'/'+label+'-summary.json',JSON.stringify({release:l.release,version:l.cpuVersion,stats:summary(),failure:failure??null,mockPosts:fixture?.postCount()??0,realMetaPosts:0,realTelegramMessages:0},null,2));console.log(JSON.stringify({evidence:root+'/'+label,failure:failure??null}));}
+finally{await fixture?.dispose();await new Promise(r=>setTimeout(r,4000));await closeTail();save();writeFileSync(root+'/'+label+'-summary.json',JSON.stringify({release:l.release,version:l.cpuVersion,stats:summary(),failure:failure??null,mockPosts:fixture?.postCount()??0,realMetaPosts:0,realTelegramMessages:0},null,2));console.log(JSON.stringify({evidence:root+'/'+label,failure:failure??null}));}
 // Node WebSocket connection pool otherwise keeps this one-off tool alive.
 process.exit(failure?1:0);

@@ -34,6 +34,7 @@ async function authorized(r:Request,e:RunnerBindings){
  const a=await publicationHash(secret),b=await publicationHash(received.slice(7));let difference=0;for(let i=0;i<a.length;i++)difference|=a.charCodeAt(i)^b.charCodeAt(i);return difference===0;
 }
 const identitySQL=`SELECT i.database_id,a.paused_by_user,a.maintenance_owner,a.blocked_reasons,a.operation_generation,
+ (SELECT count(*) FROM production_publisher_usage WHERE day=?) today_used,
  (SELECT count(*) FROM schema_migrations) migrations,(SELECT count(*) FROM schema_migrations WHERE name='0016_production_publisher_runner.sql') runner_schema,
  c.enabled,c.revision,c.connection_hash,c.start_date,c.active_job,c.blocked,(SELECT state FROM production_publisher_jobs WHERE id=c.active_job) job_state FROM production_identity i
  JOIN application_state a ON a.environment=i.environment JOIN production_publisher_config c ON c.id=1
@@ -79,22 +80,23 @@ async function claim(e:RunnerBindings,b:Row,n:number,state:Row){
   const current=await job(e,j.id);return answer({state:'held',...requestView(current,n)});
  }
  if(!live(state)||!state.start_date||day(n)<state.start_date)return answer({state:'closed'});
- if(await first(e,'SELECT 1 ok FROM production_publisher_usage WHERE day=?',day(n)))return answer({state:'day_complete'});
+ if(state.today_used>0)return answer({state:'day_complete'});
  const p=await first(e,`SELECT p.*,v.post_id FROM production_send_permits p JOIN post_versions v ON v.id=p.version_id
  WHERE p.page_id=? AND p.business_date=? AND p.revoked=0 AND p.due_at<=? AND p.expires_at>? AND p.approved_at<=?
  AND NOT EXISTS(SELECT 1 FROM production_publisher_jobs j WHERE j.permit=p.id) ORDER BY p.due_at,p.id LIMIT 1`,PRODUCTION_PAGE,day(n),n,n,n);
  if(!p)return answer({state:'publication_approval_required'});
  if(day(p.due_at)!==p.business_date||p.mode==='normal'&&p.due_at!==scheduledInstant(p.business_date).getTime())fail('RUNNER_PERMIT_TIME_INVALID');
  const id='runner-job:'+crypto.randomUUID();
- await batch(e,[q(e,`INSERT INTO production_publisher_jobs(id,permit,day,post,version,snapshot,caption,checksum,config_revision,operation_generation,state,lease_until,created_at)
+ const created=await batch(e,[q(e,`INSERT INTO production_publisher_jobs(id,permit,day,post,version,snapshot,caption,checksum,config_revision,operation_generation,state,lease_until,created_at)
  SELECT ?,p.id,p.business_date,v.post_id,v.id,'{"runner":true}',p.caption,p.checksum,c.revision,a.operation_generation,'held',?,?
  FROM production_send_permits p JOIN post_versions v ON v.id=p.version_id JOIN production_publisher_config c ON c.id=1 JOIN application_state a ON a.environment='production'
  WHERE p.id=? AND p.revoked=0 AND p.due_at<=? AND p.expires_at>? AND c.active_job IS NULL AND c.enabled=1 AND c.blocked IS NULL
  AND a.paused_by_user=0 AND a.maintenance_owner IS NULL AND a.blocked_reasons='[]' AND ${eligible('v.id',n)}
  AND NOT EXISTS(SELECT 1 FROM production_publisher_usage WHERE day=p.business_date OR post=v.post_id)`,id,n+180000,n,p.id,n,n),
  q(e,`INSERT INTO production_runner_sessions(job,runner,release,snapshot,expires_at) SELECT ?,?,?,snapshot,? FROM (${readSnapshotSQL()}) WHERE EXISTS(SELECT 1 FROM production_publisher_jobs WHERE id=?)`,id,b.runner,e.RELEASE_SHA!,n+180000,n,n,n,id),
- q(e,'UPDATE production_publisher_config SET active_job=? WHERE id=1 AND active_job IS NULL AND EXISTS(SELECT 1 FROM production_runner_sessions WHERE job=?)',id,id)]);
- const created=await first(e,'SELECT 1 ok FROM production_runner_sessions WHERE job=?',id);if(!created)return answer({state:'claim_lost'});
+ q(e,'UPDATE production_publisher_config SET active_job=? WHERE id=1 AND active_job IS NULL AND EXISTS(SELECT 1 FROM production_runner_sessions WHERE job=?) RETURNING active_job',id,id)]);
+ const receipt=created[2] as {results?:Row[]}|undefined;
+ if(receipt?.results?.[0]?.active_job!==id)return answer({state:'claim_lost'});
  return answer({state:'held',...requestView(await job(e,id),n)});
 }
 async function route(r:Request,e:RunnerBindings,b:Row,n:number,state:Row){
@@ -177,7 +179,7 @@ export async function runnerAPI(request:Request,e:RunnerBindings,clock:()=>numbe
   // Actual bytes are bounded, not just the untrusted Content-Length header.
   const reader=request.body?.getReader();let size=0,text='';const decoder=new TextDecoder();if(reader)while(true){const part=await reader.read();if(part.done)break;size+=part.value.length;if(size>8192){await reader.cancel();fail('RUNNER_BODY_TOO_LARGE',413);}text+=decoder.decode(part.value,{stream:true});}text+=decoder.decode();
   let input:Row;try{input=JSON.parse(text||'{}');}catch{return answer({error:'RUNNER_JSON_INVALID'},400);}if(!input||typeof input!=='object'||Array.isArray(input))fail('RUNNER_JSON_INVALID',400);
-  const state=await first(e,identitySQL);if(!state||state.database_id!==e.PRODUCTION_DATABASE_ID||state.migrations!==16||state.runner_schema!==1)fail('RUNNER_SCHEMA_INVALID');
-  return await route(request,e,input,time(clock),state);
+  const n=time(clock),state=await first(e,identitySQL,day(n));if(!state||state.database_id!==e.PRODUCTION_DATABASE_ID||state.migrations!==16||state.runner_schema!==1)fail('RUNNER_SCHEMA_INVALID');
+  return await route(request,e,input,n,state);
  }catch(error){reportError(error);return answer({error:error instanceof ProtocolError?error.message:'RUNNER_OPERATION_FAILED'},error instanceof ProtocolError?error.status:500);}
 }
