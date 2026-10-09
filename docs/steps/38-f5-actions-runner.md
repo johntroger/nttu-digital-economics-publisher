@@ -56,6 +56,40 @@ Nhóm data:4 còn thiếu một mẫu warm; không coi bảng này là đã đ�
 
 ## Hồ sơ triển khai đóng cho bước tiếp theo
 
+### Tiếp tục xử lý CPU và cảnh báo D1 — 09/10/2026
+
+`46c497c` gộp các lượt đọc claim và giảm data từ bốn SELECT xuống hai; thêm kiểm thử gate đọc. CI37936548457 đạt,470 kiểm thử đạt. Lượt `mock-1791552561817` hoàn thành131 pipeline: claim64 warm/max4ms, nhưng finalize warm11ms; dừng, không nghiệm thu.
+
+`96e053e` gộp identity/job/evidence của finalize trong một SELECT, giữ transaction chốt và kiểm thử receipt sai/lặp/phục hồi khi pause. CI37939122212 và471 kiểm thử đạt. Claim cold9ms; lượt `mock-1791553824957` dừng vì image cold11ms. Không gộp các mẫu này vào phiên bản sau.
+
+`c3bd79a7fa99eeecd3f4f91262e9e8f08a272477` gộp identity và leased job cho image/proof/intent/authorize/evidence; image đọc fence trong cùng SELECT và chỉ lấy cột cần dùng. Kiểm thử mới xác nhận không đọc R2 khi pause/nguồn/permit thay đổi. 472 kiểm thử,13 kiểm tra ảnh và CI Windows/Linux37941729391 đạt; CI có sáu kịch bản compiled workerd/native D1/R2.
+
+CF version `e8cf7dcb-2859-466f-98f1-710923a73b02`, deployment3. Cold claim9ms. Lượt `mock-1791555199839` hoàn thành150 pipeline mock, mọi mẫu API quan sát được trong ngân sách nhưng **chưa đủ30 warm ở mọi nhóm**:
+
+| Pha | Mẫu warm | p95 CPU (ms) | Max warm CPU (ms) |
+| --- | ---: | ---: | ---: |
+| claim | 72 | 3 | 5 |
+| data:0 | 30 | 3 | 6 |
+| data:1 | 25 | 2 | 3 |
+| data:2 | 18 | 2 | 2 |
+| data:3 | 49 | 3 | 4 |
+| data:4 | 25 | 2 | 3 |
+| image | 28 | 2 | 3 |
+| proof | 25 | 3 | 3 |
+| intent | 27 | 5 | 5 |
+| authorize | 13 | 3 | 3 |
+| evidence | 50 | 4 | 5 |
+| finalize | 19 | 4 | 4 |
+| status | 29 | 3 | 3 |
+
+Người quản lý gửi email cảnh báo D1 đã dùng86% hạn mức đọc5 triệu dòng/ngày. Clone dùng chung quota tài khoản; việc lặp pipeline để đo tạo tải đáng kể, nhưng chưa có số liệu analytics phân bổ toàn bộ mức86% riêng cho F5. Đã ngừng đo, không chạy lượt resume dự kiến, xóa Worker/D1 clone và token. Production kiểm lại giữ40 bài/56 mục thư viện/40 ảnh/schema14, permit/job/intent/publication0, enabled0/paused1. Facebook/Telegram thật0.
+
+Theo [D1 pricing](https://developers.cloudflare.com/d1/platform/pricing/), hạn mức Free reset00:00UTC; thông báo chỉ mốc10/10/2026, tức07:00 Việt Nam. Không nâng gói trả phí. **F5 chưa nghiệm thu và F6 chưa mở**; đây là thiếu mẫu/quota, không phải mẫu CPU vượt10ms trong bản c3bd79a. Không dùng mẫu deployment đã xóa để nghiệm thu một deployment mới.
+
+Bộ đo được bổ sung guard local: cần receipt mức sử dụng toàn tài khoản từ Cloudflare, đúng ngày UTC và mới không quá5 phút; chặn khi reads>=3 triệu hoặc writes>=50 nghìn để dành dư địa vận hành. Tối đa50 chuỗi đo/ngày UTC, ledger dùng chung qua các phiên bản, đặt chỗ trước network và không hoàn lại sau lỗi. Đây là giới hạn chuỗi và ngưỡng tài khoản, **chưa phải bộ đếm chính xác rows_read của từng SQL**. Không tự tạo receipt giả từ email cảnh báo; phải đọc dashboard/analytics mới trước lần chạy sau. Tail filter0.999 được cấu hình cho lần đo sau, chưa kiểm chứng cloud trong ngày này. Nếu vẫn thiếu mẫu thì giữ trạng thái chưa nghiệm thu, không lặp vô hạn.
+
+Đã khóa allowance ngày09/10 vì các lượt trước vượt mức50 mới đặt. Bước tiếp theo trong F5 là xác minh quota sau reset, giảm tải/lấy mẫu theo ngân sách, đo đủ trên deployment mới trước khi xin chuyển F6. Guard được kiểm thử local/CI, không tạo thêm tải D1 để kiểm nó.
+
 Trước khi kết nối thật phải duyệt một bước riêng: mount API vào entrypoint production và nâng validator schema16, áp dụng migration15/16 khi cửa đóng, tạo capability riêng, thêm workflow live với ref tin cậy và Secret do chủ dự án lưu trực tiếp, kiểm quota thực tế/budget0, sau đó kiểm lại toàn bộ cổng và rollback. Không sao chép secret Meta từ Cloudflare.
 
 `quotaAllowed` hiện là đầu vào giả lập để kiểm fail-closed; chưa đọc billing tài khoản. Monitor Node hiện chỉ trả báo cáo giả lập, chưa gửi cảnh báo hoặc thay monitor đang chạy. Việc tổng hợp stock Node và nối health/owner/warehouse schema16 chưa được kích hoạt; phải hoàn tất và kiểm thử ở bước tích hợp đóng trước bật lịch. Giữ lịch chính thức một bài/ngày10:00 Việt Nam và cơ chế gửi thủ công riêng; F5 không tạo lịch mới.

@@ -1,11 +1,17 @@
 // Explicit acceptance of the owned private F5 clone; Meta remains loopback-only.
-import {readFileSync,writeFileSync,readdirSync} from 'node:fs';
+import {readFileSync,writeFileSync,readdirSync,existsSync} from 'node:fs';
+import {reserveF5Cycles} from './f5-cloud-budget.mjs';
 import {spawnSync} from 'node:child_process';
 import {resolve} from 'node:path';
 import {runnerFixture} from '../tests/helpers/production-runner-http.mjs';
 import {runSimulatedActionsRunner,runSimulatedRunnerMonitor} from './production-actions-runner.mjs';
 const root='tmp/step38/f5',l=JSON.parse(readFileSync(root+'/resources.json'));
 if(l.deleted||!l.seeded||!/^nttu-f5-cpu-[a-f0-9]{10}$/.test(l.worker??'')||l.origin!=='https://'+l.worker+'.nttu-kts-johntroger.workers.dev'||! /^[a-f0-9]{64}$/.test(l.token??''))throw Error('Owned isolated F5 clone required');
+const usage=JSON.parse(readFileSync(root+'/account-usage.json'));
+const plan=reserveF5Cycles(usage,existsSync(root+'/cycle-budget.json')?JSON.parse(readFileSync(root+'/cycle-budget.json')):undefined);
+// Reserve before any network/fixture. Failure or a new release never refunds
+// allowance; this bounds test cycles, not the exact D1 rows of every query.
+writeFileSync(root+'/cycle-budget.json',JSON.stringify(plan.ledger,null,2));
 const events=[],requests=[],resumed=[],label='mock-'+Date.now();
 if(process.argv[2]==='resume'){
  const seen=new Set();for(const file of readdirSync(root).filter(f=>/^mock-\d+-tail\.json$/.test(f)).sort()){
@@ -25,7 +31,7 @@ let tail,socket,pending='',fixture;
 function parse(){const start=pending.indexOf('{');if(start<0){pending=pending.slice(-1000);return;}pending=pending.slice(start);let depth=0,quoted=false,escaped=false;for(let i=0;i<pending.length;i++){const c=pending[i];if(quoted){if(escaped)escaped=false;else if(c==='\\')escaped=true;else if(c==='"')quoted=false;}else if(c==='"')quoted=true;else if(c==='{')depth++;else if(c==='}'&&--depth===0){try{const e=JSON.parse(pending.slice(0,i+1));let mark;for(const log of e.logs??[])if(log.message?.[0]==='F5_OBSERVATION')try{mark=JSON.parse(log.message[1]);}catch{}events.push({version:e.scriptVersion?.id??null,path:e.event?.request?.url?new URL(e.event.request.url).pathname:null,at:e.eventTimestamp??null,outcome:e.outcome??null,cpuTime:e.cpuTime??e.metrics?.cpuTime??null,wallTime:e.wallTime??e.metrics?.wallTime??null,cold:mark?.cold??null,deployment:mark?.deployment??null,group:mark?.group??null});save();}catch{}pending=pending.slice(i+1);return parse();}}}
 const tailPath='/workers/scripts/'+l.worker+'/tails';
 async function closeTail(){socket?.close();if(tail){await cf(tailPath+'/'+tail.id,'DELETE');tail=undefined;}}
-async function openTail(){tail=await cf(tailPath,'POST',{});socket=new WebSocket(tail.url,'trace-v1');socket.binaryType='arraybuffer';pending='';const current=socket;current.addEventListener('message',e=>{if(current!==socket)return;pending+=typeof e.data==='string'?e.data:Buffer.from(e.data).toString();parse();});await new Promise((done,reject)=>{const timer=setTimeout(()=>reject(Error('F5 tail timeout')),20000);current.addEventListener('open',()=>{clearTimeout(timer);current.send(JSON.stringify({debug:false}));done();},{once:true});current.addEventListener('error',()=>{clearTimeout(timer);reject(Error('F5 tail failed'));},{once:true});});}
+async function openTail(){tail=await cf(tailPath,'POST',{filters:[{sampling_rate:0.999}]});socket=new WebSocket(tail.url,'trace-v1');socket.binaryType='arraybuffer';pending='';const current=socket;current.addEventListener('message',e=>{if(current!==socket)return;pending+=typeof e.data==='string'?e.data:Buffer.from(e.data).toString();parse();});await new Promise((done,reject)=>{const timer=setTimeout(()=>reject(Error('F5 tail timeout')),20000);current.addEventListener('open',()=>{clearTimeout(timer);current.send(JSON.stringify({debug:false}));done();},{once:true});current.addEventListener('error',()=>{clearTimeout(timer);reject(Error('F5 tail failed'));},{once:true});});}
 const phases=['claim',...Array.from({length:5},(_,g)=>'data:'+g),'image','proof','intent','authorize','evidence','finalize','status'];
 const key=e=>e.path==='/runner/data'?'data:'+e.group:e.path?.replace('/runner/','');
 const relevant=()=>events.filter(e=>e.path?.startsWith('/runner/')&&e.version===l.cpuVersion&&String(e.deployment)===String(l.deployment));
@@ -43,7 +49,7 @@ try{
  for(const stale of await cf(tailPath))await cf(tailPath+'/'+stale.id,'DELETE');
  await openTail();await new Promise(r=>setTimeout(r,5000));
  fixture=await runnerFixture({apiHandler:async request=>{const path=new URL(request.url).pathname,body=await request.text(),data=JSON.parse(body);return remote(path,body,path==='/runner/data'?data.group:undefined);}});
- for(let cycle=0;cycle<150;cycle++){
+ for(let cycle=0;cycle<plan.cycles;cycle++){
   if(cycle&&cycle%10===0){await closeTail();await openTail();}
   const reset=await remote('/reset','{}');if(!reset.ok)throw Error('F5 reset failed');
   const result=await runSimulatedActionsRunner(fixture.options);requests.push({cycle:cycle+1,...result});save();if(result.state!=='confirmed'||result.mockPosts!==1)throw Error('F5 mock pipeline failed: '+JSON.stringify(result));
@@ -58,7 +64,7 @@ finally{
  try{await fixture?.dispose();}catch{failure??='F5 local fixture cleanup failed';}
  await new Promise(r=>setTimeout(r,4000));try{await closeTail();}catch{failure??='F5 tail cleanup failed';}
  try{budget();}catch(error){failure??=error instanceof Error?error.message:'F5 final CPU budget failed';}
- save();writeFileSync(root+'/'+label+'-summary.json',JSON.stringify({release:l.release,version:l.cpuVersion,resumedEvidence:resumed,stats:summary(),failure:failure??null,mockPosts:fixture?.postCount()??0,realMetaPosts:0,realTelegramMessages:0},null,2));console.log(JSON.stringify({evidence:root+'/'+label,failure:failure??null}));
+ save();writeFileSync(root+'/'+label+'-summary.json',JSON.stringify({release:l.release,version:l.cpuVersion,resumedEvidence:resumed,cycleBudget:plan.ledger,telemetryFilter:'sampling_rate=0.999',stats:summary(),failure:failure??null,mockPosts:fixture?.postCount()??0,realMetaPosts:0,realTelegramMessages:0},null,2));console.log(JSON.stringify({evidence:root+'/'+label,failure:failure??null}));
 }
 // Node WebSocket connection pool otherwise keeps this one-off tool alive.
 process.exit(failure?1:0);

@@ -4,6 +4,7 @@ import {resolve} from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {randomBytes,randomUUID,createHash} from 'node:crypto';
 import {productionMigrations} from './production-management-prepare.mjs';
+import {assertF5Usage} from './f5-cloud-budget.mjs';
 const ACCOUNT='4d46e32e5c27ff522ee857308a53e729',root='tmp/step38/f5',mode=process.argv[2];mkdirSync(root,{recursive:true});
 const path=root+'/resources.json',read=()=>JSON.parse(readFileSync(path)),save=l=>writeFileSync(path,JSON.stringify(l,null,2));
 async function cf(p,method='GET',body){const conf=readFileSync(resolve(process.env.APPDATA,'xdg.config/.wrangler/config/default.toml'),'utf8'),token=conf.match(/^oauth_token\s*=\s*"([^"]+)"/m)?.[1];if(!token)throw Error('Cloudflare OAuth unavailable');const r=await fetch('https://api.cloudflare.com/client/v4/accounts/'+ACCOUNT+p,{method,headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body),signal:AbortSignal.timeout(60000)});const j=await r.json();if(!r.ok||!j.success)throw Error('F5 Cloudflare operation HTTP '+r.status);return j.result;}
@@ -11,6 +12,7 @@ function guard(l){if(l.deleted||!/^nttu-f5-cpu-[a-f0-9]{10}$/.test(l.worker??'')
 function tested(){const git=spawnSync('git',['rev-parse','HEAD'],{encoding:'utf8'}),dirty=spawnSync('git',['status','--porcelain','--untracked-files=no'],{encoding:'utf8'});if(git.status!==0||dirty.stdout.trim())throw Error('Clean tested HEAD required');const sha=git.stdout.trim(),ci=JSON.parse(readFileSync(root+'/ci.json'));if(!ci.some(r=>r.sha===sha&&r.conclusion==='success'))throw Error('Successful exact-HEAD CI required');return sha;}
 function wrangler(args,label,input){const r=spawnSync(process.execPath,['node_modules/wrangler/bin/wrangler.js',...args],{encoding:'utf8',input,timeout:180000,env:{...process.env,WRANGLER_SEND_METRICS:'false',CI:'true'}});writeFileSync(root+'/'+label+'.log',(r.stdout??'')+(r.stderr??''));if(r.status!==0)throw Error('F5 '+label+' failed; inspect retained log');return r.stdout??'';}
 if(mode==='create'){
+ assertF5Usage(JSON.parse(readFileSync(root+'/account-usage.json')));
  if(existsSync(path)&&!read().deleted)throw Error('Existing F5 resources must be cleaned before creating another clone');
  const sha=tested(),name='nttu-f5-cpu-'+randomUUID().replaceAll('-','').slice(0,10),sql=readFileSync('tmp/step38/f4/backup/production-schema14.sql');
  if(sql.length<1000||sql.includes(Buffer.from('CREATE TABLE production_runner_sessions')))throw Error('Expected retained schema14 backup');

@@ -171,3 +171,7 @@ Chủ dự án chọn GitHub Actions theo đề xuất đã lưu, chỉ code/gi�
 ### 09/10/2026 — chốt kết quả F5: chức năng đạt, CPU chưa đạt
 
 Bản1871c88 đạt469 kiểm thử,14 nhóm runner, sáu kịch bản native,13 kiểm tra ảnh và CI Windows/Linux37912824859. Cloud clone hoàn thành121 pipeline mock nhưng claim11ms/data:1 12ms vượt10ms; đã dừng, chưa nghiệm thu. Production kiểm lại giữ40 bài/56 mục thư viện/40 ảnh/schema14, không permit/job/intent/publication, publisher tắt/paused. Worker/D1 clone đã xóa, token đo thu hồi; backup và bằng chứng được giữ. Chưa đăng Facebook/Telegram thật hoặc thay main/cron. Cần xử lý CPU trước chuyển bước; F6 chỉ là đề xuất chưa duyệt.
+
+### 09/10/2026 — tối ưu tiếp F5, dừng tải vì quota D1
+
+Bảnc3bd79a gộp các lượt đọc identity/job/fence và finalize;472 kiểm thử,13 kiểm tra ảnh và CI37941729391 đạt. Cloud150 pipeline mock: CPU warm cao nhất6ms, cold claim9ms, chưa đủ30 warm ở một số nhóm nên chưa nghiệm thu. Các ứng viên trước46c497c/96e053e lần lượt gặp finalize warm11ms/image cold11ms, được giữ riêng. Chủ dự án gửi cảnh báo D1 reads86%; đã ngừng đo, xóa clone/token, kiểm production nguyên trạng40/56/schema14/cửa đóng. Bổ sung receipt quota mới và ngân sách tối đa50 chuỗi đo/ngày, không lặp resume vô hạn; chặn thử khi tài khoản reads>=3 triệu hoặc writes>=50 nghìn. Chưa đo cloud cho guard/filter mới, chưa chuyển F6. Hạn mức trong thông báo reset07:00 Việt Nam10/10; không tự hẹn hoặc chạy tiếp sau reset. Chi tiết tại docs/steps/38-f5-actions-runner.md.
