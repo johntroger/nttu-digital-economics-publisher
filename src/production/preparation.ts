@@ -65,7 +65,7 @@ export async function productionPreparation(e:PublisherBindings,input:unknown,tr
  if(expectedPhase!==undefined&&expectedPhase!==(prior?.phase??'content'))throw Error('SEND_RECEIPT_PHASE_INVALID');
  const projected=!prior||prior.phase==='finalize';
  if(!e.DB!.batch)throw Error('PRODUCTION_DATABASE_UNAVAILABLE');
- const identitySQL=PRODUCTION_STATE_SQL.replace('a.paused_by_user,','a.paused_by_user,a.maintenance_owner,a.blocked_reasons,a.operation_generation,');
+ const identitySQL=PRODUCTION_STATE_SQL;
  const statements=[e.DB!.prepare(identitySQL),e.DB!.prepare('SELECT * FROM production_publisher_config WHERE id=1'),
   e.DB!.prepare(`SELECT (SELECT count(*) FROM production_publisher_jobs WHERE state IN ('held','requested','retry_wait','unknown')) active,
    (SELECT count(*) FROM production_send_permits WHERE revoked=0) permits,

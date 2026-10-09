@@ -817,3 +817,7 @@ Lịch đăng staging chỉ đọc trạng thái điều kiện; lịch thật t
 Nghiệm thu intent/receipt, retry 5 phút/tối đa ba lần, dự phòng cùng ngày,
 unknown/đối chiếu muộn, chống trùng ngày, rollback D1 và auth trước chuyển bước.
 Chi tiết phạm vi/giới hạn: docs/steps/19-cloud-workflow.md.
+
+### Điều chỉnh dự kiến sau đo Workers Free F4 — 09/10/2026
+
+F4 chưa đạt ngân sách CPU; production giữ cửa đóng ở F2/schema14. Bản đề xuất F5 chuyển phần xử lý nặng sang Node trên GitHub Actions Linux, giữ D1/R2/OAuth/UI trên Cloudflare Free và giữ nguyên một bài tự động/ngày10:00 Việt Nam. Phải kiểm quota Actions dùng chung với CI/monitor, cổng server/intent/unknown/chống trùng và CPU API nhỏ trước triển khai. Đây là **đề xuất chờ phê duyệt**, chưa thay kế hoạch vận hành hoặc cấp phép POST thật. Phạm vi duyệt đầu tiên chỉ code/kiểm thử giả lập trên draft, xem docs/steps/38-f5-free-runner-proposal.md.

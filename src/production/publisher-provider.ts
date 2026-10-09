@@ -4,7 +4,20 @@ import {publicationFailure} from './publisher-outcome.ts';
 export const PRODUCTION_PAGE='817593604765443';
 export interface PublicationRequest {attemptId:string;pageId:string;caption:string;checksum:string;bytes:Uint8Array;sentAt:number}
 export type PublicationResult={kind:'confirmed';remoteId:string;confirmedAt:number;attemptId:string;pageId:string;captionHash:string;checksum:string}|{kind:'retryable'|'policy'|'global'|'unknown';remoteId?:string};
-export const publicationHash=async(value:string|Uint8Array)=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',typeof value==='string'?new TextEncoder().encode(value):new Uint8Array(value))),b=>b.toString(16).padStart(2,'0')).join('');
+// Keep the exact slice of an ArrayBuffer-backed image; WebCrypto and Blob take
+// their own snapshots. Copy only shared/foreign buffers instead of copying the
+// entire PNG once more before each native operation.
+const imageView=(value:Uint8Array)=>value.buffer instanceof ArrayBuffer?new Uint8Array(value.buffer,value.byteOffset,value.byteLength):new Uint8Array(value);
+// Static field names and a fresh random boundary avoid FormData's additional
+// binary serialization. Blob snapshots the exact verified slice once. Caption
+// remains UTF-8 data, never an interpolated header or a URL parameter.
+function photoBody(request:PublicationRequest,proof:string){
+ let boundary:string;do{boundary='nttu-'+crypto.randomUUID();}while(request.caption.includes(boundary));
+ const field=(name:string,value:string)=>`--${boundary}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${value}\r\n`;
+ const prefix=field('caption',request.caption)+field('published','true')+field('appsecret_proof',proof)+`--${boundary}\r\nContent-Disposition: form-data; name="source"; filename="approved.png"\r\nContent-Type: image/png\r\n\r\n`;
+ return new Blob([prefix,imageView(request.bytes),`\r\n--${boundary}--\r\n`],{type:'multipart/form-data; boundary='+boundary});
+}
+export const publicationHash=async(value:string|Uint8Array)=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',typeof value==='string'?new TextEncoder().encode(value):imageView(value))),b=>b.toString(16).padStart(2,'0')).join('');
 const validId=(id:unknown):id is string=>typeof id==='string'&&new RegExp('^'+PRODUCTION_PAGE+'_[1-9][0-9]{4,24}$').test(id);
 async function data(response:Response){
  const reader=response.body?.getReader(),parts:Uint8Array[]=[];let size=0;
@@ -48,7 +61,7 @@ export class ProductionMetaPublisher {
  async send(request:PublicationRequest,clock:()=>number=Date.now):Promise<PublicationResult>{
   if(!this.configured()||request.pageId!==PRODUCTION_PAGE||!request.attemptId||!request.caption||!Number.isSafeInteger(request.sentAt)||request.bytes.length>5242880||request.bytes.length===0||await publicationHash(request.bytes)!==request.checksum)return {kind:'global'};
   try{return await bounded(async signal=>{
-   const form=new FormData();form.set('source',new Blob([new Uint8Array(request.bytes)],{type:'image/png'}),'approved.png');form.set('caption',request.caption);form.set('published','true');form.set('appsecret_proof',await metaProof(this.env));
+   const form=photoBody(request,await metaProof(this.env));
    const response=await this.transport(this.endpoint(PRODUCTION_PAGE)+'/photos',{method:'POST',redirect:'manual',headers:{Authorization:'Bearer '+this.env.META_PAGE_ACCESS_TOKEN},body:form,signal}),body=await data(response);
    if(response.status===200&&validId(body.post_id)&&typeof body.id==='string'&&/^[1-9][0-9]{4,24}$/.test(body.id))return this.evidence(request,body.post_id,signal,clock);
    const error=body.error as {code?:unknown}|undefined;return {kind:publicationFailure(response.status,typeof error?.code==='number'?error.code:undefined).kind,...(validId(body.post_id)?{remoteId:body.post_id}:{})};
@@ -59,7 +72,7 @@ export class ProductionMetaPublisher {
  async dispatch(request:PublicationRequest):Promise<PublicationResult>{
   if(!this.configured()||request.pageId!==PRODUCTION_PAGE||!request.attemptId||!request.caption||!Number.isSafeInteger(request.sentAt)||request.bytes.length>5242880||request.bytes.length===0||await publicationHash(request.bytes)!==request.checksum)return {kind:'global'};
   try{return await bounded(async signal=>{
-   const form=new FormData();form.set('source',new Blob([new Uint8Array(request.bytes)],{type:'image/png'}),'approved.png');form.set('caption',request.caption);form.set('published','true');form.set('appsecret_proof',await metaProof(this.env));
+   const form=photoBody(request,await metaProof(this.env));
    const response=await this.transport(this.endpoint(PRODUCTION_PAGE)+'/photos',{method:'POST',redirect:'manual',headers:{Authorization:'Bearer '+this.env.META_PAGE_ACCESS_TOKEN},body:form,signal}),body=await data(response);
    if(response.status===200)return {kind:'unknown',...(validId(body.post_id)?{remoteId:body.post_id}:{})};
    const error=body.error as {code?:unknown}|undefined;return {kind:publicationFailure(response.status,typeof error?.code==='number'?error.code:undefined).kind};

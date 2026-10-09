@@ -1,6 +1,6 @@
 # Bước 38 — Phương án nghiệm thu ngân sách CPU
 
-Ngày 08/10/2026: người quản lý chọn **giữ Workers Free**, chấp nhận làm chậm để ổn định. Không nâng gói. F1–F2 đã triển khai và kiểm thử trong phạm vi đọc/chuẩn bị. F3 đã được phê duyệt, hoàn tất code và kiểm thử cô lập; chưa rollout cloud hoặc đo CPU F3. F4 vẫn cần phê duyệt riêng. Bằng chứng F3: [báo cáo bộ đăng bền vững](38-f3-durable-publisher.md).
+Ngày 08/10/2026: người quản lý chọn **giữ Workers Free**, chấp nhận làm chậm để ổn định. Không nâng gói. F1–F2 đã triển khai và kiểm thử trong phạm vi đọc/chuẩn bị. F3 đã hoàn tất code và kiểm thử cô lập. F4 đã được phê duyệt và đang đo/tối ưu trên cloud clone; chưa đạt CPU, chưa rollout production. Xem [F3](38-f3-durable-publisher.md) và [trạng thái F4](38-f4-cloud-acceptance.md).
 
 ## Phương án A — Workers Paid
 

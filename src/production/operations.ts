@@ -1,7 +1,7 @@
 import {publisherPreflight} from './publisher-live.ts';
 import type {ManagementBindings} from './management.ts';
-import {productionState} from './management.ts';
-import {productionMetaStatus} from './meta.ts';
+import {productionState,productionRuntimeState} from './management.ts';
+import {productionMetaConfigured} from './meta.ts';
 import {telegramConfigured,dispatchTelegramQueue} from '../cloud/telegram.ts';
 import {inspectMetaConnection} from '../cloud/meta.ts';
 
@@ -11,11 +11,11 @@ export async function httpTriggerStatus(env:ManagementBindings){
  return ready?env.DB!.prepare('SELECT enabled,last_http_at,heartbeat_count,last_complete_at,last_dispatch_state FROM production_http_trigger WHERE id=1').first<Record<string,unknown>>():null;
 }
 export async function operationsStatus(env:ManagementBindings){
- await productionState(env);const schemaReady=await operationsSchema(env);
+ const state=await productionState(env);const schemaReady=await operationsSchema(env);
  const runtime=schemaReady?await env.DB!.prepare('SELECT last_scheduled_at,heartbeat_count,last_dispatch_state FROM production_operations WHERE id=1').first():null;
  const events=(await env.DB!.prepare('SELECT event_id,state,tries,next_at,message_id,last_error FROM notification_outbox ORDER BY rowid DESC LIMIT 100').all!()).results;
  const http=await httpTriggerStatus(env);
- return{environment:'production',configured:telegramConfigured(env)&&env.TELEGRAM_CHAT_ID==='1548618770',schemaReady,runtime,http,triggerSource:http?.enabled===1?'http':'cron',events,publishingEnabled:false};
+ return{environment:'production',configured:telegramConfigured(env)&&env.TELEGRAM_CHAT_ID==='1548618770',schemaReady,runtime,http,triggerSource:http?.enabled===1?'http':'cron',events,...await productionRuntimeState(env,state)};
 }
 export async function enqueueProductionTelegramTest(env:ManagementBindings,input:unknown){
  const status=await operationsStatus(env);if(!status.schemaReady||!status.configured)throw Error('TELEGRAM_NOT_CONFIGURED');
@@ -64,12 +64,19 @@ export async function runProductionHttpTick(env:ManagementBindings,options:Param
   throw Error('HTTP_TRIGGER_UNAVAILABLE');
  }
 }
-export async function productionMonitorStatus(env:ManagementBindings){
- const ops=await operationsStatus(env),meta=await productionMetaStatus(env);
- const live=meta.configured?await inspectMetaConnection(env):null;
- return{environment:'production',databaseChecked:true,publishingEnabled:false,paused:true,schemaReady:ops.schemaReady,telegramConfigured:ops.configured,runtime:ops.runtime,http:ops.http,triggerSource:ops.triggerSource,
-  publisher:await publisherPreflight(env),metaConfigured:meta.configured,metaVerified:live?.state==='verified_read_only',metaExpiresAt:live?.expires??null,
+export async function productionMonitorStatus(env:ManagementBindings,options:{now?:number;transport?:typeof fetch}={}){
+ const state=await productionState(env),migrations=Number(state.migration_count),schemaReady=migrations>=12;
+ // The monitor needs counts, not the latest 100 notification payload rows or a
+ // historical Meta check. Read only the fields returned to its scoped caller.
+ const view=await env.DB!.prepare(`SELECT
+ ${schemaReady?"(SELECT json_object('last_scheduled_at',last_scheduled_at,'heartbeat_count',heartbeat_count,'last_dispatch_state',last_dispatch_state) FROM production_operations WHERE id=1)":"NULL"} runtime,
+ ${migrations>=13?"(SELECT json_object('enabled',enabled,'last_http_at',last_http_at,'heartbeat_count',heartbeat_count,'last_complete_at',last_complete_at,'last_dispatch_state',last_dispatch_state) FROM production_http_trigger WHERE id=1)":"NULL"} http,
+ (SELECT count(*) FROM (SELECT state FROM notification_outbox ORDER BY rowid DESC LIMIT 100) WHERE state!='delivered') pending,
+ (SELECT count(*) FROM (SELECT state FROM notification_outbox ORDER BY rowid DESC LIMIT 100) WHERE state IN ('needs_action','delivery_unknown')) blocked`).first<Record<string,any>>();
+ const runtime=view!.runtime?JSON.parse(view!.runtime):null,http=view!.http?JSON.parse(view!.http):null,configured=productionMetaConfigured(env);
+ const live=configured?await inspectMetaConnection(env,options):null,publisher=await publisherPreflight(env,options.now??Date.now(),state);
+ return{environment:'production',databaseChecked:true,publishingEnabled:publisher.publishingEnabled,paused:publisher.paused??state.paused_by_user===1,schemaReady,telegramConfigured:telegramConfigured(env)&&env.TELEGRAM_CHAT_ID==='1548618770',runtime,http,triggerSource:http?.enabled===1?'http':'cron',
+  publisher,metaConfigured:configured,metaVerified:live?.state==='verified_read_only',metaExpiresAt:live?.expires??null,
   dataAccessExpiresAt:live?.dataExpires??null,
-  notificationsPending:ops.events.filter((e:any)=>!['delivered'].includes(e.state)).length,
-  notificationsBlocked:ops.events.filter((e:any)=>['needs_action','delivery_unknown'].includes(e.state)).length};
+  notificationsPending:view!.pending,notificationsBlocked:view!.blocked};
 }

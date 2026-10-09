@@ -4,10 +4,11 @@ CREATE TABLE production_publisher_preparation (
  phase TEXT NOT NULL CHECK(phase IN ('image','connection','send')),
  revision INTEGER NOT NULL DEFAULT 1,
  release TEXT NOT NULL, fingerprint TEXT NOT NULL,
+ approval_snapshot TEXT,
  image_bytes INTEGER, verified_at INTEGER, proof_expires_at INTEGER,
  CHECK(image_bytes IS NULL OR image_bytes BETWEEN 1 AND 5242880)
 );
-CREATE TRIGGER production_preparation_identity BEFORE UPDATE OF job,release,fingerprint ON production_publisher_preparation
+CREATE TRIGGER production_preparation_identity BEFORE UPDATE OF job,release,fingerprint,approval_snapshot ON production_publisher_preparation
  BEGIN SELECT RAISE(ABORT,'immutable preparation identity'); END;
 CREATE TABLE production_publisher_stock_scan (
  id INTEGER PRIMARY KEY CHECK(id=1), snapshot TEXT NOT NULL,
