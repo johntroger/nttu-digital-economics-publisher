@@ -14,11 +14,14 @@ test('F4 harness requires isolation and a private capability, denying real datab
 });
 test('F4 harness preserves real publisher phases but routes every Graph call to the isolated mock',async()=>{
  const f=await fixture();let posts=0;try{
+  f.db.exec("INSERT INTO notification_outbox(event_id,payload_json) VALUES('copied-history','{}'); CREATE TABLE f4_history(id TEXT PRIMARY KEY,event_id TEXT REFERENCES notification_outbox(event_id)); INSERT INTO f4_history VALUES('keep','copied-history')");
   const wire=async(url,init)=>{assert.equal(new URL(url).origin,f.env.CPU_MOCK_ORIGIN);if(init.method==='POST')posts++;return mockFetch(new Request(url,init),f.env);};
   const reset=await cpuFetch(request('/reset'),f.env,wire);assert.equal(reset.status,200,await reset.text());
   for(const [i,state] of ['content_prepared','image_prepared','connection_prepared','evidence_recorded','evidence_verified','confirmed'].entries()){
    const r=await cpuFetch(request('/tick/'+i,{at:at+i*60000}),f.env,wire),body=await r.json();assert.equal(r.status,200,JSON.stringify(body));assert.equal(body.state,state);
   }assert.equal(posts,1);assert.equal(f.db.prepare('SELECT count(*) n FROM production_publisher_usage').get().n,1);
+  assert.equal(f.db.prepare("SELECT count(*) n FROM notification_outbox WHERE event_id='copied-history'").get().n,1);
+  assert.equal((await cpuFetch(request('/reset'),f.env,wire)).status,200);
  }finally{f.db.close();}
 });
 test('F4 mock has no anonymous or real-Graph forwarding path',async()=>{

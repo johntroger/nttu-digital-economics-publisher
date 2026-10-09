@@ -9,7 +9,8 @@ const child=spawn(process.execPath,['node_modules/wrangler/bin/wrangler.js','tai
 let pending='';
 function parse(){const start=pending.indexOf('{');if(start<0){pending=pending.slice(-1000);return;}pending=pending.slice(start);let depth=0,quoted=false,escaped=false;for(let i=0;i<pending.length;i++){const c=pending[i];if(quoted){if(escaped)escaped=false;else if(c==='\\')escaped=true;else if(c==='"')quoted=false;}else if(c==='"')quoted=true;else if(c==='{')depth++;else if(c==='}'&&--depth===0){try{const e=JSON.parse(pending.slice(0,i+1)),url=e.event?.request?.url;let mark;for(const log of e.logs??[]){const parts=log.message??[];if(parts[0]==='F4_OBSERVATION')try{mark=JSON.parse(parts[1]);}catch{}}
  events.push({version:e.scriptVersion?.id??null,path:typeof url==='string'?new URL(url).pathname:null,at:e.eventTimestamp??null,outcome:e.outcome??null,cpuTime:e.cpuTime??e.metrics?.cpuTime??null,wallTime:e.wallTime??e.metrics?.wallTime??null,cold:mark?.cold??null,deployment:mark?.deployment??null});save();}catch{}pending=pending.slice(i+1);return parse();}}}
-child.stdout.on('data',p=>{pending+=p.toString();parse();});child.stderr.on('data',()=>{});
+let connected=false,exited=false;
+child.stdout.on('data',p=>{const text=p.toString();if(text.includes('Connected to'))connected=true;pending+=text;parse();});child.stderr.on('data',p=>{if(p.toString().includes('Connected to'))connected=true;});child.once('exit',()=>{exited=true;});
 const base=Date.parse('2026-10-08T02:00:00Z');
 async function call(path,body={}){const start=Date.now();let response,j;try{response=await fetch(ledger.origin+path,{method:'POST',headers:{Authorization:'Bearer '+ledger.token,'Content-Type':'application/json'},body:JSON.stringify({at:base,...body}),signal:AbortSignal.timeout(30000)});const text=await response.text();try{j=JSON.parse(text);}catch{j={error:'NON_JSON_RESPONSE'};}requests.push({path,status:response.status,state:j.state??null,phase:j.phase??null,error:j.error??null,cold:j.cold??null,wallMs:Date.now()-start});save();if(!response.ok)throw Error(path+' HTTP '+response.status+' '+(j.error??''));return j;}catch(error){save();throw error;}}
 function warm(path){return events.filter(e=>e.path===path&&e.cold===false&&typeof e.cpuTime==='number'&&e.outcome==='ok').length;}
@@ -17,8 +18,9 @@ async function publishing(){await call('/reset');for(const [i,[p,state]] of [['c
 async function reads(){const r=await call('/reset',{scenario:'closed'});for(const p of ['/summary','/posts','/library','/detail'])await call(p,{key:r.postId});let receipt;for(const p of ['content','image','connection','finalize']){const j=await call('/preparation/'+p,{key:r.versionId,receipt});receipt=j.nextReceipt;}
  let cursor,offset=0;do{const phase=cursor?JSON.parse(Buffer.from(cursor.split('.')[0],'base64url').toString()).phase:'initialize';const j=await call('/preview/'+phase,{cursor});cursor=j.nextCursor;offset++;if(offset>43)throw Error('Preview did not finish');}while(cursor);}
 async function stock(){await call('/reset',{scenario:'stock'});let offset=0,state;do{const p=offset===0?'stock-init':offset<=40?'stock-item':'stock-finalize';const j=await call('/tick/'+p,{at:base+offset*60000});state=j.state;offset++;if(offset>43)throw Error('Stock did not finish');}while(state!=='day_complete');}
-await new Promise(r=>setTimeout(r,5000));
 try{
+ for(let i=0;i<60&&!connected&&!exited;i++)await new Promise(r=>setTimeout(r,1000));
+ if(!connected||exited)throw Error('Cloud CPU tail not connected; no measurements started');
  if(mode==='probe')await publishing();
  else if(mode==='publish'){
   const paths=['content','image','connection','send','evidence-get','finalize'].map(p=>'/tick/'+p);
