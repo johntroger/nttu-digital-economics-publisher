@@ -32,6 +32,10 @@ Monitor tải thống kê cần thiết thay vì lịch sử thông báo và ki�
 
 Ứng viên tiếp theo giảm leased read từ chín response D1 xuống hai, bỏ job snapshot và library metadata không dùng; giữ một transaction và fresh fences trước outbound. SHA/Blob dùng đúng lát ArrayBuffer, giữ checksum và bản sao bất biến của native API, tránh copy PNG thêm lần nữa. 454 kiểm thử local đạt, gồm upload/hash không đọc bytes nằm ngoài lát ảnh; còn phải qua CI và đo cloud của đúng phiên bản.
 
+Bản `7343e6f` đã đạt [CI Windows/Linux 37884100902](https://github.com/johntroger/nttu-digital-economics-publisher/actions/runs/37884100902), triển khai trên clone ở deployment6 / CF version `f37da61b-1f20-435a-84e0-211229ab4e89`. Probe `probe-1791528811027` chạy đúng 19 request nhưng pha gửi có 14 ms. Lượt `publish-1791528841709` dừng sớm khi đã xác nhận không đạt: send có 9 warm, trung bình 11,2 ms, max21; content max12, image/connection max11, monitor max13. Không đủ mẫu để nghiệm thu và không gộp số liệu với ứng viên kế tiếp. Đã dừng đúng child đo, bộ chạy dọn cache và xóa một tail riêng; giữ bằng chứng.
+
+Ứng viên mới đóng gói multipart bằng Blob một lần thay vì serialize FormData thêm lần nữa; giữ nguyên bytes/checksum, kiểm lại UTF-8 caption và dữ liệu nguồn bằng HTTP parser cho cả send/dispatch. 455 kiểm thử local đạt. Bộ đo dừng sớm khi vượt 10 ms, vẫn yêu cầu ít nhất 30 warm mỗi endpoint để đạt, và làm mới tail cả lượt reads/stock. Chưa có kết quả CPU cloud cho ứng viên này; không coi thay đổi đóng gói là đã giải quyết lỗi.
+
 ## Việc còn lại trước nghiệm thu
 
 1. Chốt kiểm thử local, native và CI của đúng phiên bản ứng viên.

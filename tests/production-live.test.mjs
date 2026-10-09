@@ -9,9 +9,25 @@ test('publisher hashes and uploads only the exact image slice, excluding surroun
  const f=await liveFixture();try{
   const image=f.imageBytes.get(f.item.key);assert.ok(image);const backing=new Uint8Array(image.length+2);backing.fill(99);backing.set(image,1);const bytes=backing.subarray(1,-1),checksum=await publicationHash(image);
   assert.equal(await publicationHash(bytes),checksum);assert.notEqual(await publicationHash(backing),checksum);
-  let uploads=0;const provider=new ProductionMetaPublisher(f.env,async(url,init)=>{uploads++;assert.equal(init.method,'POST');assert.deepEqual(new Uint8Array(await init.body.get('source').arrayBuffer()),new Uint8Array(image));return Response.json({post_id:f.remote});});
+  let uploads=0;const provider=new ProductionMetaPublisher(f.env,async(url,init)=>{uploads++;assert.equal(init.method,'POST');const form=await new Request(url,init).formData();assert.deepEqual(new Uint8Array(await form.get('source').arrayBuffer()),new Uint8Array(image));return Response.json({post_id:f.remote});});
   assert.equal((await provider.dispatch({attemptId:'image-slice',pageId:PRODUCTION_PAGE,caption:f.item.caption,checksum,bytes,sentAt:now})).kind,'unknown');assert.equal(uploads,1);
   if(typeof SharedArrayBuffer!=='undefined'){const shared=new SharedArrayBuffer(backing.length);new Uint8Array(shared).set(backing);assert.equal(await publicationHash(new Uint8Array(shared,1,image.length)),checksum);}
+ }finally{f.db.close();}
+});
+test('both publisher transports preserve UTF-8 caption, multipart boundaries and binary source exactly',async()=>{
+ const f=await liveFixture();try{
+  const bytes=f.imageBytes.get(f.item.key),caption='Sinh viên Kinh tế số 🎓\n============\r\n"source"\nContent-Disposition: form-data; name="published"\nfalse';
+  const checksum=await publicationHash(bytes);let uploads=0;
+  const provider=new ProductionMetaPublisher(f.env,async(url,init)=>{
+   if(init.method==='GET')return Response.json({id:f.remote,message:caption,created_time:new Date(now).toISOString()});
+   uploads++;assert.match(init.body.type,/^multipart\/form-data; boundary=nttu-/);
+   const request=new Request(url,init),form=await request.formData();assert.deepEqual([...form.keys()].sort(),['appsecret_proof','caption','published','source']);
+   assert.equal(form.get('caption'),caption);assert.equal(form.get('published'),'true');assert.match(form.get('appsecret_proof'),/^[a-f0-9]{64}$/);
+   const image=form.get('source');assert.equal(image.name,'approved.png');assert.equal(image.type,'image/png');assert.deepEqual(new Uint8Array(await image.arrayBuffer()),new Uint8Array(bytes));
+   return Response.json({id:'1234567890123456',post_id:f.remote});
+  });
+  const request={attemptId:'multipart',pageId:PRODUCTION_PAGE,caption,checksum,bytes,sentAt:now};
+  assert.equal((await provider.dispatch(request)).kind,'unknown');assert.equal((await provider.send(request,()=>now)).kind,'confirmed');assert.equal(uploads,2);
  }finally{f.db.close();}
 });
 test('Live schema migration remains disabled, empty and transactional; closed tick never touches a provider',async()=>{

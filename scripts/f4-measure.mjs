@@ -25,6 +25,7 @@ await openTail();
 const base=Date.parse('2026-10-08T02:00:00Z');
 async function call(path,body={}){const start=Date.now();let response,j;try{response=await fetch(ledger.origin+path,{method:'POST',headers:{Authorization:'Bearer '+ledger.token,'Content-Type':'application/json'},body:JSON.stringify({at:base,...body}),signal:AbortSignal.timeout(30000)});const text=await response.text();try{j=JSON.parse(text);}catch{j={error:'NON_JSON_RESPONSE'};}requests.push({path,status:response.status,state:j.state??null,phase:j.phase??null,error:j.error??null,cold:j.cold??null,wallMs:Date.now()-start});save();if(!response.ok)throw Error(path+' HTTP '+response.status+' '+(j.error??''));return j;}catch(error){save();throw error;}}
 function warm(path){return events.filter(e=>e.path===path&&e.version===ledger.cpuVersion&&String(e.deployment)===String(ledger.deployment)&&e.cold===false&&typeof e.cpuTime==='number'&&e.outcome==='ok').length;}
+function budget(paths){const failures=events.filter(e=>paths.includes(e.path)&&e.version===ledger.cpuVersion&&String(e.deployment)===String(ledger.deployment)&&(e.outcome!=='ok'||typeof e.cpuTime==='number'&&e.cpuTime>10));if(failures.length)throw Error('F4 CPU budget failed; evidence retained: '+JSON.stringify(failures.map(e=>({path:e.path,cpuTime:e.cpuTime,outcome:e.outcome,cold:e.cold}))));}
 async function publishing(){await call('/reset');for(const [i,[p,state]] of [['content','content_prepared'],['image','image_prepared'],['connection','connection_prepared'],['send','evidence_recorded'],['evidence-get','evidence_verified'],['finalize','confirmed']].entries()){const at=base+i*60000,r=await call('/tick/'+p,{at});if(r.state!==state)throw Error(p+' returned '+r.state);const summary=await call('/summary',{at}),monitor=await call('/monitor',{at});if(summary.publishingEnabled!==(state!=='confirmed')||monitor.publishingEnabled!==summary.publishingEnabled||monitor.paused!==summary.paused)throw Error('Manager/monitor state mismatch during '+p);}}
 async function reads(){const r=await call('/reset',{scenario:'closed'});for(const p of ['/summary','/posts','/library','/detail'])await call(p,{key:r.postId});let receipt;for(const p of ['content','image','connection','finalize']){const j=await call('/preparation/'+p,{key:r.versionId,receipt});receipt=j.nextReceipt;}
  let cursor,offset=0;do{const phase=cursor?JSON.parse(Buffer.from(cursor.split('.')[0],'base64url').toString()).phase:'initialize';const j=await call('/preview/'+phase,{cursor});cursor=j.nextCursor;offset++;if(offset>43)throw Error('Preview did not finish');}while(cursor);}
@@ -36,10 +37,18 @@ try{
  else if(mode==='probe')await publishing();
  else if(mode==='publish'){
   const paths=['content','image','connection','send','evidence-get','finalize'].map(p=>'/tick/'+p);
-  for(let i=0;i<150;i++){if(i>0&&i%10===0)await renewTail();await publishing();if(i%5===0)console.log(JSON.stringify({cycle:i+1,samples:Object.fromEntries(paths.map(p=>[p,warm(p)]))}));if(paths.every(p=>warm(p)>=30))break;}
+  for(let i=0;i<150;i++){if(i>0&&i%10===0)await renewTail();await publishing();budget([...paths,'/monitor','/summary']);if(i%5===0)console.log(JSON.stringify({cycle:i+1,samples:Object.fromEntries(paths.map(p=>[p,warm(p)]))}));if(paths.every(p=>warm(p)>=30))break;}
   if(!paths.every(p=>warm(p)>=30))throw Error('Insufficient warm CPU samples; acceptance remains incomplete');
- }else if(mode==='reads'){for(let i=0;i<50;i++){await reads();if(i%5===0)console.log(JSON.stringify({readCycle:i+1}));}}
- else if(mode==='stock'){for(let i=0;i<60;i++){await stock();console.log(JSON.stringify({stockCycle:i+1,finalize:warm('/tick/stock-finalize')}));if(warm('/tick/stock-init')>=30&&warm('/tick/stock-finalize')>=30)break;}}
+ }else if(mode==='reads'){
+  const paths=['/summary','/posts','/library','/detail',...['content','image','connection','finalize'].map(p=>'/preparation/'+p),...['initialize','item','finalize'].map(p=>'/preview/'+p)];
+  for(let i=0;i<150;i++){if(i>0&&i%10===0)await renewTail();await reads();budget(paths);if(i%5===0)console.log(JSON.stringify({readCycle:i+1,samples:Object.fromEntries(paths.map(p=>[p,warm(p)]))}));if(paths.every(p=>warm(p)>=30))break;}
+  if(!paths.every(p=>warm(p)>=30))throw Error('Insufficient read CPU samples; acceptance remains incomplete');
+ }
+ else if(mode==='stock'){
+  const paths=['stock-init','stock-item','stock-finalize'].map(p=>'/tick/'+p);
+  for(let i=0;i<150;i++){if(i>0&&i%10===0)await renewTail();await stock();budget(paths);console.log(JSON.stringify({stockCycle:i+1,finalize:warm('/tick/stock-finalize')}));if(paths.every(p=>warm(p)>=30))break;}
+  if(!paths.every(p=>warm(p)>=30))throw Error('Insufficient stock CPU samples; acceptance remains incomplete');
+ }
  else throw Error('Unknown F4 measurement mode');
  await new Promise(r=>setTimeout(r,4000));
 }finally{socket.close();await cf(tailPath+'/'+tail.id,'DELETE');save();console.log(JSON.stringify({evidence:root+'/'+label,requests:requests.length,events:events.length,maxCpu:Math.max(0,...events.map(e=>e.cpuTime??0))}));}
