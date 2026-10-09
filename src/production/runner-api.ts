@@ -17,6 +17,9 @@ const q=(e:RunnerBindings,sql:string,...values:Value[])=>e.DB!.prepare(sql).bind
 const first=(e:RunnerBindings,sql:string,...values:Value[])=>q(e,sql,...values).first<Row>();
 const batch=(e:RunnerBindings,sql:ReturnType<typeof q>[])=>e.DB!.batch!(sql);
 const day=(n:number)=>businessDate(new Date(n));
+// Cache query text only. D1 still reads mutable rows and receives fresh server
+// time parameters on every invocation; no approval result is cached here.
+const SNAPSHOT_SQL=readSnapshotSQL();
 const uid=(x:unknown):x is string=>typeof x==='string'&&/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(x);
 const hash=(x:unknown):x is string=>typeof x==='string'&&/^[a-f0-9]{64}$/.test(x);
 const remote=(x:unknown):x is string=>typeof x==='string'&&/^817593604765443_[1-9][0-9]{4,24}$/.test(x);
@@ -48,15 +51,16 @@ const fenceSQL=(n:number)=>`EXISTS(SELECT 1 FROM production_publisher_config c J
  WHERE c.id=1 AND c.active_job=j.id AND c.enabled=1 AND c.blocked IS NULL AND c.revision=j.config_revision
  AND a.paused_by_user=0 AND a.maintenance_owner IS NULL AND a.blocked_reasons='[]' AND a.operation_generation=j.operation_generation
  AND p.page_id='${PRODUCTION_PAGE}' AND p.revoked=0 AND p.due_at<=${n} AND p.expires_at>${n} AND p.business_date='${day(n)}'
- AND s.release=? AND s.runner=? AND s.expires_at>${n} AND s.snapshot=(SELECT snapshot FROM (${readSnapshotSQL()}))
+ AND s.release=? AND s.runner=? AND s.expires_at>${n} AND s.snapshot=(SELECT snapshot FROM (${SNAPSHOT_SQL}))
  AND NOT EXISTS(SELECT 1 FROM production_publisher_usage WHERE day=j.day OR post=j.post) AND ${eligible('j.version',n)})`;
 const fenceArgs=(e:RunnerBindings,runner:string,n:number):Value[]=>[e.RELEASE_SHA!,runner,n,n,n];
-async function job(e:RunnerBindings,id:unknown){
- if(typeof id!=='string'||!/^runner-job:[a-f0-9-]{36}$/.test(id))fail('RUNNER_JOB_INVALID',400);
- const row=await first(e,`SELECT j.*,s.runner,s.release,s.expires_at,s.caption_hash,s.image_bytes,s.proof_until,s.fingerprint,
+const JOB_SQL=`SELECT j.*,s.runner,s.release,s.expires_at,s.caption_hash,s.image_bytes,s.proof_until,s.fingerprint,
  l.id image_id,l.storage_key,l.size_bytes,l.checksum file_checksum FROM production_publisher_jobs j
  JOIN production_runner_sessions s ON s.job=j.id JOIN post_versions v ON v.id=j.version
- JOIN cloud_library l ON v.asset_id='library-'||l.id WHERE j.id=?`,id);if(!row)fail('RUNNER_JOB_UNKNOWN',404);return row;
+ JOIN cloud_library l ON v.asset_id='library-'||l.id WHERE j.id=?`;
+async function job(e:RunnerBindings,id:unknown){
+ if(typeof id!=='string'||!/^runner-job:[a-f0-9-]{36}$/.test(id))fail('RUNNER_JOB_INVALID',400);
+ const row=await first(e,JOB_SQL,id);if(!row)fail('RUNNER_JOB_UNKNOWN',404);return row;
 }
 const requestView=(j:Row,at:number)=>({job:j.id,versionId:j.version,caption:j.caption,checksum:j.checksum,pageId:PRODUCTION_PAGE,bytes:j.size_bytes,serverNow:at,day:j.day,release:j.release,captionHash:j.caption_hash});
 async function recovery(e:RunnerBindings,j:Row,n:number){
@@ -83,7 +87,7 @@ async function claim(e:RunnerBindings,b:Row,n:number,state:Row){
  }
  if(!live(state)||!state.start_date||day(n)<state.start_date)return answer({state:'closed'});
  if(state.today_used>0)return answer({state:'day_complete'});
- const p=await first(e,`SELECT p.*,v.post_id FROM production_send_permits p JOIN post_versions v ON v.id=p.version_id
+ const p=await first(e,`SELECT p.id,p.mode,p.due_at,p.business_date FROM production_send_permits p JOIN post_versions v ON v.id=p.version_id
  WHERE p.page_id=? AND p.business_date=? AND p.revoked=0 AND p.due_at<=? AND p.expires_at>? AND p.approved_at<=?
  AND NOT EXISTS(SELECT 1 FROM production_publisher_jobs j WHERE j.permit=p.id) ORDER BY p.due_at,p.id LIMIT 1`,PRODUCTION_PAGE,day(n),n,n,n);
  if(!p)return answer({state:'publication_approval_required'});
@@ -95,11 +99,12 @@ async function claim(e:RunnerBindings,b:Row,n:number,state:Row){
  WHERE p.id=? AND p.revoked=0 AND p.due_at<=? AND p.expires_at>? AND c.active_job IS NULL AND c.enabled=1 AND c.blocked IS NULL
  AND a.paused_by_user=0 AND a.maintenance_owner IS NULL AND a.blocked_reasons='[]' AND ${eligible('v.id',n)}
  AND NOT EXISTS(SELECT 1 FROM production_publisher_usage WHERE day=p.business_date OR post=v.post_id)`,id,n+180000,n,p.id,n,n),
- q(e,`INSERT INTO production_runner_sessions(job,runner,release,snapshot,expires_at) SELECT ?,?,?,snapshot,? FROM (${readSnapshotSQL()}) WHERE EXISTS(SELECT 1 FROM production_publisher_jobs WHERE id=?)`,id,b.runner,e.RELEASE_SHA!,n+180000,n,n,n,id),
- q(e,'UPDATE production_publisher_config SET active_job=? WHERE id=1 AND active_job IS NULL AND EXISTS(SELECT 1 FROM production_runner_sessions WHERE job=?) RETURNING active_job',id,id)]);
+ q(e,`INSERT INTO production_runner_sessions(job,runner,release,snapshot,expires_at) SELECT ?,?,?,snapshot,? FROM (${SNAPSHOT_SQL}) WHERE EXISTS(SELECT 1 FROM production_publisher_jobs WHERE id=?)`,id,b.runner,e.RELEASE_SHA!,n+180000,n,n,n,id),
+ q(e,'UPDATE production_publisher_config SET active_job=? WHERE id=1 AND active_job IS NULL AND EXISTS(SELECT 1 FROM production_runner_sessions WHERE job=?) RETURNING active_job',id,id),q(e,JOB_SQL,id)]);
  const receipt=created[2] as {results?:Row[]}|undefined;
  if(receipt?.results?.[0]?.active_job!==id)return answer({state:'claim_lost'});
- return answer({state:'held',...requestView(await job(e,id),n)});
+ const claimed=(created[3] as {results?:Row[]}|undefined)?.results?.[0];if(!claimed)fail('RUNNER_JOB_UNKNOWN',404);
+ return answer({state:'held',...requestView(claimed,n)});
 }
 async function route(r:Request,e:RunnerBindings,b:Row,n:number,state:Row){
  const path=new URL(r.url).pathname;

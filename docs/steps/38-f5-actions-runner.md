@@ -26,7 +26,9 @@ Kho fixture giữ40 bài và toàn bộ asset đã nhập fixture; fixture khôn
 
 Bản `810af6f` giảm hai round trip D1 ở claim, max warm8ms. Lượt đo `mock-1791534267322` đã hoàn thành21 pipeline mock, giữ40 bài/56 mục thư viện, nhưng data cold13ms, proof warm12ms và status cold11ms. Bộ đo dừng ngay; chưa đủ30 warm mỗi API, không nghiệm thu hoặc gộp mẫu với ứng viên sau. Các mẫu cold phát sinh cả giữa chuỗi request khi Cloudflare khởi tạo isolate mới; không bỏ chúng để báo cáo đẹp hơn.
 
-Ứng viên tiếp theo dùng CTE nguyên tử cho proof, kiểm version/snapshot/gate ngay trong UPDATE và giảm hai lượt đọc; token capability cố định64 ký tự được so sánh đủ64 vị trí thay vì hash hai lần. Kiểm thêm race thay pause/nguồn/version ngay lúc ghi proof. Kết quả cuối cập nhật sau CI và đo cloud đúng release. Chưa có phép mở cửa production từ hồ sơ này.
+`88396a3` dùng CTE nguyên tử cho proof, kiểm version/snapshot/gate ngay trong UPDATE và giảm hai lượt đọc; token capability cố định64 ký tự được so sánh đủ64 vị trí thay vì hash hai lần. 468 kiểm thử,13 nhóm runner và native đạt; CI Windows/Linux37906088097 đạt. Lượt `mock-1791535402823` hoàn thành61 pipeline mock nhưng dừng vì claim warm11ms; còn thiếu30 warm ở một số API. Không nghiệm thu, không gộp mẫu.
+
+Ứng viên tiếp theo đọc job ngay trong transaction claim, chỉ lấy bốn cột permit cần dùng và cache chuỗi SQL snapshot; kết quả dữ liệu/phê duyệt và thời gian vẫn được đọc mới. Kết quả cuối cập nhật sau CI và đo cloud đúng release. Chưa có phép mở cửa production từ hồ sơ này.
 
 ## Hồ sơ triển khai đóng cho bước tiếp theo
 
