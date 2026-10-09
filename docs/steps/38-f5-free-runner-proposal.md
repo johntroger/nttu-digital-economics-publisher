@@ -1,6 +1,6 @@
-# F5 — phương án runner miễn phí, chờ phê duyệt
+# F5 — runner GitHub Actions đã được duyệt cho code và giả lập
 
-Ngày 09/10/2026. Đây là đề xuất để duyệt trước khi code F5. Không thay đổi cấu hình vận hành, không cấp credential mới và không cho phép Facebook POST thật.
+Ngày 09/10/2026. Chủ dự án đã chọn «GitHub Actions: theo đề xuất F5 đã lưu», giới hạn code và kiểm thử giả lập trên nhánh draft. Không chuyển sang Supabase, không thay cấu hình vận hành hoặc cho phép Facebook POST thật. Kết quả thực hiện được ghi tại [hồ sơ F5](38-f5-actions-runner.md).
 
 ## Cơ sở lựa chọn
 
