@@ -99,16 +99,18 @@ const usageRow={date:'2026-10-10',product:'Actions',sku:'Actions Linux',quantity
 test('F6 account quota includes other repositories, weighted usage and the CI/monitor reserve',()=>{
  const q=quotaDecision({usageItems:[usageRow,{...usageRow,sku:'Actions Windows',quantity:50},{...usageRow,sku:'Actions macOS',quantity:10}]},billingPolicy,quotaNow);
  assert.equal(q.usedMinutes,300);assert.equal(q.remainingMinutes,1300);assert.equal(q.allowed,true);
+ assert.equal(quotaDecision({usageItems:[{...usageRow,product:'actions',sku:'actions_linux'}]},billingPolicy,quotaNow).usedMinutes,100);
+ assert.equal(quotaDecision({usageItems:[{...usageRow,product:'actions',unitType:'Minutes'}]},billingPolicy,quotaNow).usedMinutes,100);
  assert.equal(quotaDecision({usageItems:[{...usageRow,quantity:1596}]},billingPolicy,quotaNow).allowed,false);
  for(const p of [undefined,{...billingPolicy,stopUsage:false},{...billingPolicy,budgetUSD:5},{...billingPolicy,scope:'repository'},{...billingPolicy,verifiedAt:quotaNow-86400001},{...billingPolicy,reserveMinutes:0}])assert.equal(quotaDecision({usageItems:[]},p,quotaNow).allowed,false);
- for(const r of [{},{...usageRow,sku:'unknown'},{...usageRow,netAmount:1},{...usageRow,quantity:-1},{...usageRow,date:'2026-09-30'}])assert.equal(quotaDecision({usageItems:[r]},billingPolicy,quotaNow).allowed,false);
+ for(const r of [{},{...usageRow,sku:'unknown'},{...usageRow,unitType:'hours'},{...usageRow,netAmount:1},{...usageRow,quantity:-1},{...usageRow,date:'2026-09-30'}])assert.equal(quotaDecision({usageItems:[r]},billingPolicy,quotaNow).allowed,false);
 });
 test('F6 quota adapter reads current account month and fails closed on 403, redirects or unreadable usage',async()=>{
  let calls=0;
  const transport=async(url,init)=>{calls++;assert.match(url,/\/users\/johntroger\/settings\/billing\/usage\?year=2026&month=10$/);assert.ok(!url.includes('repository'));assert.equal(init.redirect,'error');return Response.json({usageItems:[usageRow]});};
  assert.equal((await readRunnerQuota({token:'fixture',policy:billingPolicy,now:quotaNow,transport})).allowed,true);assert.equal(calls,1);
  assert.equal((await readRunnerQuota({token:'fixture',policy:{...billingPolicy,budgetUSD:2},now:quotaNow,transport})).allowed,false);assert.equal(calls,1);
- for(const response of [new Response('',{status:403}),Response.json({}),Response.json({usageItems:[]},{headers:{Link:'next-page'}})])assert.equal((await readRunnerQuota({token:'fixture',policy:billingPolicy,now:quotaNow,transport:async()=>response})).allowed,false);
+ for(const response of [new Response('',{status:403}),Response.json({}),Response.json({usageItems:[]}),Response.json({usageItems:[{...usageRow,product:'unsupported'}]}),Response.json({usageItems:[]},{headers:{Link:'next-page'}})])assert.equal((await readRunnerQuota({token:'fixture',policy:billingPolicy,now:quotaNow,transport:async()=>response})).allowed,false);
 });
 function trustedEnv(f){return {...f.env,PRODUCTION_ACTIONS_ENABLED:'true',GITHUB_ACTIONS:'true',GITHUB_REPOSITORY:'johntroger/nttu-digital-economics-publisher',GITHUB_EVENT_NAME:'workflow_dispatch',GITHUB_REF:'refs/heads/main',GITHUB_WORKFLOW_REF:'johntroger/nttu-digital-economics-publisher/'+LIVE_WORKFLOW+'@refs/heads/main',GITHUB_SHA:f.env.RELEASE_SHA,PRODUCTION_RUNNER_RELEASE:f.env.RELEASE_SHA,GITHUB_RUN_ID:'12345',GITHUB_TOKEN:'fixture',PRODUCTION_BILLING_READ_TOKEN:'fixture',PRODUCTION_BILLING_POLICY:JSON.stringify(billingPolicy)};}
 function liveMock(f,{usage={usageItems:[usageRow]},run={},hook}={}){

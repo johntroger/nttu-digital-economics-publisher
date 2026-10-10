@@ -1,0 +1,21 @@
+{
+  "policyVersion": 2,
+  "account": "johntroger",
+  "product": "Actions",
+  "scope": "account",
+  "plan": "free",
+  "budgetUSD": 0,
+  "stopUsage": true,
+  "includedMinutes": 2000,
+  "reserveMinutes": 600,
+  "cycleMinutes": 5,
+  "verificationMode": "owner-monthly-attestation",
+  "evidenceSource": "authenticated-github-ui",
+  "reviewedBy": "tranthanhtung37@gmail.com",
+  "ownerApproved": false,
+  "autoRenew": false,
+  "period": null,
+  "verifiedAt": null,
+  "expiresAt": null,
+  "releaseSha": null
+}

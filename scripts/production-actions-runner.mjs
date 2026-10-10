@@ -33,7 +33,7 @@ export async function runRunnerProtocol(client,options){
  const api=(path,data={})=>client.call(path,{job:held.job,runner,...data});
  async function finish(result){await api('/runner/evidence',{attempt:attempt.attempt,result});await checkpoint('after_evidence');const done=await api('/runner/finalize',{attempt:attempt.attempt});return report(done.state);}
  try{
-  await checkpoint('before_claim');held=await client.call('/runner/claim',{runner});
+  await checkpoint('before_claim');const claimStarted=performance.now();held=await client.call('/runner/claim',{runner});
   if(!['held','requested','unknown'].includes(held.state))return report(held.state);
   descriptor(held);
   if(options.expectedRelease!==undefined&&held.release!==options.expectedRelease)throw Error('RUNNER_RELEASE_CHANGED');
@@ -42,7 +42,7 @@ export async function runRunnerProtocol(client,options){
    attempt={attempt:held.attempt,sentAt:held.sentAt};
    // Recovery never executes POST, even when a prior send grant was consumed.
    if(!held.remoteId)return await finish({kind:'unknown'});
-   await checkpoint('before_reconcile');const proof=await client.provider.reconcile({attemptId:attempt.attempt,pageId:PRODUCTION_PAGE,caption:held.caption,checksum:held.checksum,sentAt:attempt.sentAt},held.remoteId,()=>held.serverNow);
+   await checkpoint('before_reconcile');const proof=await client.provider.reconcile({attemptId:attempt.attempt,pageId:PRODUCTION_PAGE,caption:held.caption,checksum:held.checksum,sentAt:attempt.sentAt},held.remoteId,()=>held.serverNow+Math.ceil(performance.now()-claimStarted));
    return await finish(proof);
   }
   const data=[];for(let group=0;group<5;group++){const rows=[];let offset=0;do{await checkpoint('data');const page=await api('/runner/data',{group,offset});if(!Array.isArray(page.rows)||page.rows.length>8||page.next!==null&&page.next!==offset+8)throw Error('SIMULATION_PAGE_INVALID');rows.push(...page.rows);offset=page.next;if(rows.length>128)throw Error('SIMULATION_PAGES_EXCEEDED');}while(offset!==null);data.push(rows);}
@@ -63,7 +63,10 @@ export async function runRunnerProtocol(client,options){
   const result=await client.provider.dispatch({attemptId:attempt.attempt,pageId:PRODUCTION_PAGE,caption:held.caption,checksum:held.checksum,bytes,sentAt:attempt.sentAt});posts++;
   await checkpoint('after_post');
   await api('/runner/evidence',{attempt:attempt.attempt,result});await checkpoint('after_hint');
-  if(result.kind==='unknown'&&result.remoteId){const confirmed=await client.provider.reconcile({attemptId:attempt.attempt,pageId:PRODUCTION_PAGE,caption:held.caption,checksum:held.checksum,sentAt:attempt.sentAt},result.remoteId,()=>grant.serverNow);await checkpoint('after_get');return await finish(confirmed);}
+  // Advance the trusted server timestamp using monotonic elapsed time. Keeping
+  // the authorization timestamp frozen makes a valid post after network transit
+  // look like a future-dated post. Caller wall clocks never supply this estimate.
+  if(result.kind==='unknown'&&result.remoteId){const confirmed=await client.provider.reconcile({attemptId:attempt.attempt,pageId:PRODUCTION_PAGE,caption:held.caption,checksum:held.checksum,sentAt:attempt.sentAt},result.remoteId,()=>grant.serverNow+Math.ceil(performance.now()-authorizationStarted));await checkpoint('after_get');return await finish(confirmed);}
   const done=await api('/runner/finalize',{attempt:attempt.attempt});return report(done.state);
  }catch(error){return report(attempt?'needs_reconciliation':'held_or_closed',{reason:error instanceof Error&&/^[A-Z0-9_]+$/.test(error.message)?error.message:'SIMULATION_INTERRUPTED',needsReconciliation:Boolean(attempt)});}
 }
