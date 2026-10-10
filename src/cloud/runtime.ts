@@ -28,7 +28,7 @@ export interface CloudBindings {
   ASSETS?: { fetch(request: Request): Promise<Response> };
   MEDIA?: {
     put(key: string, data: ArrayBuffer | Uint8Array, options?: { onlyIf?: { etagDoesNotMatch: string }; httpMetadata?: { contentType: string }; customMetadata?: Record<string,string> }): Promise<unknown>;
-    get(key: string): Promise<{ size: number; arrayBuffer(): Promise<ArrayBuffer> } | null>;
+    get(key: string): Promise<{ size: number; body?:ReadableStream<Uint8Array>; arrayBuffer(): Promise<ArrayBuffer> } | null>;
   };
 }
 export const HEARTBEAT_CRON = '*/5 * * * *';

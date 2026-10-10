@@ -11,6 +11,8 @@
     "typecheck": "tsc --noEmit",
     "test": "node scripts/run-clean.mjs test",
     "test:stages": "node scripts/run-clean.mjs script scripts/test-production-stages.mjs",
+    "test:runner": "node scripts/run-clean.mjs script scripts/test-production-runner.mjs",
+    "test:runner:native": "node scripts/run-clean.mjs script scripts/production-runner-smoke.mjs",
     "test:production-live": "node scripts/run-clean.mjs script scripts/production-live-smoke.mjs",
     "check": "npm run typecheck && npm test",
     "catalog": "node scripts/catalog.mjs",

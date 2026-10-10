@@ -3,7 +3,7 @@ import {resolve,relative,sep} from 'node:path';
 import {createHash} from 'node:crypto';
 import {pathToFileURL} from 'node:url';
 import {prepareProduction,STAGING_DATABASE_ID} from './production-prepare.mjs';
-export function productionMigrations(databaseId,{publisherStages=false}={}) {
+export function productionMigrations(databaseId,{publisherStages=false,publisherRunner=false}={}) {
   if(typeof databaseId!=='string'||!/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(databaseId)
     || databaseId.toLowerCase()===STAGING_DATABASE_ID || databaseId.replaceAll('-','')==='0'.repeat(32))throw Error('Invalid production database ID');
   // Validate the same resource boundary as the deployment configuration.
@@ -18,7 +18,8 @@ export function productionMigrations(databaseId,{publisherStages=false}={}) {
     {name:'0012_production_operations.sql',sql:readFileSync('cloud/telegram.sql','utf8')+readFileSync('cloud/production-operations.sql','utf8')},
     {name:'0013_production_http_trigger.sql',sql:readFileSync('cloud/production-http-trigger.sql','utf8')},
     {name:'0014_production_publisher.sql',sql:readFileSync('cloud/production-publisher.sql','utf8')});
-  if(publisherStages)files.push({name:'0015_production_publisher_stages.sql',sql:readFileSync('cloud/production-publisher-stages.sql','utf8')});
+  if(publisherStages||publisherRunner)files.push({name:'0015_production_publisher_stages.sql',sql:readFileSync('cloud/production-publisher-stages.sql','utf8')});
+  if(publisherRunner)files.push({name:'0016_production_publisher_runner.sql',sql:readFileSync('cloud/production-publisher-runner.sql','utf8')});
   return files.map((file,i)=>{const checksum=createHash('sha256').update(file.sql).digest('hex');return {...file,checksum,
     sql:(i===0?'CREATE TABLE schema_migrations(name TEXT PRIMARY KEY,checksum TEXT NOT NULL);\n':'')+file.sql+`\nINSERT INTO schema_migrations VALUES('${file.name}','${checksum}');\n`};});
 }
