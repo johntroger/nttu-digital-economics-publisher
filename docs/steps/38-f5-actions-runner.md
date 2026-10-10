@@ -1,5 +1,7 @@
 # F5 — runner Node và API Worker, phạm vi giả lập
 
+Trạng thái mới nhất 10/10/2026: **nghiệm thu CPU cloud giả lập đạt** trên deployment `5b175c38-61ed-4ffe-b608-61e40d81593c`, runtime `d67443000f0cd219f214c753efca329367a32b1c`. Các kết quả chưa đạt bên dưới là lịch sử từng ứng viên. F6 vẫn cần phê duyệt riêng, chưa triển khai production.
+
 Ngày 09/10/2026. Phê duyệt của chủ dự án: «GitHub Actions: theo đề xuất F5 đã lưu»; chỉ code và kiểm thử giả lập, chưa đăng Facebook. Nhánh `codex/step38-f5-actions-runner` kế thừa F4; chưa merge main hoặc triển khai vào Worker production/staging.
 
 ## Phần đã thực hiện
@@ -127,3 +129,31 @@ API log lưu trữ trả403 thiếu quyền. Dashboard đang đăng nhập hiể
 Lượt đo tiếp theo cần sửa bước chuẩn bị: seed fixture trực tiếp trên D1 clone trước request đầu tiên, thu API cold trước khi `/reset` làm nóng isolate, rồi chạy warm trong cùng ngân sách50 chuỗi và cùng deployment. Ưu tiên log lưu trữ khi tail thiếu mẫu; nếu cần quyền đọc log mới thì người quản lý phải cấp rõ phạm vi. Không tự nâng gói, tăng tải, đặt lịch chạy lại hoặc mở F6 khi thiếu cold.
 
 Chuẩn bị cold đã được code trong F5: `scripts/f5-cold-seed.mjs` tạo fixture SQL từ credential giả lập; `f5-cloud create` chỉ áp dụng sau guard clone riêng và trước deploy. `f5-measure` gọi due claim trước request reset, yêu cầu descriptor held hợp lệ, trừ một chuỗi khỏi allowance trước warm (tối đa1 cold claim +49 pipeline warm). Khi thiếu cold claim quan sát được thì không chốt bộ đo. Kiểm thử local mới xác nhận request đầu tiên giữ đúng job, giữ số bài, không tạo attempt và không gửi mock POST. Thay đổi chuẩn bị này chưa được chạy cloud trong ngày10/10; ledger ngày này đã hết50 chuỗi. Kết quả warm ở trên thuộc deployment26294c1 đã xóa, không phải bằng chứng cloud của code chuẩn bị mới.
+
+### Nghiệm thu bổ sung theo yêu cầu chạy ngay — 10/10/2026
+
+Chủ dự án yêu cầu «1. chạy luôn không cần đợi», rồi «tiếp tục». Đọc usage thực tế trước mỗi lượt; giữ nguyên ledger50 chuỗi trước đó, lưu quyền chạy bổ sung riêng trong `extra-cold-2026-10-10.json` và `extra-batch-2026-10-10.json`. Không bỏ ngưỡng dự phòng3 triệu reads/50 nghìn writes và không tự tăng tải vô hạn.
+
+Một phép đo riêng trên clone `nttu-f5-cpu-aad57927c1` cho cold claim3ms/HTTP200; clone đã dọn. **Không ghép mẫu đó với đợt nghiệm thu đầy đủ.** Đợt đầy đủ dùng clone `nttu-f5-cpu-c0cce8d532`, CF version `5b175c38-61ed-4ffe-b608-61e40d81593c`, runtime d674430, cùng deployment1. Seed trực tiếp D1 trước request đầu tiên. Ngân sách50 gồm1 cold claim,47 pipeline hoàn tất,1 pipeline ngắt khi đọc stream ảnh và1 lượt reset timeout tính bảo thủ; không hoàn lại lượt lỗi. Không có Facebook/Telegram thật.
+
+Máy chủ HTTP giả lập ban đầu ghi header trước khi đọc hết stream; khi stream lỗi nó ghi header lần nữa và làm tiến trình dừng. Đã sửa để đọc body trước khi ghi header, xử lý socket đã đóng và hủy nếu header đã gửi. Kiểm thử mới xác nhận stream lỗi trả500 và server vẫn phục vụ request kế tiếp. Bộ481 kiểm thử local đạt. Bản sửa chỉ nằm trong helper kiểm thử Node, không sửa API Worker d674430 đang đo. Timeout kết nối và lần ngắt được giữ trong bằng chứng, không coi toàn bộ50 lượt đều thành công.
+
+Tail vẫn thiếu mẫu nên không dùng trạng thái thiếu mẫu đó để chốt CPU. Dashboard xuất riêng809 invocation và809 marker; ghép1.618 sự kiện cùng Worker/version/deployment theo requestId, không bị giới hạn1.000 sự kiện của mỗi bản xuất. Bằng chứng hẹp/checksum giữ tại `tmp/step38/f5/persisted-d674430-analysis.json`; raw export riêng tư không đưa vào Git. Không ghép log deployment cũ.
+
+| Pha | Warm | p95(ms) | Max(ms) | Cold(ms) |
+| --- | ---: | ---: | ---: | ---: |
+| claim | 48 | 4 | 6 | 5 |
+| data:0 | 48 | 3 | 4 | — |
+| data:1 | 48 | 2 | 3 | — |
+| data:2 | 48 | 1 | 2 | — |
+| data:3 | 96 | 2 | 3 | — |
+| data:4 | 48 | 1 | 1 | — |
+| image | 48 | 3 | 4 | — |
+| proof | 47 | 4 | 5 | — |
+| intent | 47 | 4 | 4 | — |
+| authorize | 47 | 3 | 4 | — |
+| evidence | 94 | 4 | 5 | — |
+| finalize | 46 | 3 | 3 | 6 |
+| status | 94 | 2 | 3 | — |
+
+Đủ tối thiểu30 warm mỗi nhóm, có API cold cùng deployment, không có outcome API lỗi hoặc CPU API vượt10ms trong1.618 sự kiện. **Đạt cổng CPU F5 và47 pipeline giả lập hoàn tất; không phải bảo đảm mọi request tương lai dưới10ms hoặc SLA của gói Free.** Usage mới sau đo722.002 reads/10.449 writes toàn tài khoản, analytics có độ trễ và không quy toàn bộ tăng riêng cho clone. Worker/D1/token thử đã dọn, giữ bằng chứng/backup và dữ liệu gốc. Production/staging/main/cron không đổi; không đọc hoặc di chuyển secret Meta thật. Đề xuất bước tiếp theo vẫn là F6 tích hợp đóng, cần người quản lý phê duyệt trước khi code.

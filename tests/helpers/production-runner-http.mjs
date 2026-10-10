@@ -5,7 +5,7 @@ import {productionMigrations} from '../../scripts/production-management-prepare.
 import {SIMULATION_META} from '../../scripts/production-actions-runner.mjs';
 import {metaFingerprint} from '../../src/cloud/meta.ts';
 export async function loopbackServer(handler){
- const server=createServer(async(req,res)=>{try{const chunks=[];for await(const chunk of req)chunks.push(chunk);const body=Buffer.concat(chunks);const request=new Request('http://127.0.0.1'+req.url,{method:req.method,headers:req.headers,...(body.length?{body}:{} )});const response=await handler(request);res.writeHead(response.status,Object.fromEntries(response.headers));res.end(Buffer.from(await response.arrayBuffer()));}catch{res.writeHead(500);res.end('{}');}});
+ const server=createServer(async(req,res)=>{try{const chunks=[];for await(const chunk of req)chunks.push(chunk);const body=Buffer.concat(chunks);const request=new Request('http://127.0.0.1'+req.url,{method:req.method,headers:req.headers,...(body.length?{body}:{} )});const response=await handler(request);const bytes=Buffer.from(await response.arrayBuffer());if(res.destroyed)return;res.writeHead(response.status,Object.fromEntries(response.headers));res.end(bytes);}catch{if(res.destroyed||res.writableEnded)return;if(res.headersSent){res.destroy();return;}res.writeHead(500);res.end('{}');}});
  await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(0,'127.0.0.1',resolve);});const origin='http://127.0.0.1:'+server.address().port;
  return {origin,async close(){server.closeAllConnections();await new Promise((resolve,reject)=>server.close(e=>e?reject(e):resolve()));}};
 }
