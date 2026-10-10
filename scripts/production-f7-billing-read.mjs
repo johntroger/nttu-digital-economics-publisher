@@ -1,15 +1,15 @@
 // Read-only account quota acceptance; no Worker/Meta/Telegram transport.
 import {pathToFileURL} from 'node:url';
-import {githubJSON} from './production-runner-quota.mjs';
+import {githubJSON,ACTIONS_MINUTE_WEIGHTS,isActionsProduct} from './production-runner-quota.mjs';
 export function summarizeBillingUsage(usage,now=Date.now()){
- const month=new Date(now).toISOString().slice(0,7),weights={'Actions Linux':1,'Actions Windows':2,'Actions macOS':10};
+ const month=new Date(now).toISOString().slice(0,7),weights=ACTIONS_MINUTE_WEIGHTS;
  if(!Array.isArray(usage?.usageItems)||usage.usageItems.length>10000)throw Error('F7_USAGE_INVALID');
  const daily={};let used=0,charged=0,rows=0;const products=new Set();
  for(const item of usage.usageItems){
   if(typeof item?.product!=='string'||typeof item.date!=='string'||!Number.isFinite(Date.parse(item.date))||!item.date.startsWith(month))throw Error('F7_USAGE_INVALID');
   if(!/^[a-zA-Z0-9 _-]{1,64}$/.test(item.product))throw Error('F7_USAGE_INVALID');
   products.add(item.product);
-  if(item.product!=='Actions')continue;
+  if(!isActionsProduct(item.product))continue;
   if(!Object.hasOwn(weights,item.sku)||item.unitType!=='minutes'||!Number.isFinite(item.quantity)||item.quantity<0||!Number.isFinite(item.netAmount)||item.netAmount<0)throw Error('F7_USAGE_UNSUPPORTED');
   const minutes=Math.ceil(item.quantity)*weights[item.sku],day=item.date.slice(0,10);
   used+=minutes;charged+=item.netAmount;rows++;daily[day]=(daily[day]??0)+minutes;
