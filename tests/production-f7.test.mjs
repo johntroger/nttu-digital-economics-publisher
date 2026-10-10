@@ -8,6 +8,35 @@ import {actionsForecast} from '../scripts/production-f7-forecast.mjs';
 import {summarizeBillingUsage,billingRead,billingSchema} from '../scripts/production-f7-billing-read.mjs';
 import {runnerFixture} from './helpers/production-runner-http.mjs';
 import {runSimulatedActionsRunner} from '../scripts/production-actions-runner.mjs';
+import {f7MockClock} from '../scripts/f7-mock-clock.mjs';
+import {runnerAPI} from '../src/production/runner-api.ts';
+
+test('F7 cloud mock anchors provider timestamps to server time and fails closed without authorization',()=>{
+ let elapsed=100;const clock=f7MockClock(()=>elapsed);
+ assert.throws(()=>clock.now(),/UNANCHORED/);
+ clock.observe('/runner/claim',{serverNow:123});assert.throws(()=>clock.now(),/UNANCHORED/);
+ clock.observe('/runner/authorize',{dispatch:false,serverNow:123});assert.throws(()=>clock.now(),/UNANCHORED/);
+ assert.throws(()=>clock.observe('/runner/authorize',{dispatch:true,serverNow:NaN}),/INVALID/);
+ for(const serverNow of [100000,9000000000000]){
+  clock.observe('/runner/authorize',{dispatch:true,serverNow});elapsed+=27.2;
+  assert.equal(clock.now(),serverNow+28);
+ }
+ elapsed=-1;assert.throws(()=>clock.now(),/INVALID/);
+});
+
+test('F7 provider mock confirms against a clone clock ahead of the workstation without relaxing correlation',async()=>{
+ const clock=f7MockClock();let f;let serverTime;
+ try{
+  f=await runnerFixture({apiHandler:request=>runnerAPI(request,f.env,()=>serverTime),graphHook:async(_url,request)=>{if(request.method==='POST')f.setTime(clock.now());}});
+  serverTime=f.now()+20000;
+  const result=await runSimulatedActionsRunner({...f.options,transport:async(input,init)=>{
+   const response=await fetch(input,init);
+   if(new URL(input).pathname==='/runner/authorize'&&response.ok)clock.observe('/runner/authorize',await response.clone().json());
+   return response;
+  }});
+  assert.equal(result.state,'confirmed',JSON.stringify(result));assert.equal(f.postCount(),1);assert.equal(f.getCount(),1);
+ }finally{await f?.dispose();}
+});
 test('F7 closed configuration preserves exact UI/font bytes and live resource identity without credentials or send gates',()=>{
  const dir=resolve('tmp/production-test-'+randomUUID());mkdirSync(dir);
  const r=prepareClosedF7('a'.repeat(40),{output:resolve(dir,'closed-config')});

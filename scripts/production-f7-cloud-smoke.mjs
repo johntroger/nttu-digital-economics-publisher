@@ -13,6 +13,7 @@ import {runnerFixture} from '../tests/helpers/production-runner-http.mjs';
 import {SIMULATION_META,runSimulatedActionsRunner,simulatedClient} from './production-actions-runner.mjs';
 import {scanRunnerStock} from './production-runner-stock.mjs';
 import {assertF5Usage} from './f5-cloud-budget.mjs';
+import {f7MockClock} from './f7-mock-clock.mjs';
 const root='tmp/step38/f7',account='4d46e32e5c27ff522ee857308a53e729',liveDB='09cdecc7-36a2-4196-950e-ef68b1ecd834';mkdirSync(root,{recursive:true});
 const usage=JSON.parse(readFileSync(root+'/account-usage.json'));assertF5Usage(usage);
 const sha=spawnSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).stdout.trim();
@@ -76,10 +77,11 @@ try{
  resources.workerAttempted=true;save();wrangler(['deploy','--config',configPath],'deploy');wrangler(['secret','put','CPU_TEST_TOKEN','--config',configPath],'secret',token);
  const deployments=await cf('/workers/scripts/'+name+'/deployments');resources.version=deployments.deployments?.[0]?.versions?.[0]?.version_id;save();
  const requests=[];report.requests=requests;
- fixture=await runnerFixture({open:false,graphHook:async(_url,request)=>{if(request.method==='POST')fixture.setTime(Date.now());},apiHandler:async request=>{
+ const mockClock=f7MockClock();
+ fixture=await runnerFixture({open:false,graphHook:async(_url,request)=>{if(request.method==='POST')fixture.setTime(mockClock.now());},apiHandler:async request=>{
   const path=new URL(request.url).pathname,start=performance.now();
   const response=await fetch(origin+path,{method:'POST',redirect:'error',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:await request.text(),signal:AbortSignal.timeout(20000)});
-  requests.push({path,status:response.status,wallMs:Math.ceil(performance.now()-start)});const bytes=await response.arrayBuffer(),headers=new Headers(response.headers);headers.delete('content-encoding');headers.delete('content-length');return new Response(bytes,{status:response.status,headers});
+  requests.push({path,status:response.status,wallMs:Math.ceil(performance.now()-start)});const bytes=await response.arrayBuffer(),headers=new Headers(response.headers);if(path==='/runner/authorize'&&response.ok)mockClock.observe(path,JSON.parse(new TextDecoder().decode(bytes)));headers.delete('content-encoding');headers.delete('content-length');return new Response(bytes,{status:response.status,headers});
  }});fixture.setTime(Date.now());
  const result=await runSimulatedActionsRunner({...fixture.options,expectedRelease:sha});assert.equal(result.state,'confirmed',JSON.stringify(result));assert.equal(fixture.postCount(),1);
  const stock=await scanRunnerStock(simulatedClient(fixture.options),{expectedRelease:sha});assert.equal(stock.remaining,39);
