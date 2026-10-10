@@ -4,6 +4,11 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      f7_billing_read:
+        description: F7 read-only account billing on the isolated acceptance branch
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -11,7 +16,23 @@ concurrency:
   # Never interrupt a remote migration/deployment when a newer push arrives.
   cancel-in-progress: false
 jobs:
+  f7-billing-read:
+    if: github.event_name == 'workflow_dispatch' && inputs.f7_billing_read && github.repository == 'johntroger/nttu-digital-economics-publisher' && github.ref == 'refs/heads/codex/step38-f7-closed-acceptance'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version-file: .nvmrc
+      - name: Read whole-account usage and print sanitized totals
+        run: node scripts/production-f7-billing-read.mjs
+        env:
+          PRODUCTION_BILLING_READ_TOKEN: ${{ secrets.PRODUCTION_BILLING_READ_TOKEN }}
   portable-checks:
+    if: github.event_name != 'workflow_dispatch' || !inputs.f7_billing_read || github.ref != 'refs/heads/codex/step38-f7-closed-acceptance'
     name: Portable checks (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
