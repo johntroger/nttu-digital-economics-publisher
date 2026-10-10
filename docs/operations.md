@@ -97,3 +97,9 @@ Mở Lịch đăng, đợi preview kiểm đủ rồi chọn bài và bấm Ki�
 F3 lưu tiến độ chuẩn bị và evidence qua nhiều lượt. Production hiện vẫn chạy F2, tắt/paused; chưa áp dụng schema15 hoặc cấp publisher token/permit. Sau khi F4 được duyệt, cần backup, kiểm migration15 với cửa đăng đóng và đo CPU trước duyệt bài thử thật. Không đổi cron Telegram/monitor thành publisher và không tự mở SQL để kiểm thử.
 
 Khi được vận hành, mỗi tick xử lý một giai đoạn. Chuẩn bị có thể bắt đầu trước giờ ba phút nhưng POST không được trước giờ permit. Mất response sau intent giữ unknown; không bấm đăng lại, không xóa khóa/job/evidence hoặc đổi ngày để né khóa. Hint remote ID cần GET tương quan. Chốt evidence bị lỗi có thể phục hồi kể cả khi pause và không POST lại. Các lệnh npm kiểm thử và hook trước push dùng run-clean; giữ bằng chứng nghiệm thu, chỉ dọn fixture/cache mới thuộc lượt chạy. Chi tiết: docs/steps/38-f3-durable-publisher.md.
+
+### F6 — runner Node, đang giữ cấu hình đóng
+
+F6 đã được duyệt cho code và kiểm thử giả lập. Entrypoint runner riêng dùng schema16; giao diện quản lý nhận schema14/15/16 và có nút pause owner/CSRF. Khi chọn schema16, publisher cũ không được gửi. Node thực hiện projection kho, đọc quota toàn tài khoản và xử lý provider; Worker giữ journal, fence và callback. Không triển khai migration/config/secret hoặc thay lịch thật trong F6.
+
+Workflow mới mặc định đóng, chỉ manual main/SHA đã duyệt. Watchdog trực tiếp phát hiện lượt runner không bắt đầu hoặc chưa hoàn tất; tác vụ cron-job.org hiện hành chưa đổi. Budget receipt chỉ hợp lệ24 giờ và chưa phải tự vận hành dài ngày. Trước rollout phải xử lý cách tái xác minh budget và đo CPU bundle F6 (cả các route mới); không dùng kết quả F5 thay cho F6. Chi tiết nghiệm thu và rollout/rollback: docs/steps/38-f6-closed-integration.md.

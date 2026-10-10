@@ -1,0 +1,36 @@
+name: Production Node runner (closed by default)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: production-node-runner
+  cancel-in-progress: false
+jobs:
+  run:
+    if: github.repository == 'johntroger/nttu-digital-economics-publisher' && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.workflow_ref == 'johntroger/nttu-digital-economics-publisher/.github/workflows/production-runner.yml@refs/heads/main' && vars.PRODUCTION_ACTIONS_ENABLED == 'true' && vars.PRODUCTION_RUNNER_RELEASE == github.sha
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: production-runner
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+      - run: npm ci --ignore-scripts
+      - name: Read quota, execute one fenced cycle and record completion
+        run: node scripts/run-clean.mjs script scripts/production-runner-live.mjs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PRODUCTION_ACTIONS_ENABLED: ${{ vars.PRODUCTION_ACTIONS_ENABLED }}
+          PRODUCTION_RUNNER_RELEASE: ${{ vars.PRODUCTION_RUNNER_RELEASE }}
+          PRODUCTION_BILLING_POLICY: ${{ vars.PRODUCTION_BILLING_POLICY }}
+          PRODUCTION_BILLING_READ_TOKEN: ${{ secrets.PRODUCTION_BILLING_READ_TOKEN }}
+          PRODUCTION_RUNNER_TOKEN: ${{ secrets.PRODUCTION_RUNNER_TOKEN }}
+          META_APP_SECRET: ${{ secrets.PRODUCTION_META_APP_SECRET }}
+          META_PAGE_ACCESS_TOKEN: ${{ secrets.PRODUCTION_META_PAGE_ACCESS_TOKEN }}
+      # No schedule, arbitrary ref input, deployment or automatic activation.

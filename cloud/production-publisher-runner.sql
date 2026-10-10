@@ -1,4 +1,6 @@
 -- F5 opt-in journal. No activation or real credentials. Keep F3/F4 journals.
+-- F6 extends this never-installed production migration with a stock CAS receipt.
+ALTER TABLE production_publisher_stock_scan ADD COLUMN commit_token TEXT;
 CREATE TABLE production_runner_sessions (
  job TEXT PRIMARY KEY REFERENCES production_publisher_jobs(id),
  runner TEXT NOT NULL, release TEXT NOT NULL, snapshot TEXT NOT NULL,

@@ -7,8 +7,9 @@ function render(){
  panel.replaceChildren();const titles={overview:'Chuẩn bị fanpage chính thức',posts:'Kho nội dung',schedule:'Lịch đăng',history:'Lịch sử đăng bài',notifications:'Thông báo',connections:'Kết nối'};
  panel.append(el('h2',titles[view]));
  if(view==='overview'){
-  panel.append(el('p','Kho thuộc môi trường chính thức. Mở từng tab để đọc dữ liệu; lịch đăng vẫn tắt trong giai đoạn nghiệm thu.'));
-  panel.append(table(['Hạng mục','Hiện trạng'],[['Kho bài',data.counts.posts+' bài'],['Ảnh và tài liệu',data.counts.files+' tệp'],['Bài đã đăng',data.counts.publications+' bài'],['Đăng nhập quản lý',identity.email],['Fanpage','Xem trạng thái trong Kết nối'],['Lịch đăng','Đang tắt']]));
+  panel.append(el('p',data.publishingEnabled?'Lịch đăng tự động đã được bật.':'Lịch đăng tự động đang tắt.'));
+  panel.append(table(['Hạng mục','Hiện trạng'],[['Kho bài',data.counts.posts+' bài'],['Ảnh và tài liệu',data.counts.files+' tệp'],['Bài đã đăng',data.counts.publications+' bài'],['Đăng nhập quản lý',identity.email],['Fanpage','Xem trạng thái trong Kết nối'],['Lịch đăng',data.paused?'Đã tạm dừng':data.publishingEnabled?'Đã bật':'Đang tắt']]));
+  if(data.schema>=14){const pause=el('button','Tạm dừng đăng tự động');pause.disabled=data.paused;pause.addEventListener('click',async()=>{pause.disabled=true;try{const r=await fetch('/api/production/pause',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':identity.csrf},body:'{}',redirect:'error'});if(!r.ok)throw Error('Chưa tạm dừng được. Hãy thử lại.');await load();}catch(e){pause.disabled=false;showError(e);}});panel.append(pause);}
   panel.append(el('p','Thời gian đăng dự kiến: 10:00 mỗi ngày, theo giờ Việt Nam. Chỉ bật sau khi hoàn tất kết nối, kho nội dung và nghiệm thu.'));
  }else if(view==='posts'){
   if(!data.posts)panel.append(el('p','Đang đọc danh sách bài…'));

@@ -5,7 +5,7 @@ import {verifiedBytes} from '../cloud/storage.ts';
 import {productionMetaStatus} from './meta.ts';
 import {operationsStatus} from './operations.ts';
 import {digest,readSnapshot,readCursor,initialCursor,signCursor} from './read-pages.ts';
-export interface ManagementBindings extends CloudBindings { PRODUCTION_DATABASE_ID?:string; PRODUCTION_ASSET_BUCKET?:string; PRODUCTION_MONITOR_TOKEN?:string; PRODUCTION_TRIGGER_TOKEN?:string; PRODUCTION_PUBLISHER_ENABLED?:string; PRODUCTION_PUBLISHER_TOKEN?:string }
+export interface ManagementBindings extends CloudBindings { PRODUCTION_DATABASE_ID?:string; PRODUCTION_ASSET_BUCKET?:string; PRODUCTION_MONITOR_TOKEN?:string; PRODUCTION_TRIGGER_TOKEN?:string; PRODUCTION_PUBLISHER_ENABLED?:string; PRODUCTION_PUBLISHER_TOKEN?:string; PRODUCTION_RUNNER_ENABLED?:string; PRODUCTION_RUNNER_TOKEN?:string; RUNNER_ORIGIN?:string }
 type Row=Record<string,unknown>;
 export function assertProductionEnvironment(env:ManagementBindings) {
   if(env.APP_ENV!=='production'||env.INTEGRATION_MODE!=='management'||env.DAILY_PUBLISHING_ENABLED!=='false'
@@ -16,13 +16,15 @@ export function assertProductionEnvironment(env:ManagementBindings) {
 export const PRODUCTION_STATE_SQL=`SELECT i.environment,i.database_id,i.schema_version,a.paused_by_user,a.maintenance_owner,a.blocked_reasons,a.operation_generation,
     c.enabled,c.publish_time,c.timezone,c.target_page_url,c.page_id,c.connection_verified,
     (SELECT count(*) FROM schema_migrations) migration_count,
-    (SELECT count(*) FROM schema_migrations WHERE name NOT IN ('0011_production_meta.sql','0012_production_operations.sql','0013_production_http_trigger.sql','0014_production_publisher.sql','0015_production_publisher_stages.sql')) base_migration_count
+    (SELECT count(*) FROM schema_migrations WHERE name='0016_production_publisher_runner.sql') runner_schema,
+    (SELECT count(*) FROM schema_migrations WHERE name NOT IN ('0011_production_meta.sql','0012_production_operations.sql','0013_production_http_trigger.sql','0014_production_publisher.sql','0015_production_publisher_stages.sql','0016_production_publisher_runner.sql')) base_migration_count
     FROM production_identity i JOIN application_state a ON a.environment=i.environment
     JOIN production_control c ON c.id=i.id WHERE i.id=1`;
 export function assertProductionState(env:ManagementBindings,row:Row|null|undefined) {
   assertProductionEnvironment(env);
   if(!row||row.environment!=='production'||row.database_id!==env.PRODUCTION_DATABASE_ID||row.schema_version!==1
-    ||![10,11,12,13,14,15].includes(Number(row.migration_count))||row.base_migration_count!==10||!(row.paused_by_user===1||row.paused_by_user===0&&Number(row.migration_count)===15&&env.PRODUCTION_PUBLISHER_ENABLED==='true')||row.enabled!==0||row.connection_verified!==0
+    ||![10,11,12,13,14,15,16].includes(Number(row.migration_count))||row.base_migration_count!==10||Number(row.migration_count)===16&&row.runner_schema!==1
+    ||!(row.paused_by_user===1||row.paused_by_user===0&&(Number(row.migration_count)===15&&env.PRODUCTION_PUBLISHER_ENABLED==='true'||Number(row.migration_count)===16&&env.PRODUCTION_RUNNER_ENABLED==='true'&&env.PRODUCTION_PUBLISHER_ENABLED==='false'))||row.enabled!==0||row.connection_verified!==0
     ||row.page_id!==null||row.publish_time!=='10:00'||row.timezone!=='Asia/Ho_Chi_Minh'
     ||row.target_page_url!=='https://www.facebook.com/NganhKinhTeSoNTTU') throw Error('PRODUCTION_IDENTITY_INVALID');
   return row;
@@ -32,11 +34,12 @@ export async function productionState(env:ManagementBindings) {
   return assertProductionState(env,await env.DB!.prepare(PRODUCTION_STATE_SQL).first<Row>());
 }
 export function productionPublishingEnabled(env:ManagementBindings,state:Row,enabled:unknown,blocked:unknown){
+ if(Number(state.migration_count)===16)return env.PRODUCTION_RUNNER_ENABLED==='true'&&env.PRODUCTION_PUBLISHER_ENABLED==='false'&&/^[a-f0-9]{64}$/.test(env.PRODUCTION_RUNNER_TOKEN??'')&&![env.PRODUCTION_MONITOR_TOKEN,env.PRODUCTION_TRIGGER_TOKEN,env.PRODUCTION_PUBLISHER_TOKEN].includes(env.PRODUCTION_RUNNER_TOKEN)&&enabled===1&&blocked===null&&state.paused_by_user===0&&state.maintenance_owner===null&&state.blocked_reasons==='[]';
  return env.PRODUCTION_PUBLISHER_ENABLED==='true'&&/^[a-f0-9]{64}$/.test(env.PRODUCTION_PUBLISHER_TOKEN??'')&&env.PRODUCTION_PUBLISHER_TOKEN!==env.PRODUCTION_MONITOR_TOKEN&&env.PRODUCTION_PUBLISHER_TOKEN!==env.PRODUCTION_TRIGGER_TOKEN
   &&Number(state.migration_count)===15&&enabled===1&&blocked===null&&state.paused_by_user===0&&state.maintenance_owner===null&&state.blocked_reasons==='[]';
 }
 export async function productionRuntimeState(env:ManagementBindings,state:Row){
- const c=env.PRODUCTION_PUBLISHER_ENABLED==='true'&&Number(state.migration_count)===15?await env.DB!.prepare('SELECT enabled,blocked FROM production_publisher_config WHERE id=1').first<Row>():null;
+ const c=(Number(state.migration_count)===16||env.PRODUCTION_PUBLISHER_ENABLED==='true'&&Number(state.migration_count)===15)?await env.DB!.prepare('SELECT enabled,blocked FROM production_publisher_config WHERE id=1').first<Row>():null;
  return {paused:state.paused_by_user===1,publishingEnabled:productionPublishingEnabled(env,state,c?.enabled,c?.blocked)};
 }
 async function rows(env:ManagementBindings,sql:string) {
@@ -83,7 +86,7 @@ export async function managementSummary(env:ManagementBindings){
  const state=await productionState(env);
  const result=await env.DB!.prepare(`SELECT (SELECT count(*) FROM posts) posts,(SELECT count(*) FROM posts WHERE pool='scheduled') main,(SELECT count(*) FROM posts WHERE pool='reserve') reserve,(SELECT count(*) FROM cloud_library WHERE state='complete') files,(SELECT count(*) FROM ${Number(state.migration_count)>=14?'production_publisher_usage':'publications'}) publications,${Number(state.migration_count)>=14?'(SELECT enabled FROM production_publisher_config WHERE id=1) publisher_enabled,(SELECT blocked FROM production_publisher_config WHERE id=1) publisher_blocked':'0 publisher_enabled,NULL publisher_blocked'}`).first<Row>();
  if(!result)throw Error('PRODUCTION_DATABASE_UNAVAILABLE');const {publisher_enabled,publisher_blocked,...counts}=result;
- return {environment:'production',readOnly:true,publishingEnabled:productionPublishingEnabled(env,state,publisher_enabled,publisher_blocked),paused:state.paused_by_user===1,targetPageUrl:state.target_page_url,publishTime:state.publish_time,timeZone:state.timezone,counts};
+ return {environment:'production',readOnly:true,schema:Number(state.migration_count),publisherEngine:Number(state.migration_count)===16?'runner':'legacy',publishingEnabled:productionPublishingEnabled(env,state,publisher_enabled,publisher_blocked),paused:state.paused_by_user===1,targetPageUrl:state.target_page_url,publishTime:state.publish_time,timeZone:state.timezone,counts};
 }
 export async function managementPostPage(env:ManagementBindings,token?:string,now=Date.now()){
  await productionState(env);const c0=await readCursor(env,token,'post-list',now),before=await readSnapshot(env,now),snapshot=await digest(before);

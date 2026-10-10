@@ -1,6 +1,6 @@
-# F6 — đề xuất tích hợp đóng, chưa được phê duyệt
+# F6 — tích hợp đóng, đã được phê duyệt
 
-Chỉ tiến hành sau khi chốt kết quả F5 và chủ dự án duyệt bước này. Giữ phương án GitHub Actions đã chọn; không chuyển sang Supabase hoặc mua gói trả phí.
+Chủ dự án đã phê duyệt F6 và yêu cầu tiếp tục. Giữ phương án GitHub Actions đã chọn; không chuyển sang Supabase hoặc mua gói trả phí. Phạm vi phê duyệt chỉ code và kiểm thử giả lập, chưa triển khai hoặc gửi thật.
 
 ## Phạm vi đề nghị
 

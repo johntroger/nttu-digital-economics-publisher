@@ -20,11 +20,11 @@ export async function publisherImageBytes(e:ManagementBindings,file:Row){
  try{return await Promise.race([verifiedBytes(e,file),new Promise<never>((_,reject)=>{timer=setTimeout(()=>reject(Error('R2_READ_TIMEOUT')),5000);})]);}
  finally{if(timer)clearTimeout(timer);}
 }
-export const PUBLISHER_IDENTITY_SQL="SELECT i.database_id,a.paused_by_user,a.maintenance_owner,a.blocked_reasons,a.operation_generation,(SELECT count(*) FROM schema_migrations) migrations,(SELECT count(*) FROM schema_migrations WHERE name='0014_production_publisher.sql') publisher_schema,(SELECT count(*) FROM schema_migrations WHERE name='0015_production_publisher_stages.sql') staged_schema FROM production_identity i JOIN application_state a ON a.environment=i.environment WHERE i.id=1 AND i.environment='production' AND i.schema_version=1";
+export const PUBLISHER_IDENTITY_SQL="SELECT i.database_id,a.paused_by_user,a.maintenance_owner,a.blocked_reasons,a.operation_generation,(SELECT count(*) FROM schema_migrations) migrations,(SELECT count(*) FROM schema_migrations WHERE name='0014_production_publisher.sql') publisher_schema,(SELECT count(*) FROM schema_migrations WHERE name='0015_production_publisher_stages.sql') staged_schema,(SELECT count(*) FROM schema_migrations WHERE name='0016_production_publisher_runner.sql') runner_schema FROM production_identity i JOIN application_state a ON a.environment=i.environment WHERE i.id=1 AND i.environment='production' AND i.schema_version=1";
 export function assertPublisherIdentity(e:PublisherBindings,i:Row|null|undefined){
  assertPublisherBoundary(e.APP_ENV??'',e.META_PAGE_ID??'',e.PRODUCTION_DATABASE_ID??'',e.PRODUCTION_ASSET_BUCKET??'');
  if(e.INTEGRATION_MODE!=='management'||!e.DB?.batch||e.DAILY_PUBLISHING_ENABLED!=='false'||! /^[a-f0-9]{40}$/.test(e.RELEASE_SHA??''))throw Error('LIVE_PUBLISHER_BOUNDARY_INVALID');
- if(!i||i.database_id!==e.PRODUCTION_DATABASE_ID||![14,15].includes(i.migrations)||i.publisher_schema!==1)throw Error('LIVE_PUBLISHER_SCHEMA_INVALID');return i;
+ if(!i||i.database_id!==e.PRODUCTION_DATABASE_ID||![14,15,16].includes(i.migrations)||i.publisher_schema!==1||i.migrations===16&&(i.runner_schema!==1||i.staged_schema!==1))throw Error('LIVE_PUBLISHER_SCHEMA_INVALID');return i;
 }
 export async function publisherIdentity(e:PublisherBindings){return assertPublisherIdentity(e,await one(e,PUBLISHER_IDENTITY_SQL));}
 const identity=publisherIdentity;
@@ -74,7 +74,7 @@ export async function publisherPreflight(e:PublisherBindings,now=Date.now(),obse
  const config=JSON.parse(view!.config),runtime=JSON.parse(view!.runtime),counts=JSON.parse(view!.counts);
  const publishingEnabled=productionPublishingEnabled(e,state,config!.enabled,config!.blocked);
  return {schemaReady:true,state:counts!.unknown?'unknown':counts!.in_flight?'in_flight':publishingEnabled?'armed':'closed',publishingEnabled,paused:state.paused_by_user===1,checkedAt:new Date(now).toISOString(),serverDate:day(now),publishTime:POLICY.publishTime,timeZone:POLICY.timeZone,config,runtime,counts,
-  gates:{deployment:e.PRODUCTION_PUBLISHER_ENABLED==='true',database:config!.enabled===1,ownerPublicationApproval:counts!.permits>0,httpPublisher:!!e.PRODUCTION_PUBLISHER_TOKEN},realPublication:counts!.publications===0?'NOT_RUN':'RECORDED'};
+  engine:Number(state.migration_count)===16?'runner':'legacy',gates:{deployment:Number(state.migration_count)===16?e.PRODUCTION_RUNNER_ENABLED==='true'&&e.PRODUCTION_PUBLISHER_ENABLED==='false':e.PRODUCTION_PUBLISHER_ENABLED==='true',database:config!.enabled===1,ownerPublicationApproval:counts!.permits>0,httpPublisher:Number(state.migration_count)===16?!!e.PRODUCTION_RUNNER_TOKEN:!!e.PRODUCTION_PUBLISHER_TOKEN},realPublication:counts!.publications===0?'NOT_RUN':'RECORDED'};
 }
 export async function publisherAuthorized(request:Request,e:PublisherBindings){
  const token=e.PRODUCTION_PUBLISHER_TOKEN,received=request.headers.get('Authorization');
@@ -142,7 +142,7 @@ async function operation(e:PublisherBindings,provider:ProductionMetaPublisher,cl
 // Never called by the Telegram tick or native cron.
 export async function runProductionPublisher(e:PublisherBindings,provider:ProductionMetaPublisher,clock:()=>number=Date.now){
  if(!(provider instanceof ProductionMetaPublisher))throw Error('EXPLICIT_LIVE_PROVIDER_REQUIRED');
- await identity(e);const now=clock();if(!Number.isSafeInteger(now)||now<0)throw Error('PUBLISHER_CLOCK_INVALID');
+ const selected=await identity(e);if(selected.migrations===16||e.PRODUCTION_RUNNER_ENABLED==='true')return {state:'runner_selected',sends:0};const now=clock();if(!Number.isSafeInteger(now)||now<0)throw Error('PUBLISHER_CLOCK_INVALID');
  const lease=crypto.randomUUID(),claimed=await s(e,'UPDATE production_publisher_runtime SET lease_id=?,lease_until=?,last_received_at=?,heartbeat_count=heartbeat_count+1,last_bucket=? WHERE id=1 AND (lease_until IS NULL OR lease_until<=?) AND (last_bucket IS NULL OR last_bucket<?) RETURNING id',lease,now+60000,now,Math.floor(now/60000),now,Math.floor(now/60000)).first();
  if(!claimed)return {state:'coalesced',sends:0};
  let queries=2,state='failed';const started=performance.now(),original=e.DB!;

@@ -150,6 +150,7 @@ type StagedBindings=PublisherBindings&{__publisherLease?:string};
 export async function runStagedProductionPublisher(e:PublisherBindings,provider:ProductionMetaPublisher,clock:()=>number=Date.now){
  if(!(provider instanceof ProductionMetaPublisher))throw Error('EXPLICIT_LIVE_PROVIDER_REQUIRED');
  const identity=await publisherIdentity(e);
+ if(identity.migrations===16||e.PRODUCTION_RUNNER_ENABLED==='true')return result('runner_selected');
  if(identity.staged_schema!==1)return result(e.PRODUCTION_PUBLISHER_ENABLED==='true'?'stage_schema_required':'closed');
  const now=validTime(clock()),lease=crypto.randomUUID();
  // D1 batch keeps the leased read view atomic and avoids separate SDK/HTTP
