@@ -14,6 +14,7 @@ test('F7 closed configuration preserves exact UI/font bytes and live resource id
   const c=JSON.parse(readFileSync(resolve(r.directory,kind+'.json')));
   assert.equal(c.d1_databases[0].database_id,'09cdecc7-36a2-4196-950e-ef68b1ecd834');assert.equal(c.r2_buckets[0].bucket_name,'nttu-publisher-production-assets');
   assert.equal(c.vars.PRODUCTION_RUNNER_ENABLED,'false');assert.equal(c.vars.PRODUCTION_PUBLISHER_ENABLED,'false');assert.deepEqual(c.triggers.crons,[]);
+  assert.equal(Object.hasOwn(c,'limits'),false,'Free config must use its default cap, not the paid CPU limits setting');
   assert.ok(!('META_APP_SECRET' in c.vars));assert.ok(!('META_PAGE_ACCESS_TOKEN' in c.vars));assert.ok(!('GOOGLE_CLIENT_SECRET' in c.vars));
  }
  const m=JSON.parse(readFileSync(resolve(r.directory,'management.json')));assert.equal(m.assets.directory,'./assets');assert.equal(m.vars.TELEGRAM_ENABLED,'true');assert.match(m.vars.GOOGLE_CLIENT_ID,/apps.googleusercontent.com$/);

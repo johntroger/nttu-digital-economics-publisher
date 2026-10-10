@@ -33,8 +33,17 @@ const name='nttu-f7-cpu-'+randomUUID().replaceAll('-','').slice(0,10),token=rand
 const resources={worker:name,bucket:name,databaseName:name,release:sha,databaseId:null,workerAttempted:false,bucketAttempted:false,imageAttempted:false,imageKey:null,deleted:false};
 const save=()=>writeFileSync(root+'/cloud-smoke-resources.json',JSON.stringify(resources,null,2));save();
 async function cf(path,method='GET',body){
- const response=await fetch('https://api.cloudflare.com/client/v4/accounts/'+account+path,{method,redirect:'error',headers:{Authorization:'Bearer '+cfToken,'Content-Type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)}),signal:AbortSignal.timeout(20000)});
- const data=await response.json();if(!response.ok||data.success!==true)throw Error('F7_CF_OPERATION_'+response.status);return data.result;
+ for(let retry=0;retry<2;retry++){
+  // Wrangler can refresh OAuth during import/deploy. Do not retain an older
+  // capability for cleanup after it has rotated the existing credential.
+  const currentToken=readFileSync(resolve(process.env.APPDATA,'xdg.config/.wrangler/config/default.toml'),'utf8').match(/^oauth_token\s*=\s*"([^"]+)"/m)?.[1];
+  if(!currentToken)throw Error('F7_CF_AUTH_UNAVAILABLE');
+  const response=await fetch('https://api.cloudflare.com/client/v4/accounts/'+account+path,{method,redirect:'error',headers:{Authorization:'Bearer '+currentToken,'Content-Type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)}),signal:AbortSignal.timeout(20000)});
+  if(response.status===401&&retry===0){await response.body?.cancel();wrangler(['whoami'],'oauth-refresh');continue;}
+  if(response.status===404&&method==='DELETE'){await response.body?.cancel();return null;}
+  const data=await response.json();if(!response.ok||data.success!==true)throw Error('F7_CF_OPERATION_'+response.status);return data.result;
+ }
+ throw Error('F7_CF_AUTH_UNAVAILABLE');
 }
 function guard(){if(!/^nttu-f7-cpu-[a-f0-9]{10}$/.test(resources.worker)||resources.bucket!==name||resources.databaseName!==name||resources.databaseId&&(!/^[a-f0-9-]{36}$/.test(resources.databaseId)||[liveDB,'83881fd7-88e6-4835-b616-6f4f8f2d25cd'].includes(resources.databaseId)))throw Error('F7_RESOURCE_OWNERSHIP_INVALID');}
 function wrangler(args,label,input){const r=spawnSync(process.execPath,['node_modules/wrangler/bin/wrangler.js',...args],{encoding:'utf8',input,timeout:180000,env:{...process.env,WRANGLER_SEND_METRICS:'false',CI:'true'}});writeFileSync(root+'/cloud-smoke-'+label+'.log',(r.stdout??'')+(r.stderr??''));if(r.status!==0)throw Error('F7_WRANGLER_'+label);}
@@ -47,7 +56,7 @@ try{
  resources.imageKey=image.storage_key;save();
  const db=await cf('/d1/database','POST',{name});resources.databaseId=db.uuid;save();guard();
  resources.bucketAttempted=true;save();await cf('/r2/buckets','POST',{name});
- const config={name,account_id:account,main:'../../../tests/helpers/production-f7-cpu-worker.ts',compatibility_date:'2026-10-07',workers_dev:true,preview_urls:false,limits:{cpu_ms:10},triggers:{crons:[]},vars:{APP_ENV:'production',INTEGRATION_MODE:'management',DAILY_PUBLISHING_ENABLED:'false',PRODUCTION_PUBLISHER_ENABLED:'false',RELEASE_SHA:sha,PRODUCTION_DATABASE_ID:liveDB,PRODUCTION_ASSET_BUCKET:'nttu-publisher-production-assets',META_PAGE_ID:'817593604765443',CPU_TEST_MODE:'private-f7',CPU_TEST_NAME:name,CPU_TEST_DATABASE_ID:db.uuid,CPU_TEST_ASSET_BUCKET:name,CPU_DEPLOYMENT:'1'},d1_databases:[{binding:'DB',database_name:name,database_id:db.uuid}],r2_buckets:[{binding:'MEDIA',bucket_name:name}],observability:{enabled:true,head_sampling_rate:1}};
+ const config={name,account_id:account,main:'../../../tests/helpers/production-f7-cpu-worker.ts',compatibility_date:'2026-10-07',workers_dev:true,preview_urls:false,triggers:{crons:[]},vars:{APP_ENV:'production',INTEGRATION_MODE:'management',DAILY_PUBLISHING_ENABLED:'false',PRODUCTION_PUBLISHER_ENABLED:'false',RELEASE_SHA:sha,PRODUCTION_DATABASE_ID:liveDB,PRODUCTION_ASSET_BUCKET:'nttu-publisher-production-assets',META_PAGE_ID:'817593604765443',CPU_TEST_MODE:'private-f7',CPU_TEST_NAME:name,CPU_TEST_DATABASE_ID:db.uuid,CPU_TEST_ASSET_BUCKET:name,CPU_DEPLOYMENT:'1'},d1_databases:[{binding:'DB',database_name:name,database_id:db.uuid}],r2_buckets:[{binding:'MEDIA',bucket_name:name}],observability:{enabled:true,head_sampling_rate:1}};
  const configPath=root+'/cloud-smoke-config.json';writeFileSync(configPath,JSON.stringify(config,null,2));
  wrangler(['d1','execute',name,'--remote','--config',configPath,'--file','tmp/step38/f4/backup/production-schema14.sql','--yes'],'import');
  const at=Date.now(),day=businessDate(new Date(at)),fingerprint=await metaFingerprint(SIMULATION_META);
