@@ -44,4 +44,6 @@ Draft PR17 được tạo trên baseF6, không merge: https://github.com/johntro
 
 Lượt09:29:39Z đọc16usageItems với product `actions`. Chênh lệch trước đó là lỗi adapter nhận diện chữ hoa/chữ thường, không phải API không có dữ liệu. Đối chiếu [GitHub Product/SKU identifiers](https://docs.github.com/en/billing/reference/product-and-sku-names), bổ sung chính xác `actions` và `actions_linux/actions_windows/actions_macos`, giữ hỗ trợ displaylabel cũ. Không chấp nhận runner nâng cao, SKU/unit không biết, netAmount>0, báo cáo trống hoặc thiếu Actions; không tự nới budgetTTL. Cần đọc lại quota sau sửa adapter.
 
+Lượt09:37xác minh schema thực tế:16rows, productactions, SKUActions Linux/Actions Windows, unitTypeMinutes, quantitynumber. Thêm đúng aliasMinutes đã quan sát (vẫn giữminutes từ tài liệu), không chấp nhận giờ/byte hoặc unit khác. Regression gồm cả định dạng thực tế này; diagnostic chỉ in tên trường/product/SKU/unit, không giá trị token, caption hoặc tên repo.
+
 Nguồn kỹ thuật đã đối chiếu: [GitHub billing usage](https://docs.github.com/en/rest/billing/usage), [GitHub budgets](https://docs.github.com/en/rest/billing/budgets), [budget và Stop usage](https://docs.github.com/en/billing/how-tos/set-up-budgets), [Cloudflare D1 analytics](https://developers.cloudflare.com/d1/observability/metrics-analytics/).

@@ -5,6 +5,8 @@ export const REPOSITORY='johntroger/nttu-digital-economics-publisher';
 // https://docs.github.com/en/billing/reference/product-and-sku-names
 export const ACTIONS_MINUTE_WEIGHTS=Object.freeze({'Actions Linux':1,actions_linux:1,'Actions Windows':2,actions_windows:2,'Actions macOS':10,actions_macos:10});
 export const isActionsProduct=product=>product==='Actions'||product==='actions';
+// Observed account usage reports use "Minutes"; documentation examples use "minutes".
+export const isMinutesUnit=unit=>unit==='minutes'||unit==='Minutes';
 export async function githubJSON(path,token,transport=fetch){
  if(!token||!path.startsWith('/')||path.includes('://'))throw Error('GITHUB_READ_INVALID');
  const response=await transport('https://api.github.com'+path,{method:'GET',redirect:'error',headers:{Authorization:'Bearer '+token,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2026-03-10'},signal:AbortSignal.timeout(10000)});
@@ -27,7 +29,7 @@ export function quotaDecision(usage,policy,now=Date.now()){
   if(!item||typeof item.product!=='string'||!item.product||typeof item.date!=='string'||!Number.isFinite(Date.parse(item.date))||!item.date.startsWith(month)||!Number.isFinite(item.quantity)||item.quantity<0)return denied('usage_unsupported_or_charged');
   if(!isActionsProduct(item.product))continue;
   const weights=ACTIONS_MINUTE_WEIGHTS;
-  if(typeof item.date!=='string'||!item.date.startsWith(month)||item.unitType!=='minutes'||!Number.isFinite(item.quantity)||item.quantity<0||!Number.isFinite(item.netAmount)||item.netAmount!==0||!Object.hasOwn(weights,item.sku))return denied('usage_unsupported_or_charged');
+  if(typeof item.date!=='string'||!item.date.startsWith(month)||!isMinutesUnit(item.unitType)||!Number.isFinite(item.quantity)||item.quantity<0||!Number.isFinite(item.netAmount)||item.netAmount!==0||!Object.hasOwn(weights,item.sku))return denied('usage_unsupported_or_charged');
   // Round each account usage row up; retain the larger allowance reservation.
   used+=Math.ceil(item.quantity)*weights[item.sku];
   actionsRows++;

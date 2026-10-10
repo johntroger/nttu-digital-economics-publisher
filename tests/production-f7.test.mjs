@@ -40,6 +40,8 @@ test('F7 billing receipt includes other repositories and never claims to verify 
  assert.equal(result.conservativeUsedMinutes,12);assert.equal(result.dailyMinutes['2026-10-09'],12);assert.equal(result.quotaUsable,true);assert.equal(result.budgetVerifiedByAPI,false);assert.equal(result.activationApproved,false);assert.ok(!JSON.stringify(result).includes('other/private'));
  for(const usageItems of [[],[{...row,product:'unsupported'}]]){const incomplete=summarizeBillingUsage({usageItems},now);assert.equal(incomplete.quotaUsable,false);assert.equal(incomplete.conservativeUsedMinutes,null);}
  assert.equal(summarizeBillingUsage({usageItems:[{...row,product:'actions',sku:'actions_linux'},{...row,product:'actions',sku:'actions_windows',quantity:5}]},now).conservativeUsedMinutes,12);
+ assert.equal(summarizeBillingUsage({usageItems:[{...row,product:'actions',unitType:'Minutes'}]},now).conservativeUsedMinutes,2);
+ assert.throws(()=>summarizeBillingUsage({usageItems:[{...row,unitType:'hours'}]},now),/UNSUPPORTED/);
  const schema=billingSchema({usageItems:[row]});assert.deepEqual(schema.skus,['Actions Linux']);assert.deepEqual(schema.units,['minutes']);assert.deepEqual(schema.quantityTypes,['number']);assert.ok(!JSON.stringify(schema).includes('other/private'));
  assert.throws(()=>summarizeBillingUsage({usageItems:[{...row,sku:'unknown'}]},now),/UNSUPPORTED/);
  assert.throws(()=>summarizeBillingUsage({usageItems:[{...row,date:'2026-09-09'}]},now),/INVALID/);

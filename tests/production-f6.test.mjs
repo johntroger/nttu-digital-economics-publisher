@@ -100,9 +100,10 @@ test('F6 account quota includes other repositories, weighted usage and the CI/mo
  const q=quotaDecision({usageItems:[usageRow,{...usageRow,sku:'Actions Windows',quantity:50},{...usageRow,sku:'Actions macOS',quantity:10}]},billingPolicy,quotaNow);
  assert.equal(q.usedMinutes,300);assert.equal(q.remainingMinutes,1300);assert.equal(q.allowed,true);
  assert.equal(quotaDecision({usageItems:[{...usageRow,product:'actions',sku:'actions_linux'}]},billingPolicy,quotaNow).usedMinutes,100);
+ assert.equal(quotaDecision({usageItems:[{...usageRow,product:'actions',unitType:'Minutes'}]},billingPolicy,quotaNow).usedMinutes,100);
  assert.equal(quotaDecision({usageItems:[{...usageRow,quantity:1596}]},billingPolicy,quotaNow).allowed,false);
  for(const p of [undefined,{...billingPolicy,stopUsage:false},{...billingPolicy,budgetUSD:5},{...billingPolicy,scope:'repository'},{...billingPolicy,verifiedAt:quotaNow-86400001},{...billingPolicy,reserveMinutes:0}])assert.equal(quotaDecision({usageItems:[]},p,quotaNow).allowed,false);
- for(const r of [{},{...usageRow,sku:'unknown'},{...usageRow,netAmount:1},{...usageRow,quantity:-1},{...usageRow,date:'2026-09-30'}])assert.equal(quotaDecision({usageItems:[r]},billingPolicy,quotaNow).allowed,false);
+ for(const r of [{},{...usageRow,sku:'unknown'},{...usageRow,unitType:'hours'},{...usageRow,netAmount:1},{...usageRow,quantity:-1},{...usageRow,date:'2026-09-30'}])assert.equal(quotaDecision({usageItems:[r]},billingPolicy,quotaNow).allowed,false);
 });
 test('F6 quota adapter reads current account month and fails closed on 403, redirects or unreadable usage',async()=>{
  let calls=0;
