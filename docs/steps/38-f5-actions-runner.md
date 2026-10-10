@@ -95,3 +95,33 @@ Trước khi kết nối thật phải duyệt một bước riêng: mount API v
 `quotaAllowed` hiện là đầu vào giả lập để kiểm fail-closed; chưa đọc billing tài khoản. Monitor Node hiện chỉ trả báo cáo giả lập, chưa gửi cảnh báo hoặc thay monitor đang chạy. Việc tổng hợp stock Node và nối health/owner/warehouse schema16 chưa được kích hoạt; phải hoàn tất và kiểm thử ở bước tích hợp đóng trước bật lịch. Giữ lịch chính thức một bài/ngày10:00 Việt Nam và cơ chế gửi thủ công riêng; F5 không tạo lịch mới.
 
 Điều kiện nghiệm thu cloud giữ nguyên: mỗi API/nhóm dữ liệu ít nhất30 warm đúng release, cold/p95/max/outcome, ngân sách10ms; dừng nếu vượt. Đo cloud thất bại thì chỉ công nhận kết quả code/giả lập, chưa được triển khai production.
+
+### Đo giới hạn và đối chiếu log lưu trữ — 10/10/2026
+
+Runtime `26294c11d58cb03ce6515256766100f2f2bfd3ea`, CI37945583227 đạt. Đọc analytics D1 toàn tài khoản qua GraphQL sau reset:7.290 rowsRead/111 rowsWritten. Tạo clone riêng `nttu-f5-cpu-5f24b8329e`, D1 `cee87fed-a08f-44c9-8130-e1316110c7a4`, CF version `ac88893e-924f-4ca0-88cb-66f97a6869f4`. Không dùng mẫu từ deployment trước.
+
+Lượt `mock-1791601509073` kết thúc đúng50 pipeline mock, Facebook/Telegram thật0. Tail filter0.999 vẫn không đủ mẫu, nên bộ đo trả `F5 warm sampling incomplete`. Analytics sau lượt đo ghi333.086 rowsRead/4.125 rowsWritten toàn tài khoản (có độ trễ cập nhật; không quy toàn bộ mức tăng cho clone).
+
+API log lưu trữ trả403 thiếu quyền. Dashboard đang đăng nhập hiển thị1.700 sự kiện/0 lỗi. Xuất JSON từ dashboard được1.000 sự kiện mới nhất; file gốc giữ riêng trên máy, không đưa vào Git. Bộ phân tích `scripts/f5-telemetry.mjs` ghép invocation/custom marker theo requestId, kiểm Worker/CF version/deployment/path, không giữ headers/body. Chỉ bổ sung tail nằm trước timestamp nhỏ nhất của bản xuất ít nhất1 giây; loại khoảng chồng lấn và request trùng. Không chạy thêm pipeline để lấy các mẫu này. Bằng chứng hẹp và checksum bản xuất ở `tmp/step38/f5/persisted-26294c1-analysis.json`.
+
+| Pha | Warm | p95(ms) | Max(ms) |
+| --- | ---: | ---: | ---: |
+| claim | 43 | 4 | 4 |
+| data:0 | 32 | 3 | 4 |
+| data:1 | 31 | 2 | 3 |
+| data:2 | 31 | 2 | 3 |
+| data:3 | 68 | 2 | 3 |
+| data:4 | 36 | 3 | 3 |
+| image | 32 | 4 | 4 |
+| proof | 31 | 3 | 5 |
+| intent | 31 | 4 | 4 |
+| authorize | 31 | 3 | 4 |
+| evidence | 77 | 3 | 4 |
+| finalize | 31 | 4 | 4 |
+| status | 62 | 2 | 3 |
+
+**Warm đủ ít nhất30 ở mọi nhóm, không có mẫu API vượt10ms trong bằng chứng này. F5 vẫn chưa nghiệm thu toàn bộ.** Cold đầu tiên của lượt đo là `/reset` của harness, CPU11ms/outcomeok; không phải API runner và không được thay thế mẫu API cold. Các API runner trong lượt này đều warm. Không lấy cold9ms của deployment cũ để chốt deployment mới.
+
+Đã xóa clone Worker/D1 và token; giữ bằng chứng, backup thật, nội dung gốc và ledger ngày10/10 đã đặt đủ50 chuỗi. Production/staging/main/cron không đổi. Mã bộ phân tích có kiểm thử tương quan, dữ liệu trùng/cũ, khoảng chồng lấn và CPU vượt kể cả invocation mất marker.
+
+Lượt đo tiếp theo cần sửa bước chuẩn bị: seed fixture trực tiếp trên D1 clone trước request đầu tiên, thu API cold trước khi `/reset` làm nóng isolate, rồi chạy warm trong cùng ngân sách50 chuỗi và cùng deployment. Ưu tiên log lưu trữ khi tail thiếu mẫu; nếu cần quyền đọc log mới thì người quản lý phải cấp rõ phạm vi. Không tự nâng gói, tăng tải, đặt lịch chạy lại hoặc mở F6 khi thiếu cold.
