@@ -5,7 +5,7 @@ import {resolve} from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {prepareClosedF7,MANAGEMENT_ASSETS} from '../scripts/production-f7-prepare.mjs';
 import {actionsForecast} from '../scripts/production-f7-forecast.mjs';
-import {summarizeBillingUsage,billingRead} from '../scripts/production-f7-billing-read.mjs';
+import {summarizeBillingUsage,billingRead,billingSchema} from '../scripts/production-f7-billing-read.mjs';
 test('F7 closed configuration preserves exact UI/font bytes and live resource identity without credentials or send gates',()=>{
  const dir=resolve('tmp/production-test-'+randomUUID());mkdirSync(dir);
  const r=prepareClosedF7('a'.repeat(40),{output:resolve(dir,'closed-config')});
@@ -40,6 +40,7 @@ test('F7 billing receipt includes other repositories and never claims to verify 
  assert.equal(result.conservativeUsedMinutes,12);assert.equal(result.dailyMinutes['2026-10-09'],12);assert.equal(result.quotaUsable,true);assert.equal(result.budgetVerifiedByAPI,false);assert.equal(result.activationApproved,false);assert.ok(!JSON.stringify(result).includes('other/private'));
  for(const usageItems of [[],[{...row,product:'unsupported'}]]){const incomplete=summarizeBillingUsage({usageItems},now);assert.equal(incomplete.quotaUsable,false);assert.equal(incomplete.conservativeUsedMinutes,null);}
  assert.equal(summarizeBillingUsage({usageItems:[{...row,product:'actions',sku:'actions_linux'},{...row,product:'actions',sku:'actions_windows',quantity:5}]},now).conservativeUsedMinutes,12);
+ const schema=billingSchema({usageItems:[row]});assert.deepEqual(schema.skus,['Actions Linux']);assert.deepEqual(schema.units,['minutes']);assert.deepEqual(schema.quantityTypes,['number']);assert.ok(!JSON.stringify(schema).includes('other/private'));
  assert.throws(()=>summarizeBillingUsage({usageItems:[{...row,sku:'unknown'}]},now),/UNSUPPORTED/);
  assert.throws(()=>summarizeBillingUsage({usageItems:[{...row,date:'2026-09-09'}]},now),/INVALID/);
  await assert.rejects(billingRead({},()=>assert.fail('untrusted context made transport'),now),/CONTEXT/);
