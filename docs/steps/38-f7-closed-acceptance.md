@@ -2,6 +2,22 @@
 
 Người quản lý phê duyệt F7 ngày 10/10/2026 theo phạm vi `tmp/step38/f6/f7-review.md`. Nhánh riêng: `codex/step38-f7-closed-acceptance`. Chưa merge main, triển khai production, thay cron, sao chép Meta credential, đăng Facebook hoặc gửi Telegram.
 
+## Trạng thái hiện tại, thay thế các số liệu sơ bộ bên dưới
+
+Token billing đã hoạt động: run38042280947 ngày10/10/2026 lúc09:41:39Z. Usage toàn tài khoản có16rows productactions, unitMinutes, SKUActions Linux/Windows; adapter đã sửa và có regression. Tổng dự phòng bảo thủ1.116/2.000phút, phínet0USD; còn884phút trước các lượt CI tiếp theo và độ trễ usage. API usage không chứng minh Stop usage. Giữ nguyên budgetTTL24h; chưa tự làm mới hoặc nới hạn.
+
+Dự toán22ngày: monitor mỗi30phút+2fallback/ngày cần1.100phút, runner110phút, CI300phút, tổng1.510 vượt884. Mỗi60phút cũng vượt với tổng982. Đề xuất rollout: monitor GitHub mỗi6giờ+2fallback/ngày, watchdogHTTP trực tiếp, tổng542phút và biên342phút trước usage mới. Không đổi lịch thực tế trong F7.
+
+Kiểm thử native mới biên dịch entrypoint `runner-worker.ts` qua harness privateF7, giữ đồng hồ server thực. Harness chỉ rebase origin trong clone, vẫn chạy guard/whitelist thật; overhead wrapper phải tính vào mẫuCPU. Test dùng workerd/D1/R2 và providerlocalhost, chặn mọi outbound củaWorker. Một mockpost confirmed, stock39(29main/10reserve), heartbeat/watchdog đạt; không gửi lặp; generation thay đổi chặn finalize stock cũ; crash sauintent giữ needs_reconciliation và lần kế tiếp unknown, khôngPOSTlại; giữ đủ40warehouseposts. Không dùng native timing để kết luận CPUcloud.
+
+Preflight Cloudflare09:57:36Z: quyền đọc R2 đạt, D1toàn tài khoản734.967rowsRead/10.585rowsWritten. Receipt phải làm mới trước mỗi lượt cloud. `production-f7-cloud-smoke.mjs` yêu cầu exactHEADCI, cloneWorker/D1/R2 riêng, CPUlimit10ms, capability chỉ trong memory, seed test với ngày thực và image checksum từ backup. Tối đa2smokecycles/ngày bằng ledger không hoàn lại; finally tự xóa ảnh, Worker, bucket, D1 và ghi lỗi cleanup nếu có. Chưa chạy smokecloud; chưa đo cold/warmCPU hoặc nghiệm thu F7.
+
+TypeScript và fulltests500/500 đạt; kiểm thử native F7 đạt. CI Linux được bổ sung nativeF7. Artifact native đã lưu `tmp/step38/f7/native-results.json`; báo cáo thật luôn realMetaPosts0/realTelegramMessages0/cloudCPUAcceptedfalse. Bản cấu hình đóng trước đó và bằng chứng F5 được giữ; F5 không thay thế nghiệm thuCPU F7.
+
+Việc còn lại: exactHEADCI mới, smoke/CPUclone đủcoldwarm, ownerUI/pause/dualengine/rollbackclone, chính sách ngân sách vận hành dài ngày. F7 chưa hoàn tất và production vẫn đóng.
+
+## Lịch sử kiểm tra sơ bộ
+
 ## Quota và vận hành đã đọc
 
 GitHub UI lúc khoảng 16:12 giờ Việt Nam: tài khoản johntroger dùng GitHub Free; Actions account budget $0, Stop usage Yes; 968,7/2.000 phút đã sử dụng, 0 GB/0,5 GB storage, billable spend $0. Đây là quan sát UI, không phải receipt có thể tự làm mới bằng API. Credential Git hiện có xác thực đúng johntroger nhưng GET billing usage trả404. Đã hướng dẫn tạo token Account permission Plan: Read-only, lưu repository Secret `PRODUCTION_BILLING_READ_TOKEN`; đang chờ người quản lý hoàn tất. Không gửi token qua chat.
