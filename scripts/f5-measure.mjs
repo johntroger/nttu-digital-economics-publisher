@@ -3,6 +3,7 @@ import {readFileSync,writeFileSync,readdirSync,existsSync} from 'node:fs';
 import {reserveF5Cycles} from './f5-cloud-budget.mjs';
 import {spawnSync} from 'node:child_process';
 import {resolve} from 'node:path';
+import {randomUUID} from 'node:crypto';
 import {runnerFixture} from '../tests/helpers/production-runner-http.mjs';
 import {runSimulatedActionsRunner,runSimulatedRunnerMonitor} from './production-actions-runner.mjs';
 const root='tmp/step38/f5',l=JSON.parse(readFileSync(root+'/resources.json'));
@@ -48,8 +49,12 @@ try{
  // Recover only tails on this session-owned Worker after an interrupted tool.
  for(const stale of await cf(tailPath))await cf(tailPath+'/'+stale.id,'DELETE');
  await openTail();await new Promise(r=>setTimeout(r,5000));
+ // One reserved cycle is the first due claim. No /reset or other Worker
+ // request may precede it; remaining cycles are complete warm mock pipelines.
+ const coldResponse=await remote('/runner/claim',JSON.stringify({runner:randomUUID()}));
+ const coldClaim=await coldResponse.json();if(!coldResponse.ok||coldClaim.state!=='held'||!/^runner-job:[a-f0-9-]{36}$/.test(coldClaim.job??''))throw Error('F5 seeded first claim failed');
  fixture=await runnerFixture({apiHandler:async request=>{const path=new URL(request.url).pathname,body=await request.text(),data=JSON.parse(body);return remote(path,body,path==='/runner/data'?data.group:undefined);}});
- for(let cycle=0;cycle<plan.cycles;cycle++){
+ for(let cycle=0;cycle<plan.cycles-1;cycle++){
   if(cycle&&cycle%10===0){await closeTail();await openTail();}
   const reset=await remote('/reset','{}');if(!reset.ok)throw Error('F5 reset failed');
   const result=await runSimulatedActionsRunner(fixture.options);requests.push({cycle:cycle+1,...result});save();if(result.state!=='confirmed'||result.mockPosts!==1)throw Error('F5 mock pipeline failed: '+JSON.stringify(result));
@@ -59,6 +64,7 @@ try{
   if(Object.values(summary()).every(s=>s.warm>=30))break;
  }
  await new Promise(r=>setTimeout(r,4000));budget();if(!Object.values(summary()).every(s=>s.warm>=30))throw Error('F5 warm sampling incomplete');
+ if(!relevant().some(e=>e.path==='/runner/claim'&&e.cold===true&&e.outcome==='ok'&&typeof e.cpuTime==='number'))throw Error('F5 API cold sampling incomplete');
 }catch(error){failure=error instanceof Error?error.message:'F5 measurement failed';}
 finally{
  try{await fixture?.dispose();}catch{failure??='F5 local fixture cleanup failed';}
