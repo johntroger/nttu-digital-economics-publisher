@@ -4,6 +4,8 @@ Người quản lý phê duyệt F7 ngày 10/10/2026 theo phạm vi `tmp/step38/
 
 ## Trạng thái hiện tại, thay thế các số liệu sơ bộ bên dưới
 
+Lượtclone thứ hai deployFree thành công nhưng mockpipeline trảunknown. Kiểm thử bổ sung1.600ms sauauthorize xác định lỗi đối soát dùng timestampserver bị đóng băng; thời điểmpost hợp lệ qua mạng vượt mốc cũ+1giây. Sửa Node để cộng elapsedmonotonic vào timestampserver cho GETreconcile cả normal/recovery; không dùng wallclock từcaller và không cấp thêmPOST. Regression5/5F7đạt. Clone thứ hai cleanupkhônglỗi, chưađủCPUacceptance. Ledger giữ2lượt đã dùng, mở đúng1retry có freshaccountreceipt và tổngcap3smokecycles/ngày; khôngreset hoặc hoànquota.
+
 Smokecloud đầu tiên phát hiện lỗi deploy100328: góiFree không cho đặt thuộc tínhCPUlimits, kể cả10ms. Đã bỏ `limits.cpu_ms` khỏi proposalrunner và cloneconfig; dùng giới hạn10ms mặc định củaFree, có regression chặn thuộc tính này. Lượt đầu chưa cóWorkerinvocation hoặcCPUevidence. Sau refreshOAuth, GETWorker/D1/R2 của clone đều404, xác minh dọn hoàn toàn lúc10:13:03Z. Bộ dọn chấp nhận DELETE404 và đọc lại OAuth sau từng lần Wrangler refresh để tránh báo lỗi giả hoặc dùng credential cũ. Cần exactHEADCI mới rồi thử lại; ledger vẫn tính lượt thất bại, không hoàn lại.
 
 Token billing đã hoạt động: run38042280947 ngày10/10/2026 lúc09:41:39Z. Usage toàn tài khoản có16rows productactions, unitMinutes, SKUActions Linux/Windows; adapter đã sửa và có regression. Tổng dự phòng bảo thủ1.116/2.000phút, phínet0USD; còn884phút trước các lượt CI tiếp theo và độ trễ usage. API usage không chứng minh Stop usage. Giữ nguyên budgetTTL24h; chưa tự làm mới hoặc nới hạn.

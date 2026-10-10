@@ -6,6 +6,8 @@ import {randomUUID} from 'node:crypto';
 import {prepareClosedF7,MANAGEMENT_ASSETS} from '../scripts/production-f7-prepare.mjs';
 import {actionsForecast} from '../scripts/production-f7-forecast.mjs';
 import {summarizeBillingUsage,billingRead,billingSchema} from '../scripts/production-f7-billing-read.mjs';
+import {runnerFixture} from './helpers/production-runner-http.mjs';
+import {runSimulatedActionsRunner} from '../scripts/production-actions-runner.mjs';
 test('F7 closed configuration preserves exact UI/font bytes and live resource identity without credentials or send gates',()=>{
  const dir=resolve('tmp/production-test-'+randomUUID());mkdirSync(dir);
  const r=prepareClosedF7('a'.repeat(40),{output:resolve(dir,'closed-config')});
@@ -49,4 +51,16 @@ test('F7 billing receipt includes other repositories and never claims to verify 
  await assert.rejects(billingRead({},()=>assert.fail('untrusted context made transport'),now),/CONTEXT/);
  const env={GITHUB_ACTIONS:'true',GITHUB_REPOSITORY:'johntroger/nttu-digital-economics-publisher',GITHUB_EVENT_NAME:'workflow_dispatch',GITHUB_REF:'refs/heads/codex/step38-f7-closed-acceptance',PRODUCTION_BILLING_READ_TOKEN:'fixture'};
  const receipt=await billingRead(env,async(url,init)=>{assert.match(url,/\/users\/johntroger\/settings\/billing\/usage\?year=2026&month=10$/);assert.equal(init.method,'GET');assert.equal(init.redirect,'error');return Response.json({usageItems:[row]});},now);assert.equal(receipt.conservativeUsedMinutes,2);
+});
+
+test('F7 reconciliation advances trusted server time across network delay without granting another POST',async()=>{
+ const f=await runnerFixture();
+ try{
+  const initial=f.now();
+  const result=await runSimulatedActionsRunner({...f.options,hook:async stage=>{
+   if(stage==='after_authorize'){await new Promise(done=>setTimeout(done,1600));f.setTime(initial+1600);}
+  }});
+  assert.equal(result.state,'confirmed',JSON.stringify(result));assert.equal(f.postCount(),1);assert.equal(f.getCount(),1);
+  assert.ok(['closed','day_complete'].includes((await runSimulatedActionsRunner(f.options)).state));assert.equal(f.postCount(),1);
+ }finally{await f.dispose();}
 });

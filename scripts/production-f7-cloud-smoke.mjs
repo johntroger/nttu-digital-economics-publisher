@@ -24,9 +24,12 @@ if(!ci?.workflow_runs?.some(r=>r.head_sha===sha&&r.conclusion==='success'))throw
 assertF5Usage(usage);
 const ledgerPath=root+'/cloud-smoke-load.json';
 let ledger;try{ledger=JSON.parse(readFileSync(ledgerPath));}catch(error){if(error.code!=='ENOENT')throw error;}
-if(ledger&&(!/^\d{4}-\d{2}-\d{2}$/.test(ledger.utcDate)||!Number.isSafeInteger(ledger.reservedCycles)||ledger.reservedCycles<0||ledger.reservedCycles>2))throw Error('F7_SMOKE_LEDGER_INVALID');
+if(ledger&&(!/^\d{4}-\d{2}-\d{2}$/.test(ledger.utcDate)||!Number.isSafeInteger(ledger.reservedCycles)||ledger.reservedCycles<0||ledger.reservedCycles>3))throw Error('F7_SMOKE_LEDGER_INVALID');
 const utcDate=new Date().toISOString().slice(0,10),reserved=ledger?.utcDate===utcDate?ledger.reservedCycles:0;
-if(reserved>=2)throw Error('F7_SMOKE_DAILY_LOAD_LIMIT');
+// One extra bounded retry after the observed Free-config and transit-clock
+// failures. Failed reservations remain charged; a fresh account receipt is still
+// mandatory and never replaced by resetting the ledger.
+if(reserved>=3)throw Error('F7_SMOKE_DAILY_LOAD_LIMIT');
 writeFileSync(ledgerPath,JSON.stringify({utcDate,reservedCycles:reserved+1},null,2));
 const conf=readFileSync(resolve(process.env.APPDATA,'xdg.config/.wrangler/config/default.toml'),'utf8'),cfToken=conf.match(/^oauth_token\s*=\s*"([^"]+)"/m)?.[1];if(!cfToken)throw Error('F7_CF_AUTH_UNAVAILABLE');
 const name='nttu-f7-cpu-'+randomUUID().replaceAll('-','').slice(0,10),token=randomBytes(32).toString('hex'),origin='https://'+name+'.nttu-kts-johntroger.workers.dev';
@@ -72,11 +75,11 @@ try{
  resources.imageAttempted=true;save();wrangler(['r2','object','put',name+'/'+resources.imageKey,'--remote','--file','assets/batch/v1/P01.png','--config',configPath],'image');
  resources.workerAttempted=true;save();wrangler(['deploy','--config',configPath],'deploy');wrangler(['secret','put','CPU_TEST_TOKEN','--config',configPath],'secret',token);
  const deployments=await cf('/workers/scripts/'+name+'/deployments');resources.version=deployments.deployments?.[0]?.versions?.[0]?.version_id;save();
- const requests=[];
+ const requests=[];report.requests=requests;
  fixture=await runnerFixture({open:false,graphHook:async(_url,request)=>{if(request.method==='POST')fixture.setTime(Date.now());},apiHandler:async request=>{
-  const path=new URL(request.url).pathname;
+  const path=new URL(request.url).pathname,start=performance.now();
   const response=await fetch(origin+path,{method:'POST',redirect:'error',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:await request.text(),signal:AbortSignal.timeout(20000)});
-  requests.push({path,status:response.status});const bytes=await response.arrayBuffer(),headers=new Headers(response.headers);headers.delete('content-encoding');headers.delete('content-length');return new Response(bytes,{status:response.status,headers});
+  requests.push({path,status:response.status,wallMs:Math.ceil(performance.now()-start)});const bytes=await response.arrayBuffer(),headers=new Headers(response.headers);headers.delete('content-encoding');headers.delete('content-length');return new Response(bytes,{status:response.status,headers});
  }});fixture.setTime(Date.now());
  const result=await runSimulatedActionsRunner({...fixture.options,expectedRelease:sha});assert.equal(result.state,'confirmed',JSON.stringify(result));assert.equal(fixture.postCount(),1);
  const stock=await scanRunnerStock(simulatedClient(fixture.options),{expectedRelease:sha});assert.equal(stock.remaining,39);
