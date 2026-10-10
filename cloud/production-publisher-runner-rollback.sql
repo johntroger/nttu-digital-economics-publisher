@@ -8,4 +8,5 @@ INSERT INTO production_runner_rollback_guard SELECT CASE WHEN
 DROP TABLE production_runner_rollback_guard;
 DROP TABLE production_runner_grants;
 DROP TABLE production_runner_sessions;
+ALTER TABLE production_publisher_stock_scan DROP COLUMN commit_token;
 DELETE FROM schema_migrations WHERE name='0016_production_publisher_runner.sql';

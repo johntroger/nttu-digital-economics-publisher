@@ -74,9 +74,9 @@ export async function productionMonitorStatus(env:ManagementBindings,options:{no
  (SELECT count(*) FROM (SELECT state FROM notification_outbox ORDER BY rowid DESC LIMIT 100) WHERE state!='delivered') pending,
  (SELECT count(*) FROM (SELECT state FROM notification_outbox ORDER BY rowid DESC LIMIT 100) WHERE state IN ('needs_action','delivery_unknown')) blocked`).first<Record<string,any>>();
  const runtime=view!.runtime?JSON.parse(view!.runtime):null,http=view!.http?JSON.parse(view!.http):null,configured=productionMetaConfigured(env);
- const live=configured?await inspectMetaConnection(env,options):null,publisher=await publisherPreflight(env,options.now??Date.now(),state);
+ const live=configured&&migrations<16?await inspectMetaConnection(env,options):null,publisher=await publisherPreflight(env,options.now??Date.now(),state);
  return{environment:'production',databaseChecked:true,publishingEnabled:publisher.publishingEnabled,paused:publisher.paused??state.paused_by_user===1,schemaReady,telegramConfigured:telegramConfigured(env)&&env.TELEGRAM_CHAT_ID==='1548618770',runtime,http,triggerSource:http?.enabled===1?'http':'cron',
-  publisher,metaConfigured:configured,metaVerified:live?.state==='verified_read_only',metaExpiresAt:live?.expires??null,
+  publisher,metaVerificationSource:migrations===16?'node_required':'worker',metaConfigured:configured,metaVerified:live?.state==='verified_read_only',metaExpiresAt:live?.expires??null,
   dataAccessExpiresAt:live?.dataExpires??null,
   notificationsPending:view!.pending,notificationsBlocked:view!.blocked};
 }

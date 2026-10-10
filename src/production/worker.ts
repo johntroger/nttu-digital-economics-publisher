@@ -1,4 +1,4 @@
-import {publisherPreflight,publisherAuthorized} from './publisher-live.ts';
+import {publisherPreflight,publisherAuthorized,pauseProductionPublisher} from './publisher-live.ts';
 import {runStagedProductionPublisher} from './publisher-stages.ts';
 import type {PublisherBindings} from './publisher-live.ts';
 import {ProductionMetaPublisher} from './publisher-provider.ts';
@@ -42,7 +42,7 @@ export default {
       try{return json(await runProductionHttpTick(env));}catch{return json({error:'TRIGGER_UNAVAILABLE'},503);}
     }
     if(url.pathname==='/health'&&request.method==='GET')return json({environment:'production',phase:'management',release:env.RELEASE_SHA,
-      databaseChecked:true,publisherAdapterImplemented:true,publishingImplemented:false,...await productionRuntimeState(env,outerState!),schedulerImplemented:false,operationsSchedulerImplemented:true,ownerLoginConfigured:authConfigured(env)});
+      databaseChecked:true,publisherAdapterImplemented:true,runnerImplemented:Number(outerState!.migration_count)===16,publisherEngine:Number(outerState!.migration_count)===16?'runner':'legacy',publishingImplemented:Number(outerState!.migration_count)===16,...await productionRuntimeState(env,outerState!),schedulerImplemented:false,operationsSchedulerImplemented:true,ownerLoginConfigured:authConfigured(env)});
     if(url.pathname==='/api/production/monitor'&&request.method==='GET'){
       if(!await monitorAuthorized(request,env))return json({error:'MONITOR_AUTH_REQUIRED'},401);
       return json(await productionMonitorStatus(env));
@@ -65,6 +65,12 @@ export default {
       return Response.json({loggedOut:true},{headers:{...headers,'Set-Cookie':clearSessionCookie()}});
     }
     if(request.method==='GET'&&url.pathname==='/api/me')return json({email:owner.email,csrf:owner.csrf,environment:'production'});
+    if(url.pathname==='/api/production/pause'){
+      if(request.method!=='POST')return json({error:'METHOD_NOT_ALLOWED'},405);
+      try{requireMutation(request,env,owner);}catch{return json({error:'CSRF_REQUIRED'},403);}
+      if(url.search||Number(request.headers.get('Content-Length'))>2||await request.text()!=='{}')return json({error:'PAUSE_REQUEST_INVALID'},422);
+      await pauseProductionPublisher(env,owner.email);return json(await publisherPreflight(env));
+    }
     if(request.method==='GET'&&url.pathname==='/api/meta')return json(await productionMetaStatus(env));
     if(request.method==='GET'&&url.pathname==='/api/telegram')return json(await operationsStatus(env));
     if(request.method==='POST'&&url.pathname==='/api/telegram/test'){

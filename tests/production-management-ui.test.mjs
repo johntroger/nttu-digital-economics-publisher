@@ -10,14 +10,22 @@ class Element{
  async emit(name){await this.events[name]?.();}
 }
 const flush=async()=>{for(let i=0;i<8;i++)await new Promise(setImmediate);};
-function harness(respond){
+function harness(respond,summaryOverrides={}){
  const ids=Object.fromEntries(['panel','error','owner','logout','refresh'].map(k=>[k,new Element(k)])),nav=['overview','posts','schedule','history','notifications','connections'].map(view=>Object.assign(new Element('button'),{dataset:{view}})),calls=[];
- const summary={counts:{posts:40,main:30,reserve:10,files:56,publications:0},targetPageUrl:'https://www.facebook.com/NganhKinhTeSoNTTU'};
+ const summary={counts:{posts:40,main:30,reserve:10,files:56,publications:0},targetPageUrl:'https://www.facebook.com/NganhKinhTeSoNTTU',...summaryOverrides};
  const context=vm.createContext({document:{hidden:false,createElement:tag=>new Element(tag),querySelector:s=>ids[s.slice(1)],querySelectorAll:()=>nav},AbortController,console,location:{assign(){}},setInterval(){},crypto,Date,fetch:async(path,opts)=>{calls.push(path);const body=path==='/api/me'?{email:'owner',csrf:'fixture'}:path==='/api/management'?structuredClone(summary):await respond(path,opts);return {status:body.httpError?422:200,ok:!body.httpError,json:async()=>body.httpError?{error:body.httpError}:body};}});
  vm.runInContext(readFileSync('ui/production/management.js','utf8'),context);
  const find=(root,predicate)=>[root,...root.children.flatMap(c=>find(c,predicate))].filter(predicate);
- return {ids,nav,calls,find,click:async view=>{await nav.find(n=>n.dataset.view===view).emit('click');await flush();}};
+ return {ids,nav,calls,find,summary,click:async view=>{await nav.find(n=>n.dataset.view===view).emit('click');await flush();}};
 }
+test('F6 UI reports enabled state and pauses with owner CSRF before showing success',async()=>{
+ let h;
+ h=harness(async(path,options)=>{assert.equal(path,'/api/production/pause');assert.equal(options.method,'POST');assert.equal(options.headers['X-CSRF-Token'],'fixture');assert.equal(options.body,'{}');h.summary.paused=true;h.summary.publishingEnabled=false;return {};},{schema:16,publishingEnabled:true,paused:false});
+ await flush();assert.match(h.ids.panel.text,/Lịch đăng tự động đã được bật/);
+ await h.find(h.ids.panel,e=>e.textContent==='Tạm dừng đăng tự động')[0].emit('click');await flush();
+ assert.match(h.ids.panel.text,/Đã tạm dừng/);assert.equal(h.find(h.ids.panel,e=>e.textContent==='Tạm dừng đăng tự động')[0].disabled,true);
+});
+
 test('F1 UI initially requests only identity/summary; captions load on opening a post and other tabs stay unloaded',async()=>{
  const h=harness(async path=>path==='/api/management/posts'?{items:[{id:'p1',version_id:'v1',content_key:'P01',caption_title:'Title'}],nextCursor:null,snapshot:'s'}:path==='/api/management/posts/p1'?{version_id:'v1',version:1,content_key:'P01',caption:'approved\n============\nfooter',sourceRefs:[],sourceFiles:[],contentDesignApproved:true}:assert.fail(path));await flush();
  assert.deepEqual(h.calls,['/api/me','/api/management']);assert.match(h.ids.panel.text,/40 bài/);

@@ -41,6 +41,7 @@ jobs:
           node scripts/run-clean.mjs script scripts/production-publisher-smoke.mjs
           npm run test:production-live
           npm run test:runner:native
+          node scripts/run-clean.mjs script scripts/production-f6-native.mjs
   deploy-staging:
     name: Deploy staging foundation
     needs: portable-checks

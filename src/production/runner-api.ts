@@ -10,6 +10,7 @@ import {PRODUCTION_PAGE,publicationHash} from './publisher-provider.ts';
 import {finalizePublisherEvidence} from './publisher-live.ts';
 import type {PublicationResult} from './publisher-provider.ts';
 import {businessDate,scheduledInstant} from '../domain/policy.ts';
+import {runnerStock} from './runner-stock.ts';
 
 export interface RunnerBindings extends ManagementBindings {PRODUCTION_RUNNER_ENABLED?:string;PRODUCTION_RUNNER_TOKEN?:string}
 type Row=Record<string,any>;type Value=string|number|null;
@@ -31,7 +32,7 @@ function fail(code:string,status=409):never{throw new ProtocolError(code,status)
 const only=(body:Row,names:string[])=>{if(Object.keys(body).some(k=>!names.includes(k)))fail('RUNNER_FIELDS_INVALID',400);};
 const time=(clock:()=>number)=>{const now=clock();if(!Number.isSafeInteger(now)||now<0)fail('RUNNER_CLOCK_INVALID');return now;};
 async function authorized(r:Request,e:RunnerBindings){
- const status=new URL(r.url).pathname==='/runner/status',received=r.headers.get('Authorization');
+ const status=['/runner/status','/runner/watchdog'].includes(new URL(r.url).pathname),received=r.headers.get('Authorization');
  const secret=status&&received==='Bearer '+e.PRODUCTION_MONITOR_TOKEN?e.PRODUCTION_MONITOR_TOKEN:e.PRODUCTION_RUNNER_TOKEN;
  if(!hash(secret)||(secret===e.PRODUCTION_RUNNER_TOKEN?[e.PRODUCTION_PUBLISHER_TOKEN,e.PRODUCTION_MONITOR_TOKEN,e.PRODUCTION_TRIGGER_TOKEN].includes(secret):secret===e.PRODUCTION_TRIGGER_TOKEN||secret===e.PRODUCTION_PUBLISHER_TOKEN)||received?.length!==71||!received.startsWith('Bearer '))return false;
  // Both operands are fixed-size hexadecimal capabilities. Compare every byte;
@@ -256,6 +257,21 @@ export async function runnerAPI(request:Request,e:RunnerBindings,clock:()=>numbe
    return await route(request,e,input,n,row,row);
   }
   const state=await first(e,identitySQL,day(n));if(!state||state.database_id!==e.PRODUCTION_DATABASE_ID||state.migrations!==16||state.runner_schema!==1)fail('RUNNER_SCHEMA_INVALID');
+  if(path==='/runner/heartbeat'){
+   only(input,['runId','state']);if(!/^[1-9][0-9]{0,19}$/.test(input.runId??'')||!['started','completed','failed','needs_reconciliation'].includes(input.state))fail('RUNNER_HEARTBEAT_INVALID',400);
+   await q(e,input.state==='started'?'UPDATE production_publisher_runtime SET last_received_at=?,state=?,heartbeat_count=heartbeat_count+1 WHERE id=1':'UPDATE production_publisher_runtime SET last_complete_at=?,state=? WHERE id=1',n,'runner_'+input.state).run();
+   return answer({state:input.state,serverNow:n});
+  }
+  if(path==='/runner/watchdog'){
+   only(input,[]);const runtime=await first(e,'SELECT last_received_at,last_complete_at,state FROM production_publisher_runtime WHERE id=1');
+   const due=scheduledInstant(day(n)).getTime();
+   const stale=!runtime||!Number.isSafeInteger(runtime.last_received_at)||runtime.last_received_at>n||n-runtime.last_received_at>36*3600000||live(state)&&n>=due+20*60000&&runtime.last_received_at<due;
+   const failed=['runner_failed','runner_needs_reconciliation'].includes(runtime?.state)||runtime?.state==='runner_started'&&n-runtime.last_received_at>10*60000;
+   return answer({state:stale?'runner_not_started':failed?'runner_incomplete':'observed',release:e.RELEASE_SHA},stale||failed?503:200);
+  }
+  if(['/runner/stock-start','/runner/stock-data','/runner/stock-finalize'].includes(path)){
+   try{return answer(await runnerStock(e,path,input,n));}catch(error){fail(error instanceof Error&&/^STOCK_[A-Z_]+$/.test(error.message)?error.message:'STOCK_OPERATION_FAILED');}
+  }
   return await route(request,e,input,n,state);
  }catch(error){reportError(error);return answer({error:error instanceof ProtocolError?error.message:'RUNNER_OPERATION_FAILED'},error instanceof ProtocolError?error.status:500);}
 }

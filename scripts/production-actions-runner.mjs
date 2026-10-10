@@ -10,7 +10,7 @@ export function simulatedClient({apiOrigin,mockGraphOrigin,token,transport=fetch
  const api=loopback(apiOrigin),graph=loopback(mockGraphOrigin);if(!/^[a-f0-9]{64}$/.test(token??''))throw Error('SIMULATION_TOKEN_INVALID');
  const wire=async(input,init)=>{const u=new URL(String(input));if(u.origin!=='https://graph.facebook.com'||!/^\/v26\.0\/(debug_token|me|817593604765443(?:\/photos|_[1-9][0-9]{4,24})?)$/.test(u.pathname)||!['GET','POST'].includes(init?.method))throw Error('SIMULATION_GRAPH_ROUTE_DENIED');return transport(graph+u.pathname+u.search,{...init,redirect:'error'});};
  return {provider:new ProductionMetaPublisher(SIMULATION_META,wire),async call(route,body={},binary=false){
-  if(!/^\/runner\/(claim|data|image|proof|intent|authorize|evidence|finalize|status)$/.test(route))throw Error('SIMULATION_API_ROUTE_DENIED');
+  if(!/^\/runner\/(claim|data|image|proof|intent|authorize|evidence|finalize|status|stock-start|stock-data|stock-finalize)$/.test(route))throw Error('SIMULATION_API_ROUTE_DENIED');
   const response=await transport(api+route,{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(body),redirect:'error',signal:AbortSignal.timeout(20000)});
   const bytes=await limited(response,binary?5242880:131072);let value;try{value=JSON.parse(new TextDecoder().decode(bytes));}catch{if(!binary||!response.ok)throw Error('SIMULATION_RESPONSE_INVALID');}
   if(!response.ok)throw Error(typeof value?.error==='string'?value.error:'SIMULATION_HTTP_FAILED');return binary?bytes:value;
@@ -19,7 +19,12 @@ export function simulatedClient({apiOrigin,mockGraphOrigin,token,transport=fetch
 const descriptor=d=>{if(d.pageId!==PRODUCTION_PAGE||!/^runner-job:[a-f0-9-]{36}$/.test(d.job??'')||!Number.isSafeInteger(d.serverNow)||!Number.isSafeInteger(d.bytes)||d.bytes<1||d.bytes>5242880||! /^[a-f0-9]{64}$/.test(d.checksum??'')||typeof d.caption!=='string'||!d.caption||! /^[a-f0-9]{40}$/.test(d.release??''))throw Error('SIMULATION_DESCRIPTOR_INVALID');};
 // Outcomes are deliberately small and contain no caption, token, response or URL.
 export async function runSimulatedActionsRunner(options){
- const start=performance.now(),maxMs=options.maxMs??180000,runner=randomUUID(),client=simulatedClient(options),hook=options.hook??(()=>{});
+ return runRunnerProtocol(simulatedClient(options),options);
+}
+// Transport capabilities are injected explicitly. The live wrapper supplies a
+// fixed-origin client only after workflow, billing and release verification.
+export async function runRunnerProtocol(client,options){
+ const start=performance.now(),maxMs=options.maxMs??180000,runner=randomUUID(),hook=options.hook??(()=>{});
  if(!Number.isSafeInteger(maxMs)||maxMs<1||maxMs>180000)throw Error('SIMULATION_BUDGET_INVALID');
  if(options.quotaAllowed!==true)return {state:'quota_blocked',mockPosts:0};
  let posts=0,held,attempt;
@@ -31,6 +36,7 @@ export async function runSimulatedActionsRunner(options){
   await checkpoint('before_claim');held=await client.call('/runner/claim',{runner});
   if(!['held','requested','unknown'].includes(held.state))return report(held.state);
   descriptor(held);
+  if(options.expectedRelease!==undefined&&held.release!==options.expectedRelease)throw Error('RUNNER_RELEASE_CHANGED');
   if(held.state!=='held'){
    if(!held.attempt)return report('unknown',{needsReconciliation:true});
    attempt={attempt:held.attempt,sentAt:held.sentAt};
