@@ -37,7 +37,8 @@ test('F7 forecasts reserve monitor, runner, CI and other account usage; never tr
 test('F7 billing receipt includes other repositories and never claims to verify account budget',async()=>{
  const now=Date.parse('2026-10-10T12:00:00Z'),row={date:'2026-10-09',product:'Actions',sku:'Actions Linux',quantity:1.2,unitType:'minutes',netAmount:0,repositoryName:'other/private'};
  const result=summarizeBillingUsage({usageItems:[row,{...row,sku:'Actions Windows',quantity:5}]},now);
- assert.equal(result.conservativeUsedMinutes,12);assert.equal(result.dailyMinutes['2026-10-09'],12);assert.equal(result.budgetVerifiedByAPI,false);assert.equal(result.activationApproved,false);assert.ok(!JSON.stringify(result).includes('other/private'));
+ assert.equal(result.conservativeUsedMinutes,12);assert.equal(result.dailyMinutes['2026-10-09'],12);assert.equal(result.quotaUsable,true);assert.equal(result.budgetVerifiedByAPI,false);assert.equal(result.activationApproved,false);assert.ok(!JSON.stringify(result).includes('other/private'));
+ for(const usageItems of [[],[{...row,product:'actions'}]]){const incomplete=summarizeBillingUsage({usageItems},now);assert.equal(incomplete.quotaUsable,false);assert.equal(incomplete.conservativeUsedMinutes,null);}
  assert.throws(()=>summarizeBillingUsage({usageItems:[{...row,sku:'unknown'}]},now),/UNSUPPORTED/);
  assert.throws(()=>summarizeBillingUsage({usageItems:[{...row,date:'2026-09-09'}]},now),/INVALID/);
  await assert.rejects(billingRead({},()=>assert.fail('untrusted context made transport'),now),/CONTEXT/);

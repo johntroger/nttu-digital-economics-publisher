@@ -36,4 +36,10 @@ Metadata GitHub xác nhận Secret `PRODUCTION_BILLING_READ_TOKEN` đã được
 
 F7 chưa nghiệm thu, chưa đủ điều kiện rollout.
 
+## Token billing đã kết nối, nhưng báo cáo chưa đủ dữ liệu
+
+Ngày10/10/2026 lúc09:24:03Z, workflow chỉ đọc38041242521 chạy thành công bằng Secret mới; chứng minh API chấp nhận token. Receipt chưa có row product Actions, trong khi UI account ghi968,7phút. Không được coi báo cáo này là đã dùng0phút hoặc quota toàn phần. Bộ đọc F7 được sửa để quotaUsable=false, số phút=null khi thiếu Actions; gate runner cũng trảusage_unavailable. Giữ policy24h, không cấp quyền claim/send. Kiểm thử regression14/14F6 và4/4F7 đạt. Cần đối chiếu schema/report/độ trễ trước khi nghiệm thu quota.
+
+Draft PR17 được tạo trên baseF6, không merge: https://github.com/johntroger/nttu-digital-economics-publisher/pull/17 .
+
 Nguồn kỹ thuật đã đối chiếu: [GitHub billing usage](https://docs.github.com/en/rest/billing/usage), [GitHub budgets](https://docs.github.com/en/rest/billing/budgets), [budget và Stop usage](https://docs.github.com/en/billing/how-tos/set-up-budgets), [Cloudflare D1 analytics](https://developers.cloudflare.com/d1/observability/metrics-analytics/).
