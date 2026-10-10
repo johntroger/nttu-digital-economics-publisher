@@ -17,8 +17,15 @@ export async function githubJSON(path,token,transport=fetch){
 }
 function policyDecision(policy,now){
  const denied=reason=>({allowed:false,reason});
- if(!policy||policy.account!=='johntroger'||policy.product!=='Actions'||policy.scope!=='account'||policy.budgetUSD!==0||policy.stopUsage!==true||policy.plan!=='free'||!Number.isSafeInteger(policy.verifiedAt)||policy.verifiedAt>now||now-policy.verifiedAt>86400000||!Number.isSafeInteger(policy.includedMinutes)||policy.includedMinutes<1||policy.includedMinutes>2000)return denied('budget_unverified');
- if(!Number.isSafeInteger(policy.reserveMinutes)||policy.reserveMinutes<300||!Number.isSafeInteger(policy.cycleMinutes)||policy.cycleMinutes<5||policy.cycleMinutes>10)return denied('reserve_unverified');
+ if(!Number.isFinite(new Date(now).getTime()))return denied('budget_unverified');
+ if(!Number.isSafeInteger(now)||now<0||!policy||policy.account!=='johntroger'||policy.product!=='Actions'||policy.scope!=='account'||policy.budgetUSD!==0||policy.stopUsage!==true||policy.plan!=='free'||!Number.isSafeInteger(policy.verifiedAt)||policy.verifiedAt>now||!Number.isSafeInteger(policy.includedMinutes)||policy.includedMinutes<1||policy.includedMinutes>2000)return denied('budget_unverified');
+ if(policy.policyVersion===2){
+  const d=new Date(now),month=d.toISOString().slice(0,7),start=Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),1),end=Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,1);
+  // Explicit owner attestation, not an API-verified budget or automatic renewal.
+  // It is bound to one UTC billing month and one reviewed release.
+  if(policy.verificationMode!=='owner-monthly-attestation'||policy.evidenceSource!=='authenticated-github-ui'||policy.reviewedBy!=='tranthanhtung37@gmail.com'||policy.ownerApproved!==true||policy.autoRenew!==false||policy.period!==month||policy.verifiedAt<start||policy.expiresAt!==end||now>=policy.expiresAt||! /^[a-f0-9]{40}$/.test(policy.releaseSha??''))return denied('budget_unverified');
+ }else if(policy.policyVersion!==undefined&&policy.policyVersion!==1||now-policy.verifiedAt>86400000)return denied('budget_unverified');
+ if(!Number.isSafeInteger(policy.reserveMinutes)||policy.reserveMinutes<(policy.policyVersion===2?600:300)||!Number.isSafeInteger(policy.cycleMinutes)||policy.cycleMinutes<5||policy.cycleMinutes>10)return denied('reserve_unverified');
  return {allowed:true};
 }
 export function quotaDecision(usage,policy,now=Date.now()){
