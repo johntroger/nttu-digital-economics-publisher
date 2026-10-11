@@ -1,3 +1,31 @@
+# F7 — hoàn tất nghiệm thu đóng
+
+Ngày 11/10/2026; runtime được nghiệm thu: 9ce88cc7be80755a6b4c57a95a94964c79de2e1e.
+
+CI Windows/Linux đúng SHA đã đạt, 507 kiểm thử local, TypeScript và 13 kiểm tra ảnh đã đạt trước đó. Trong lượt hoàn tất này không thay mã runtime và không chạy lại CI để chờ.
+
+CPU cloud: 1261 mẫu API đối chiếu theo requestId/version/deployment, mỗi nhóm ít nhất 30 warm, max 7 ms. Cold claim 7 ms và stock-data 5 ms; không có API lỗi hoặc vượt 10 ms trong các log đã thu. Có 7 sự kiện thiếu cặp, không tính vào sample; mọi invocation lỗi/vượt cap có sẵn vẫn tham gia veto. Các số đo hữu hạn không bảo đảm mọi request tương lai.
+
+31 pipeline giả lập xác nhận, stock còn 39 (29 chính/10 dự phòng), heartbeat/watchdog/status đạt. Bộ đo chạy harness riêng gọi entrypoint runner không sửa đổi; overhead harness nằm trong CPU. Không ghép mẫu release/deployment cũ.
+
+UI source và assets cuối được triển khai trên Worker/D1/R2 clone. Trình duyệt dùng relay localhost riêng và owner JWT tổng hợp; xác minh session bằng module auth nguyên bản, 401 khi thiếu owner, 403 sai CSRF/origin. Nút pause chuyển sang Đã tạm dừng. Dual engine trả runner_selected. Rollback cloud 16→15 giữ nguyên 40 bài và journal bằng checksum. Race snapshot, crash→needs_reconciliation→unknown và chặn rollback journal chưa giải quyết đã đạt trong native workerd/D1/R2 clone qua CI.
+
+Google OAuth thực vừa hoàn tất trên production F2 hiện có bằng đúng owner; mã auth giống hệt ứng viên F7. Không copy secret Google sang clone, không nhận OAuth thật trên hostname clone. Sau rollout vẫn kiểm lại login trên cấu hình mới.
+
+Một lượt UI không thao tác được vì bài thử tự đóng đúng thiết kế; lượt sau gặp lỗi truy vấn fixture dùng cột id không tồn tại ở evidence. Giữ bằng chứng thất bại, sửa thành rowid và chuẩn bị trạng thái bật chỉ trong clone. Smoke ledger giữ 3 reservation và measurement ledger giữ 32/50 chuỗi, không hoàn lượt lỗi. Lượt cuối UI/rollback đạt.
+
+Xác minh độc lập: cả 5 Worker/D1/R2 clone đều trả 404. Production thật giữ schema14, 40 bài, 56 tệp, jobs/attempts/permits/publications0, enabled0/paused1. Không đổi main, cron, credential live hoặc lịch Tập Viết; Facebook/Telegram thật0.
+
+GitHub UI: Free, 1.084,3/2.000 phút, storage0/0,5GB, Actions budget0USD và Stop usage Yes. Giữ số API bảo thủ1.184 phút vì chênh lệch/độ trễ báo cáo; dự toán640 phút còn biên176 trước usage mới. R2 account Standard143 object/52.731.235 byte, Infrequent Access0. Không coi usage API hay R2 metrics là hard stop hoặc xác nhận owner tháng.
+
+## Bước tiếp theo — F8 cần phê duyệt riêng
+
+Chuẩn bị rollout đóng: đọc quota mới, owner xác nhận policy tháng và SHA, backup production mới và thử phục hồi, duyệt migration/triển khai/credential. Giữ tất cả cổng đăng đóng; kiểm lại Google login sau triển khai. Đăng Facebook thật và bật lịch10:00 một bài/ngày vẫn cần duyệt riêng.
+
+Bằng chứng: cpu-final.json, cloud-measure-results.json, cloud-ui-results.json, cloud-ui-paused.png, google-owner-acceptance.json, closing-account-and-cleanup.json, budget-storage-closing.json.
+
+## Lịch sử trước khi hoàn tất F7
+
 # F7 — nghiệm thu đóng, đang thực hiện
 
 Người quản lý phê duyệt F7 ngày 10/10/2026 theo phạm vi `tmp/step38/f6/f7-review.md`. Nhánh riêng: `codex/step38-f7-closed-acceptance`. Chưa merge main, triển khai production, thay cron, sao chép Meta credential, đăng Facebook hoặc gửi Telegram.

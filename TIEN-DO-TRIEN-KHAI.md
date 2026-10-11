@@ -179,3 +179,16 @@ Bảnc3bd79a gộp các lượt đọc identity/job/fence và finalize;472 kiể
 10/10/2026 — F5 tiếp tục trên runtime26294c1, clone riêng đã xóa/token thu hồi. Đúng50 pipeline mock. Đối chiếu export log lưu trữ với tail trước khoảng xuất:mọi nhóm đủ31–77 warm, p95<=4ms/max5ms. Chưa nghiệm thu toàn bộ vì request cold đầu tiên là reset harness11ms, không có API cold cùng deployment. Quota sau đo333.086 reads/4.125 writes toàn tài khoản. F6 chưa mở, không Facebook/Telegram thật, production/main/cron không đổi. Chi tiết trong docs/steps/38-f5-actions-runner.md.
 
 10/10/2026 — theo yêu cầu chạy ngay và tiếp tục, nghiệm thu CPU F5 đạt trên runtime d674430/CF version5b175c38-61ed-4ffe-b608-61e40d81593c:1.618 log cùng deployment,46–96 warm mỗi nhóm, p95 tối đa4ms, CPU tối đa6ms; cold claim5ms/cold finalize6ms. Ngân sách bổ sung50 được lưu riêng, gồm47 pipeline hoàn tất,1 pipeline ngắt,1 reset timeout và1 cold claim; không sửa ledger cũ hoặc bỏ quota guard. Đã sửa lỗi stream/header trong helper giả lập,481 kiểm thử local đạt. Usage722.002 reads/10.449 writes toàn tài khoản; clone Worker/D1/token đã dọn, không gửi thật hoặc đổi production/main/cron. F6 tích hợp đóng là bước đề xuất cần phê duyệt riêng; xem docs/steps/38-f6-closed-integration-proposal.md.
+
+
+## Cập nhật 11/10/2026 — F7 hoàn tất nghiệm thu đóng
+
+Runtime9ce88cc7 đạt CPU cloud (1.261 mẫu, max7ms, >=30 warm/nhóm), UI/pause và rollback cloud giữ kho/journal; Google OAuth thực của module không đổi đã vào được owner. Clone đã dọn. Production schema14/enabled0/paused1 vẫn giữ nguyên. F8 rollout đóng cần duyệt riêng, quota/policy tháng/backup mới và kiểm login sau triển khai; chưa cấp quyền Facebook thật hoặc bật lịch. Chi tiết: docs/steps/38-f7-closed-acceptance.md và tmp/step38/f7/acceptance-final.md.
+
+## Cập nhật 11/10/2026 — F8 rollout đóng đã hoàn tất
+
+Backup production mới df2c5330… đã phục hồi/migrate14→16/rollback16→15 trong RAM đạt. Triển khai management9ce88cc7, migration thật15/16, runner riêng đóng không credential. Đối chiếu 8 bảng với backup không đổi; schema16/40 bài/56 tệp/0 lượt gửi, enabled0/paused1. Google OAuth thực sau deploy đạt; UI40/40 bài khớp duyệt. Không cron trên hai Worker, GitHub production Actions chưa cấp, không sửa main/cron-job.org/lịch Tập Viết. TypeScript đạt. Bằng chứng tmp/step38/f8; hồ sơ docs/steps/38-f8-closed-rollout.md. F9 chuẩn bị policy/credential/capability cần duyệt bước mới, chưa cấp quyền gửi bài hoặc bật lịch.
+
+## Cập nhật 11/10/2026 — F9 cấu hình quyền đóng hoàn tất
+
+GitHub environment production-runner có đủ hai secret Meta do owner lưu và token nội bộ đã được phê duyệt riêng tại GitHub/hai Worker. Policy tháng UTC2026-10/release9ce88cc7 đã được owner xác nhận và lưu, expiry07:00 Việt Nam01/11/2026, không tự gia hạn. Cổng Actions/runner/legacy/lịch vẫn tắt; schema16/40 bài/56 tệp, không lượt gửi. Hồ sơ P01 đã chuẩn bị, chưa cấp quyền gửi. Main269b0d11 chưa khớp release9ce88cc7; F10 đề xuất đồng bộ workflow/release đóng, cần duyệt bước mới, không bỏ khóa SHA hoặc tự bật lịch. Chi tiết docs/steps/38-f9-operating-permissions.md; bằng chứng tmp/step38/f9/acceptance.json.
