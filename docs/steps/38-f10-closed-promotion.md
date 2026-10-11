@@ -11,3 +11,14 @@ Preflight GitHub: main269b0d11; STAGING_DEPLOY_ENABLED=true; PRODUCTION_ACTIONS_
 Policy tháng2026-10 hiện chỉ được owner xác nhận cho9ce88cc7. SHA mới phải được owner xác nhận cụ thể trước thay policy. Giữ expiry01/11/2026 00:00UTC, reserve600 phút, budget0USD/Stop usage; không tự gia hạn. Việc lưu Meta secrets chưa chứng minh token đúng Page hoặc hạn dùng. Không gửi Facebook/Telegram, không bật runner/daily/legacy/Actions, không tạo permit hay lịch trong F10.
 
 Hồ sơ đang thực hiện:tmp/step38/f10/github-before.json và billing-dispatch.json. CI/PR và readback release cuối sẽ được bổ sung sau khi đạt kiểm tra. F10 chưa nghiệm thu chỉ từ kết quả local.
+
+
+## Cập nhật 11/10/2026 — F10 đồng bộ release đóng đã hoàn tất
+
+Main, hai Worker production/runner, PRODUCTION_RUNNER_RELEASE và policy tháng UTC2026-10 cùng SHA cd2dd2196d035e3c7e83e1d8959d8773ec2219a0. PR18 đã hợp nhất fast-forward, không bỏ ba commit giám sát. CI PR38109803715 và main38110139785 đều đạt Windows/Linux; pre-push full local tests và13 kiểm tra ảnh đạt. Monitor bổ sung schema15/16 và phân biệt credential có sẵn với cổng gửi mở;28 regression đạt. Source Worker/UI/migration không đổi so với runtime9ce88cc7 đã nghiệm thu CPU, không coi là phép đo CPU mới.
+
+STAGING_DEPLOY_ENABLED tạm false khi main CI chạy, deploy-staging skipped, đã trả true; không đổi lịch Tập Viết hoặc cron giám sát. Hai Worker không cron, mọi cổng production false; schema16/40 bài/56 tệp/0 permit/job/attempt/publication, enabled0/paused1. Runner/status trả503 do gate đóng. Environment chỉ main, ba secret có metadata; không đọc giá trị. Policy đã được owner xác nhận riêng cho F10, giữ budget0USD/Stop usage/reserve600/expiry07:00 Việt Nam01/11/2026, không tự gia hạn.
+
+Hồ sơ: docs/steps/38-f10-closed-promotion.md và tmp/step38/f10/acceptance.json, rollout.json, main-promoted.json, github-readback.json, owner-policy-confirmation.json. File tạm/cache của từng lượt được run-clean dọn; backup thật/bằng chứng giữ lại. Hồ sơ kết thúc và helper quản trị dùng tên job hiển thị đã sửa được giữ local, không push thêm commit sau SHA owner đã xác nhận. Không gửi Facebook/Telegram bằng công cụ F10, không bật lịch hoặc cấp permit. Giám sát đã có vẫn hoạt động theo cấu hình trước; cần rà nhịp chạy theo ngân sách còn lại trước vận hành chính thức.
+
+F11 đề xuất: chốt nhịp giám sát phù hợp Free và xác minh Meta chỉ đọc từ Node, đối chiếu Page817593604765443/phạm vi/hạn token/hồ sơP01. Cần duyệt bước mới; chưa đăng bài thật hoặc bật lịch10:00.
