@@ -95,11 +95,12 @@ export function parseState(body){
  return state;
 }
 export function stateBody(state){return 'Independent monitor checkpoint. Do not edit while a run is active.\n```json\n'+JSON.stringify(state,null,2)+'\n```\n';}
-export function transition(previous,result,now){
+export function transition(previous,result,now,{minObservations=2}={}){
+ if(![1,2].includes(minObservations))throw Error('Monitor observation policy invalid');
  const state=structuredClone(previous);state.lastCheckedAt=now;
  for(const code of result.observed)if(!result.codes.includes(code))delete state.incidents[code];
  for(const code of result.codes){let item=state.incidents[code];if(!item){item={firstSeen:now,lastSeen:now,count:1,notification:'pending'};state.incidents[code]=item;}else if(now-item.lastSeen>=5*60000){item.count++;item.lastSeen=now;}}
- const ready=Object.keys(state.incidents).filter(code=>result.codes.includes(code)&&state.incidents[code].notification==='pending'&&(state.incidents[code].count>=2||['late','unknown','trigger_delay','monitor_gap','test','meta_expiring','meta_expired'].includes(code)));
+ const ready=Object.keys(state.incidents).filter(code=>result.codes.includes(code)&&state.incidents[code].notification==='pending'&&(state.incidents[code].count>=minObservations||['late','unknown','trigger_delay','monitor_gap','test','meta_expiring','meta_expired'].includes(code)));
  return {state,ready};
 }
 async function jsonFetch(fetcher,url,options={}){const response=await fetcher(url,{...options,redirect:'error',signal:AbortSignal.timeout(15000)});if(!response.ok)throw Error('Provider request failed');return response.json();}
@@ -114,14 +115,16 @@ export async function probes(config,fetcher=fetch){
  return {health:value(0),status:value(1),snapshot:d1?.success===true&&d1.result?.[0]?.success===true&&d1.result[0].results?.length===1?d1.result[0].results[0]:null,now};
 }
 export async function runMonitor(config,{fetcher=fetch,probe=probes,test=false}={}){
+ if(![undefined,'daily','half-hourly'].includes(config.MONITOR_CADENCE))throw Error('Monitor cadence invalid');
+ const daily=config.MONITOR_CADENCE==='daily';
  const issue='https://api.github.com/repos/'+config.GITHUB_REPOSITORY+'/issues/'+config.MONITOR_STATE_ISSUE;
  const headers={Authorization:'Bearer '+config.GITHUB_TOKEN,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28','Content-Type':'application/json'};
  const read=await jsonFetch(fetcher,issue,{headers});if(read.title!==(config.target==='production'?PRODUCTION_STATE_TITLE:STATE_TITLE)||read.pull_request)throw Error('Monitor checkpoint identity invalid');
  const previous=parseState(read.body),data=await probe(config,fetcher),result=(config.target==='production'?assessProduction:assess)(data,data.now),trigger=triggerInfo(config,data.now);
  result.observed.push('trigger_delay','monitor_gap');if(trigger.lagSeconds>600)result.codes.push('trigger_delay');
- if(Number.isSafeInteger(previous.lastCheckedAt)&&data.now-previous.lastCheckedAt>75*60000)result.codes.push('monitor_gap');
+ if(Number.isSafeInteger(previous.lastCheckedAt)&&data.now-previous.lastCheckedAt>(daily?26*60:75)*60000)result.codes.push('monitor_gap');
  if(test){result.codes.push('test');result.observed.push('test');}else{result.observed.push('test');}
- const {state,ready}=transition(previous,result,data.now);state.lastTrigger=trigger;
+ const {state,ready}=transition(previous,result,data.now,{minObservations:daily?1:2});state.lastTrigger=trigger;
  const save=()=>jsonFetch(fetcher,issue,{method:'PATCH',headers,body:JSON.stringify({body:stateBody(state)})});
  // Persist intent before any Telegram send. A crash or missing response cannot trigger an automatic repeat.
  for(const code of ready)state.incidents[code].notification='intent';

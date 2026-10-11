@@ -3,6 +3,13 @@ import {assess,assessProduction,transition,parseState,stateBody,runMonitor,probe
 const now=Date.parse('2026-10-06T10:25:00+07:00');
 const healthy=()=>({health:{service:'nttu-publisher',environment:'staging',release:'a'.repeat(40)},status:{environment:'staging',databaseChecked:true,paused:false,publishingEnabled:true},snapshot:{environment:'staging',last_scheduled_at:now-60000,paused_by_user:0,enabled:1,start_date:'2026-10-06',test_publish_at:null,published_today:1,unresolved_today:0},now});
 const blank=()=>({schema:1,incidents:{}});
+test('Daily cadence tolerates a normal 24-hour gap, alerts beyond 26 hours and reports incidents on first observation',async()=>{
+ const cfg={...config,MONITOR_CADENCE:'daily'};
+ let p=provider({...blank(),lastCheckedAt:now-24*3600000});assert.deepEqual((await runMonitor(cfg,{fetcher:p.fetcher,probe:async()=>healthy()})).issues,[]);
+ p=provider({...blank(),lastCheckedAt:now-27*3600000});assert.ok((await runMonitor(cfg,{fetcher:p.fetcher,probe:async()=>healthy()})).issues.includes('monitor_gap'));
+ p=provider();const data=healthy();data.health=null;const r=await runMonitor(cfg,{fetcher:p.fetcher,probe:async()=>data});assert.ok(r.notified.includes('worker'));assert.equal(p.sends,1);
+ await assert.rejects(()=>runMonitor({...config,MONITOR_CADENCE:'arbitrary'},{fetcher:async()=>assert.fail()}),/cadence/);
+});
 const productionHealthy=()=>({health:{environment:'production',phase:'management',release:'a'.repeat(40),publishingEnabled:false,schedulerImplemented:false,operationsSchedulerImplemented:true},status:{environment:'production',databaseChecked:true,schemaReady:true,paused:true,publishingEnabled:false,telegramConfigured:true,metaConfigured:true,metaVerified:true,metaExpiresAt:now+60*86400000,dataAccessExpiresAt:now+90*86400000,triggerSource:'cron',runtime:{last_dispatch_state:'idle'}},snapshot:{environment:'production',enabled:0,paused_by_user:1,migration_count:13,http_enabled:0,jobs:0,publications:0,last_scheduled_at:now-60000},now});
 test('Schema14 observes publisher gates separately from Telegram heartbeat; closed zero-heartbeat is expected',()=>{
  const p=productionHealthy();p.snapshot.migration_count=14;p.status.publisher={schemaReady:true,state:'closed',counts:{permits:0,publications:0,unknown:0},gates:{deployment:false,database:false,ownerPublicationApproval:false,httpPublisher:false},runtime:{heartbeat_count:0,state:'closed',last_queries:0,last_duration_ms:0}};

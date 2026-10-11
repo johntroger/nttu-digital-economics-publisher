@@ -853,3 +853,7 @@ STAGING_DEPLOY_ENABLED tạm false khi main CI chạy, deploy-staging skipped, �
 Hồ sơ: docs/steps/38-f10-closed-promotion.md và tmp/step38/f10/acceptance.json, rollout.json, main-promoted.json, github-readback.json, owner-policy-confirmation.json. File tạm/cache của từng lượt được run-clean dọn; backup thật/bằng chứng giữ lại. Hồ sơ kết thúc và helper quản trị dùng tên job hiển thị đã sửa được giữ local, không push thêm commit sau SHA owner đã xác nhận. Không gửi Facebook/Telegram bằng công cụ F10, không bật lịch hoặc cấp permit. Giám sát đã có vẫn hoạt động theo cấu hình trước; cần rà nhịp chạy theo ngân sách còn lại trước vận hành chính thức.
 
 F11 đề xuất: chốt nhịp giám sát phù hợp Free và xác minh Meta chỉ đọc từ Node, đối chiếu Page817593604765443/phạm vi/hạn token/hồ sơP01. Cần duyệt bước mới; chưa đăng bài thật hoặc bật lịch10:00.
+
+## F11 đã duyệt — đang kiểm thử ngày 11/10/2026
+
+Giám sát chuyển sang mỗi ngày 10:30 Việt Nam, một job Ubuntu timeout3 phút, quota toàn tài khoản được kiểm trước probe/cảnh báo, giữ reserve600 và policy tháng có hạn. GitHub dự phòng Chủ nhật10:45; khi nguồn ngoài chưa ổn định dùng lịch GitHub mỗi ngày. Độ trễ phát hiện có thể gần một ngày; không cam kết đủ quota cho mọi job trong tháng. Cron-job.org đang tắt, owner đã tự lưu PAT thay thế, chờ test với mã mới. Workflow Meta thủ công chỉ GET, kiểm đúng Page/App/scope/hạn token và run/release/policy; không đăng bài hoặc mở cổng gửi. Đổi SHA cần owner xác nhận lại policy trên bản cụ thể đã qua CI. Chi tiết docs/steps/38-f11-free-monitor-meta.md.

@@ -1,8 +1,8 @@
 name: Independent publisher monitor
 on:
   schedule:
-    - cron: '17,47 * * * *'
-    - cron: '23 2,14 * * *'
+    - cron: '30 3 * * *'
+    - cron: '45 3 * * 0'
   workflow_dispatch:
     inputs:
       monitor_target:
@@ -31,9 +31,9 @@ concurrency:
   cancel-in-progress: false
 jobs:
   monitor:
-    if: github.ref == 'refs/heads/main' && (vars.MONITOR_ENABLED == 'true' || vars.PRODUCTION_MONITOR_ENABLED == 'true') && (github.event_name != 'schedule' || vars.MONITOR_EXTERNAL_PRIMARY != 'true' || github.event.schedule == '23 2,14 * * *')
+    if: github.ref == 'refs/heads/main' && (vars.MONITOR_ENABLED == 'true' || vars.PRODUCTION_MONITOR_ENABLED == 'true') && (github.event_name != 'schedule' || vars.MONITOR_EXTERNAL_PRIMARY != 'true' || github.event.schedule == '45 3 * * 0')
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 3
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -41,9 +41,16 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .nvmrc
+      - name: Reserve free account quota before any provider probe or alert
+        id: budget
+        run: node scripts/run-clean.mjs script scripts/monitor-free-budget.mjs
+        env:
+          PRODUCTION_RUNNER_RELEASE: ${{ vars.PRODUCTION_RUNNER_RELEASE }}
+          PRODUCTION_BILLING_POLICY: ${{ vars.PRODUCTION_BILLING_POLICY }}
+          PRODUCTION_BILLING_READ_TOKEN: ${{ secrets.PRODUCTION_BILLING_READ_TOKEN }}
       - name: Read staging state and deliver incident alerts
-        if: vars.MONITOR_ENABLED == 'true' && (github.event_name != 'workflow_dispatch' || inputs.monitor_target != 'production')
-        run: node scripts/monitor.mjs
+        if: steps.budget.outputs.allowed == 'true' && vars.MONITOR_ENABLED == 'true' && (github.event_name != 'workflow_dispatch' || inputs.monitor_target != 'production')
+        run: node scripts/run-clean.mjs script scripts/monitor.mjs
         env:
           GITHUB_TOKEN: ${{ github.token }}
           STAGING_WORKER_URL: ${{ vars.STAGING_WORKER_URL }}
@@ -55,11 +62,12 @@ jobs:
           MONITOR_TELEGRAM_CHAT_ID: ${{ vars.MONITOR_TELEGRAM_CHAT_ID }}
           MONITOR_TELEGRAM_BOT_TOKEN: ${{ secrets.MONITOR_TELEGRAM_BOT_TOKEN }}
           MONITOR_TEST: ${{ github.event_name == 'workflow_dispatch' && inputs.send_test }}
+          MONITOR_CADENCE: daily
           MONITOR_TRIGGER_SOURCE: ${{ github.event_name == 'schedule' && 'github-schedule' || inputs.trigger_source || 'manual' }}
           MONITOR_TRIGGER_AT: ${{ inputs.triggered_at }}
       - name: Read production state and deliver incident alerts
-        if: ${{ !cancelled() && vars.PRODUCTION_MONITOR_ENABLED == 'true' && (github.event_name != 'workflow_dispatch' || inputs.monitor_target != 'staging') }}
-        run: node scripts/monitor.mjs
+        if: ${{ !cancelled() && steps.budget.outputs.allowed == 'true' && vars.PRODUCTION_MONITOR_ENABLED == 'true' && (github.event_name != 'workflow_dispatch' || inputs.monitor_target != 'staging') }}
+        run: node scripts/run-clean.mjs script scripts/monitor.mjs
         env:
           MONITOR_TARGET: production
           GITHUB_TOKEN: ${{ github.token }}
@@ -72,5 +80,6 @@ jobs:
           MONITOR_TELEGRAM_CHAT_ID: ${{ vars.MONITOR_TELEGRAM_CHAT_ID }}
           MONITOR_TELEGRAM_BOT_TOKEN: ${{ secrets.MONITOR_TELEGRAM_BOT_TOKEN }}
           MONITOR_TEST: ${{ github.event_name == 'workflow_dispatch' && inputs.send_test }}
+          MONITOR_CADENCE: daily
           MONITOR_TRIGGER_SOURCE: ${{ github.event_name == 'schedule' && 'github-schedule' || inputs.trigger_source || 'manual' }}
           MONITOR_TRIGGER_AT: ${{ inputs.triggered_at }}

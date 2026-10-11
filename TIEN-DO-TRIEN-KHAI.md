@@ -203,3 +203,7 @@ STAGING_DEPLOY_ENABLED tạm false khi main CI chạy, deploy-staging skipped, �
 Hồ sơ: docs/steps/38-f10-closed-promotion.md và tmp/step38/f10/acceptance.json, rollout.json, main-promoted.json, github-readback.json, owner-policy-confirmation.json. File tạm/cache của từng lượt được run-clean dọn; backup thật/bằng chứng giữ lại. Hồ sơ kết thúc và helper quản trị dùng tên job hiển thị đã sửa được giữ local, không push thêm commit sau SHA owner đã xác nhận. Không gửi Facebook/Telegram bằng công cụ F10, không bật lịch hoặc cấp permit. Giám sát đã có vẫn hoạt động theo cấu hình trước; cần rà nhịp chạy theo ngân sách còn lại trước vận hành chính thức.
 
 F11 đề xuất: chốt nhịp giám sát phù hợp Free và xác minh Meta chỉ đọc từ Node, đối chiếu Page817593604765443/phạm vi/hạn token/hồ sơP01. Cần duyệt bước mới; chưa đăng bài thật hoặc bật lịch10:00.
+
+## F11 đã duyệt — đang kiểm thử ngày 11/10/2026
+
+Đã chuẩn bị lịch ngoài10:30 hằng ngày Asia/Ho_Chi_Minh và giữ disabled. Chủ dự án đã tự thay/lưu PAT mới; chưa test credential hoặc bật tác vụ. Đã code quota guard trước probe, nhịp daily/weekly fallback và Meta verifier tối đa hai GraphGET, không Worker/POST/Telegram. Đang kiểm local/CI; chưa nghiệm thu GET thật. Giữ mọi cổng production/lịch tắt và không tạo permit. Chi tiết docs/steps/38-f11-free-monitor-meta.md; evidence tmp/step38/f11.

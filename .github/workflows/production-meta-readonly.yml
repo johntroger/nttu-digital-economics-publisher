@@ -1,0 +1,33 @@
+name: Production Meta verification (GET only)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: production-meta-readonly
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: github.repository == 'johntroger/nttu-digital-economics-publisher' && github.ref == 'refs/heads/main' && vars.PRODUCTION_ACTIONS_ENABLED == 'false' && vars.PRODUCTION_RUNNER_RELEASE == github.sha
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    environment: production-runner
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version-file: .nvmrc
+      - name: Verify quota and Page credentials through GET endpoints only
+        run: node scripts/run-clean.mjs script scripts/production-meta-readonly.mjs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PRODUCTION_ACTIONS_ENABLED: ${{ vars.PRODUCTION_ACTIONS_ENABLED }}
+          PRODUCTION_RUNNER_RELEASE: ${{ vars.PRODUCTION_RUNNER_RELEASE }}
+          PRODUCTION_BILLING_POLICY: ${{ vars.PRODUCTION_BILLING_POLICY }}
+          PRODUCTION_BILLING_READ_TOKEN: ${{ secrets.PRODUCTION_BILLING_READ_TOKEN }}
+          META_APP_SECRET: ${{ secrets.PRODUCTION_META_APP_SECRET }}
+          META_PAGE_ACCESS_TOKEN: ${{ secrets.PRODUCTION_META_PAGE_ACCESS_TOKEN }}
