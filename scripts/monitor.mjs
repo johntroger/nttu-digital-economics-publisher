@@ -1,5 +1,5 @@
 import {pathToFileURL} from 'node:url';
-import {verifyProductionMonitorMeta} from './production-monitor-meta.mjs';
+import {verifyProductionMonitorMeta,monitorPublicationState} from './production-monitor-meta.mjs';
 
 export const STATE_TITLE='[Operations] Independent staging monitor state';
 export const PRODUCTION_STATE_TITLE='[Operations] Independent production monitor state';
@@ -14,6 +14,13 @@ export const MONITOR_SQL=`SELECT r.environment,r.last_scheduled_at,a.paused_by_u
  (SELECT count(*) FROM publications p JOIN publish_jobs j ON j.id=p.job_id WHERE j.page_connection_id=c.page_connection_id AND j.slot_id IS NOT NULL AND p.remote_business_date=?) AS published_today,
  (SELECT count(*) FROM publish_jobs j JOIN schedule_slots s ON s.id=j.slot_id WHERE j.page_connection_id=c.page_connection_id AND s.business_date<=? AND j.state IN ('unknown','publish_requested','evidence_pending')) AS unresolved_today
  FROM cloud_runtime r JOIN application_state a ON a.environment=r.environment JOIN cloud_daily_config c ON c.id=1 WHERE r.id=1`;
+export const PRODUCTION_DAILY_MONITOR_SQL=`SELECT i.environment,a.paused_by_user,c.enabled legacy_enabled,p.enabled,p.start_date,
+ (SELECT count(*) FROM schema_migrations) migration_count,
+ (SELECT count(*) FROM production_publisher_usage WHERE day=?) published_today,
+ (SELECT count(*) FROM production_publisher_jobs WHERE day=? AND state IN ('requested','unknown')) unresolved_today,
+ (SELECT last_complete_at FROM production_publisher_runtime WHERE id=1) runner_last_complete_at
+ FROM production_identity i JOIN application_state a ON a.environment=i.environment
+ JOIN production_control c ON c.id=i.id JOIN production_publisher_config p ON p.id=i.id WHERE i.id=1`;
 const ORIGIN='https://nttu-publisher-staging.nttu-kts-johntroger.workers.dev';
 export function externalTriggerTemplate(){return {
  url:'https://api.github.com/repos/johntroger/nttu-digital-economics-publisher/actions/workflows/monitor.yml/dispatches',
@@ -39,7 +46,9 @@ export function triggerInfo(config,now){
  return {source,requestedAt,startedAt:now,lagSeconds:requestedAt===null?null:Math.max(0,Math.floor((now-requestedAt)/1000))};
 }
 Object.assign(names,{meta:'Kết nối Meta production cần xác minh lại.',meta_expiring:'Token Trang production còn không quá 3 ngày.',meta_expired:'Token hoặc quyền dữ liệu Meta production đã hết hạn.',telegram:'Kết nối hoặc hàng chờ Telegram production cần xử lý.'});
-export function assessProduction({health,status,snapshot,metaProof,operationsExpected},now){
+export function assessProduction(data,now){
+ const {health,status,snapshot,metaProof,operationsExpected}=data;
+ if(data.scheduleExpected==='true')return assessProductionDaily(data,now);
  const codes=[],observed=['worker','status','database'];
  if(!health||health.environment!=='production'||health.phase!=='management'||! /^[a-f0-9]{40}$/.test(health.release??'')||health.publishingEnabled!==false||health.schedulerImplemented!==false||health.operationsSchedulerImplemented!==true)codes.push('worker');
  if(!status||status.environment!=='production'||status.databaseChecked!==true||status.schemaReady!==true||status.publishingEnabled!==false||status.paused!==true)codes.push('status');
@@ -80,6 +89,26 @@ export function assessProduction({health,status,snapshot,metaProof,operationsExp
  }
  return{day:businessDay(now),codes:[...new Set(codes)],observed,operationsExpected:operationsExpected??'unconfirmed'};
 }
+export function assessProductionDaily({health,status,snapshot,metaProof,actionsEnabled},now){
+ const codes=[],observed=['worker','status','database','config','publisher','late','unknown','heartbeat','meta','meta_expiring','meta_expired','telegram'],day=businessDay(now);
+ if(health?.environment!=='production'||health.phase!=='management'||! /^[a-f0-9]{40}$/.test(health.release??'')||health.publishingEnabled!==true||health.schedulerImplemented!==false||health.operationsSchedulerImplemented!==true)codes.push('worker');
+ if(status?.environment!=='production'||status.databaseChecked!==true||status.schemaReady!==true||status.paused!==false||status.publishingEnabled!==true||status.release!==health?.release)codes.push('status');
+ const p=status?.publisher,g=p?.gates;
+ if(actionsEnabled!=='true'||!p?.schemaReady||p.engine!=='runner'||!['armed','in_flight','unknown'].includes(p.state)||!g||['deployment','database','ownerPublicationApproval','httpPublisher'].some(k=>g[k]!==true))codes.push('publisher');
+ const valid=snapshot?.environment==='production'&&snapshot.migration_count===16&&snapshot.legacy_enabled===0&&snapshot.enabled===1&&snapshot.paused_by_user===0&&/^\d{4}-\d{2}-\d{2}$/.test(snapshot.start_date??'')&&Number.isSafeInteger(snapshot.published_today)&&snapshot.published_today>=0&&snapshot.published_today<=1&&Number.isSafeInteger(snapshot.unresolved_today)&&snapshot.unresolved_today>=0;
+ if(!valid)codes.push('database');
+ else if(snapshot.start_date<=day){
+  const due=Date.parse(day+'T10:00:00+07:00');
+  if(snapshot.unresolved_today>0||p?.counts?.unknown>0)codes.push('unknown');
+  if(now>=due+20*60000&&snapshot.published_today===0)codes.push(snapshot.unresolved_today>0?'unknown':'late');
+  if(now>=due+20*60000&&(!Number.isSafeInteger(snapshot.runner_last_complete_at)||snapshot.runner_last_complete_at<due||snapshot.runner_last_complete_at>now+60000))codes.push('heartbeat');
+ }
+ const fresh=metaProof?.state==='verified_read_only'&&metaProof.readOnly===true&&metaProof.facebookPosts===0&&metaProof.workerWrites===0&&metaProof.configurationMatched===true&&metaProof.pageId==='817593604765443'&&metaProof.releaseSha===health?.release&&metaProof.releaseSha===status?.release&&Number.isSafeInteger(metaProof.checkedAt)&&metaProof.checkedAt<=now&&now-metaProof.checkedAt<120000;
+ if(status?.metaConfigured!==true||status?.metaVerificationSource!=='node_required'||!fresh)codes.push('meta');
+ if(fresh){const expiry=[metaProof.expires,metaProof.dataExpires].filter(x=>x!==null);if(expiry.some(x=>!Number.isSafeInteger(x)||x<=now))codes.push('meta_expired');else if(expiry.some(x=>x<=now+3*86400000))codes.push('meta_expiring');}
+ if(status?.telegramConfigured!==true||status.notificationsBlocked>0)codes.push('telegram');
+ return {day,codes:[...new Set(codes)],observed,scheduleExpected:'true'};
+}
 export function assess({health,status,snapshot},now){
  const day=businessDay(now),codes=[],observed=['worker','status','database'];
  if(!health||health.service!=='nttu-publisher'||health.environment!=='staging'||! /^[a-f0-9]{40}$/.test(health.release??''))codes.push('worker');
@@ -118,18 +147,18 @@ export async function probes(config,fetcher=fetch,{clock=Date.now}={}){
  const results=await Promise.allSettled([
   jsonFetch(fetcher,config.origin+'/health'),
   jsonFetch(fetcher,config.origin+(config.target==='production'?'/api/production/monitor':'/api/staging/status'),{headers:{Authorization:'Bearer '+(config.target==='production'?config.PRODUCTION_MONITOR_TOKEN:config.STAGING_HEALTH_TOKEN)}}),
-  jsonFetch(fetcher,'https://api.cloudflare.com/client/v4/accounts/'+config.CLOUDFLARE_ACCOUNT_ID+'/d1/database/'+(config.target==='production'?config.PRODUCTION_D1_DATABASE_ID:config.STAGING_D1_DATABASE_ID)+'/query',{method:'POST',headers:{Authorization:'Bearer '+config.CLOUDFLARE_API_TOKEN,'Content-Type':'application/json'},body:JSON.stringify({sql:config.target==='production'?PRODUCTION_MONITOR_SQL:MONITOR_SQL,params:config.target==='production'?[]:[day,day]})})
+  jsonFetch(fetcher,'https://api.cloudflare.com/client/v4/accounts/'+config.CLOUDFLARE_ACCOUNT_ID+'/d1/database/'+(config.target==='production'?config.PRODUCTION_D1_DATABASE_ID:config.STAGING_D1_DATABASE_ID)+'/query',{method:'POST',headers:{Authorization:'Bearer '+config.CLOUDFLARE_API_TOKEN,'Content-Type':'application/json'},body:JSON.stringify({sql:config.target==='production'?(config.PRODUCTION_SCHEDULE_EXPECTED==='true'?PRODUCTION_DAILY_MONITOR_SQL:PRODUCTION_MONITOR_SQL):MONITOR_SQL,params:config.target==='production'&&config.PRODUCTION_SCHEDULE_EXPECTED!=='true'?[]:[day,day]})})
  ]);
  const value=i=>results[i].status==='fulfilled'?results[i].value:null,d1=value(2);
  let status=value(1),metaProof=config.target==='production'&&status?.metaVerificationSource==='node_required'?await verifyProductionMonitorMeta(config,status,{transport:fetcher,now:clock()}):null;
  if(metaProof?.state==='verified_read_only'){
   try{
    const latest=await jsonFetch(fetcher,config.origin+'/api/production/monitor',{headers:{Authorization:'Bearer '+config.PRODUCTION_MONITOR_TOKEN}});
-   if(latest.metaConfigurationHash!==status.metaConfigurationHash||latest.release!==status.release||latest.metaConfigured!==true||latest.paused!==true||latest.publishingEnabled!==false)metaProof={state:'closed',reason:'MONITOR_META_CONFIGURATION_CHANGED',configurationMatched:false};
+   if(latest.metaConfigurationHash!==status.metaConfigurationHash||latest.release!==status.release||latest.metaConfigured!==true||!monitorPublicationState(config,latest))metaProof={state:'closed',reason:'MONITOR_META_CONFIGURATION_CHANGED',configurationMatched:false};
    status=latest;
   }catch{metaProof={state:'unavailable',reason:'MONITOR_META_RECHECK_UNAVAILABLE',configurationMatched:false};}
  }
- return {health:value(0),status,snapshot:d1?.success===true&&d1.result?.[0]?.success===true&&d1.result[0].results?.length===1?d1.result[0].results[0]:null,metaProof,operationsExpected:config.PRODUCTION_OPERATIONS_EXPECTED,now:clock()};
+ return {health:value(0),status,snapshot:d1?.success===true&&d1.result?.[0]?.success===true&&d1.result[0].results?.length===1?d1.result[0].results[0]:null,metaProof,operationsExpected:config.PRODUCTION_OPERATIONS_EXPECTED,scheduleExpected:config.PRODUCTION_SCHEDULE_EXPECTED,actionsEnabled:config.PRODUCTION_ACTIONS_ENABLED,now:clock()};
 }
 export async function runMonitor(config,{fetcher=fetch,probe=probes,test=false}={}){
  if(![undefined,'daily','half-hourly'].includes(config.MONITOR_CADENCE))throw Error('Monitor cadence invalid');
