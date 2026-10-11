@@ -4,8 +4,9 @@ import {DatabaseSync} from 'node:sqlite';
 import {productionMigrations} from '../scripts/production-management-prepare.mjs';
 import {operationsStatus,enqueueProductionTelegramTest,runProductionOperations,monitorAuthorized,productionMonitorStatus,runProductionHttpTick,triggerAuthorized} from '../src/production/operations.ts';
 import worker from '../src/production/worker.ts';
+import {metaFingerprint} from '../src/cloud/meta.ts';
 const now=Date.parse('2026-10-07T04:00:00Z'),chat='1548618770',token='123456789:'+ 't'.repeat(35);
-function fixture(){const db=new DatabaseSync(':memory:');for(const f of productionMigrations('09cdecc7-36a2-4196-950e-ef68b1ecd834'))db.exec(f.sql);
+function fixture({runner=false}={}){const db=new DatabaseSync(':memory:');for(const f of productionMigrations('09cdecc7-36a2-4196-950e-ef68b1ecd834',{publisherRunner:runner}))db.exec(f.sql);
  const env={APP_ENV:'production',INTEGRATION_MODE:'management',DAILY_PUBLISHING_ENABLED:'false',PRODUCTION_DATABASE_ID:'09cdecc7-36a2-4196-950e-ef68b1ecd834',RELEASE_SHA:'a'.repeat(40),AUTH_ORIGIN:'https://nttu-publisher-production.example.workers.dev',TELEGRAM_ENABLED:'true',TELEGRAM_CHAT_ID:chat,TELEGRAM_BOT_TOKEN:token,PRODUCTION_MONITOR_TOKEN:'b'.repeat(64),DB:{prepare(sql){let args=[];return{bind(...a){args=a;return this;},async first(){return db.prepare(sql).get(...args)??null;},async all(){return{results:db.prepare(sql).all(...args)};},async run(){return db.prepare(sql).run(...args);}};},async batch(statements){db.exec('BEGIN');try{const results=[];for(const s of statements)results.push(await s.run());db.exec('COMMIT');return results;}catch(e){db.exec('ROLLBACK');throw e;}}}};return{db,env};}
 const cron={cron:'*/5 * * * *',scheduledTime:now};
 test('HTTP authorization is separate; invalid method, token, payload and disabled source fail closed',async()=>{const f=fixture();try{
@@ -65,5 +66,15 @@ test('bounded monitor counts and runtime match the owner view without returning 
  assert.equal(monitor.notificationsBlocked,owner.events.filter(e=>['needs_action','delivery_unknown'].includes(e.state)).length);
  assert.equal(monitor.triggerSource,owner.triggerSource);assert.equal(monitor.paused,owner.paused);
  assert.ok(!JSON.stringify(monitor).includes('caption '));assert.equal(monitor.publishingEnabled,false);
+ }finally{f.db.close();}});
+
+test('F12 monitor exposes only the configuration fingerprint for Node comparison, never verifies or sends in schema16',async()=>{const f=fixture({runner:true});try{
+ Object.assign(f.env,{META_CONNECTION_PURPOSE:'production_verify',META_PAGE_ID:'817593604765443',META_APP_ID:'1125636386458970',META_API_VERSION:'v26.0',META_APP_SECRET:'private-app-fixture-123456789',META_PAGE_ACCESS_TOKEN:'private-page-fixture-123456789'});
+ const before=f.db.prepare('SELECT count(*) n FROM cloud_meta_checks').get().n;
+ const status=await productionMonitorStatus(f.env,{now,transport:async()=>assert.fail('No provider call authorized')});
+ assert.equal(status.release,f.env.RELEASE_SHA);assert.equal(status.metaConfigurationHash,await metaFingerprint(f.env));assert.equal(status.metaVerified,false);assert.equal(status.metaVerificationSource,'node_required');
+ assert.equal(f.db.prepare('SELECT count(*) n FROM cloud_meta_checks').get().n,before);
+ const rotated=await productionMonitorStatus({...f.env,META_PAGE_ACCESS_TOKEN:'rotated-page-fixture-123456789'},{now,transport:async()=>assert.fail()});assert.notEqual(rotated.metaConfigurationHash,status.metaConfigurationHash);
+ for(const secret of [f.env.META_APP_SECRET,f.env.META_PAGE_ACCESS_TOKEN])assert.ok(!JSON.stringify(status).includes(secret));
  }finally{f.db.close();}});
 

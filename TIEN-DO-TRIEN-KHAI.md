@@ -207,3 +207,12 @@ F11 đề xuất: chốt nhịp giám sát phù hợp Free và xác minh Meta ch
 ## F11 đã duyệt — đang kiểm thử ngày 11/10/2026
 
 Đã chuẩn bị lịch ngoài10:30 hằng ngày Asia/Ho_Chi_Minh và giữ disabled. Chủ dự án đã tự thay/lưu PAT mới; chưa test credential hoặc bật tác vụ. Đã code quota guard trước probe, nhịp daily/weekly fallback và Meta verifier tối đa hai GraphGET, không Worker/POST/Telegram. Đang kiểm local/CI; chưa nghiệm thu GET thật. Giữ mọi cổng production/lịch tắt và không tạo permit. Chi tiết docs/steps/38-f11-free-monitor-meta.md; evidence tmp/step38/f11.
+
+### F11 đã triển khai, chờ thay token Trang
+
+Release4f537bd đã qua517 local/13 ảnh/CI Windows-Linux PR38111851860 và main38113103900, PR19 merged. Owner policy tháng đã áp dụng đúng SHA; hai Worker đóng/không cron,40 bài/56 tệp/schema16/0 permit-job-attempt-publication. Staging auto-deploytrue đã phục hồi. Quota1244 phút/0USD trước rollout. Cron8594899 token mới204, run38113261525 chạy đúng source/SHA/budget; staging sạch, production cảnh báoheartbeat/meta (không có Telegram mới). Lịch giám sát10:30 bật, external-primarytrue/fallback Chủ nhật10:45. RunMeta38113235899 chỉ một GraphGET, chặn META_PAGE_TOKEN_REQUIRED; owner đang được hướng dẫn thay Page token817593604765443 trong GitHub. F11 chưa nghiệm thu kết nối Meta; chưa mở gửi thật. Hồ sơ hoàn tất phần triển khai giữ local cùng bằng chứng tmp/step38/f11, không push SHA mới sau policy.
+
+11/10 — sau owner cập nhật PRODUCTION_META_PAGE_ACCESS_TOKEN, run38113688521 đạt verified_read_only/META_READ_ONLY_VERIFIED, Page817593604765443/tên đúng/phạm vi bắt buộc đạt, hai GraphGET/không Worker/POST. Token hết hạn10:28:58 Việt Nam10/12/2026; quyền dữ liệu05/01/2027. Quota1262/reserve600. Receipt thành công và lần token sai loại đều giữ. Nghiệm thu GET-only F11 đạt; snapshot D1/credential Worker chưa được đồng bộ bằng receipt này, không kết luận heartbeat/meta alert đã hết. Cổng gửi/lịch production vẫn đóng, không chuyển bước gửi thật tự động.
+
+## F12 đang triển khai — 11/10/2026
+Chủ dự án phê duyệt phạm vi đồng bộ monitor khi cổng đăng đóng. Local527/typecheck/targeted53/native Worker schema16 đạt, không provider call/permit/job/attempt/publication. Đang chuẩn bị quota mới, CI và CPU clone; chưa triển khai production hoặc áp policy cho SHA mới. F12 chưa nghiệm thu, chưa đăng Facebook và chưa bật lịch. Hồ sơ docs/steps/38-f12-monitor-sync.md; evidence tmp/step38/f12.

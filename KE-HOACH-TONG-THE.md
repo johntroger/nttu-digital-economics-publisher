@@ -857,3 +857,12 @@ F11 đề xuất: chốt nhịp giám sát phù hợp Free và xác minh Meta ch
 ## F11 đã duyệt — đang kiểm thử ngày 11/10/2026
 
 Giám sát chuyển sang mỗi ngày 10:30 Việt Nam, một job Ubuntu timeout3 phút, quota toàn tài khoản được kiểm trước probe/cảnh báo, giữ reserve600 và policy tháng có hạn. GitHub dự phòng Chủ nhật10:45; khi nguồn ngoài chưa ổn định dùng lịch GitHub mỗi ngày. Độ trễ phát hiện có thể gần một ngày; không cam kết đủ quota cho mọi job trong tháng. Cron-job.org đang tắt, owner đã tự lưu PAT thay thế, chờ test với mã mới. Workflow Meta thủ công chỉ GET, kiểm đúng Page/App/scope/hạn token và run/release/policy; không đăng bài hoặc mở cổng gửi. Đổi SHA cần owner xác nhận lại policy trên bản cụ thể đã qua CI. Chi tiết docs/steps/38-f11-free-monitor-meta.md.
+
+### F11 đã triển khai, còn chờ credential Meta
+
+Main/hai Worker/policy cùng4f537bd, CI PR/main đạt và staging auto-deploy đã trảtrue. Cron giám sát10:30 đã bật; token mới trả204 và workflow chạy đúng SHA/nguồn, fallback GitHub Chủ nhật10:45. Production vẫn có cảnh báoheartbeat/meta; không coi là healthy. GET Meta thật bị chặn bởi META_PAGE_TOKEN_REQUIRED, owner cần tự thay Page Access Token trong GitHub environment rồi mới kiểm lại. Giữ40 bài/56 tệp/schema16/0 lượt gửi/cửa đóng; chưa nghiệm thu toàn bộ F11 hoặc mở bước gửi thật. Chi tiết và bằng chứng trong docs/steps/38-f11-free-monitor-meta.md.
+
+Cập nhật sau owner thay token ngày11/10: GET-only run38113688521 đạt verified_read_only, đúng Page817593604765443 và quyền bắt buộc; hai GraphGET, không Worker/POST. Token GitHub hết hạn10:28:58 Việt Nam10/12/2026. Phần nghiệm thu GET của F11 đạt; receipt không cập nhật D1 hoặc chứng minh credential Worker đồng bộ. Heartbeat/trạng thái Meta trong snapshot monitor còn cần xử lý trong bước vận hành tiếp theo, giữ cổng gửi/lịch production tắt.
+
+## F12 đã duyệt — đồng bộ giám sát đóng
+Đối chiếu hash credential GitHub/Worker, proof Meta GET-only mới trong mỗi lượt monitor và đọc lại để bắt rotation. Khai báo PRODUCTION_OPERATIONS_EXPECTED=false cho tác vụ vận hành đang chủ động tắt; không dùng pause publishing để suy ra Telegram tắt. Quota/policy/release vẫn đóng khi không hợp lệ, queue/unknown vẫn cảnh báo. Local527, targeted53 và native workerd/D1 đạt; CI đúng SHA, CPU cloud mới, owner policy và GET thật chưa nghiệm thu. Giữ mọi cổng gửi/lịch production tắt. Chi tiết docs/steps/38-f12-monitor-sync.md.
