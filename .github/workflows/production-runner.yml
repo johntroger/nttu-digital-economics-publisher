@@ -1,6 +1,11 @@
 name: Production Node runner (closed by default)
 on:
   workflow_dispatch:
+    inputs:
+      single_test:
+        description: Execute the separately approved one-time P01 test
+        type: boolean
+        default: false
 permissions:
   contents: read
   actions: read
@@ -22,6 +27,19 @@ jobs:
         with:
           node-version-file: .nvmrc
       - run: npm ci --ignore-scripts
+      - name: Prepare the approved one-time test and wait until due
+        if: inputs.single_test
+        run: node scripts/run-clean.mjs script scripts/production-single-test.mjs prepare
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PRODUCTION_ACTIONS_ENABLED: ${{ vars.PRODUCTION_ACTIONS_ENABLED }}
+          PRODUCTION_RUNNER_RELEASE: ${{ vars.PRODUCTION_RUNNER_RELEASE }}
+          PRODUCTION_BILLING_POLICY: ${{ vars.PRODUCTION_BILLING_POLICY }}
+          PRODUCTION_BILLING_READ_TOKEN: ${{ secrets.PRODUCTION_BILLING_READ_TOKEN }}
+          PRODUCTION_SINGLE_TEST_APPROVAL: ${{ vars.PRODUCTION_SINGLE_TEST_APPROVAL }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          META_APP_SECRET: ${{ secrets.PRODUCTION_META_APP_SECRET }}
+          META_PAGE_ACCESS_TOKEN: ${{ secrets.PRODUCTION_META_PAGE_ACCESS_TOKEN }}
       - name: Read quota, execute one fenced cycle and record completion
         run: node scripts/run-clean.mjs script scripts/production-runner-live.mjs
         env:
@@ -33,4 +51,12 @@ jobs:
           PRODUCTION_RUNNER_TOKEN: ${{ secrets.PRODUCTION_RUNNER_TOKEN }}
           META_APP_SECRET: ${{ secrets.PRODUCTION_META_APP_SECRET }}
           META_PAGE_ACCESS_TOKEN: ${{ secrets.PRODUCTION_META_PAGE_ACCESS_TOKEN }}
+      - name: Close the one-time test even after failure
+        if: always() && inputs.single_test
+        run: node scripts/run-clean.mjs script scripts/production-single-test.mjs close
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PRODUCTION_ACTIONS_ENABLED: ${{ vars.PRODUCTION_ACTIONS_ENABLED }}
+          PRODUCTION_RUNNER_RELEASE: ${{ vars.PRODUCTION_RUNNER_RELEASE }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       # No schedule, arbitrary ref input, deployment or automatic activation.
