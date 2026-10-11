@@ -131,7 +131,7 @@ export async function runMonitor(config,{fetcher=fetch,probe=probes,test=false}=
  await save();
  let notificationFailed=Object.values(state.incidents).some(item=>['intent','unknown','rejected'].includes(item.notification));
  if(ready.length){
-  const text='Ngành Kinh tế số · NTTU [GIÁM SÁT '+(config.target==='production'?'PRODUCTION':'STAGING')+']\n'+(test?'[KIỂM THỬ]\n':'')+ready.map(code=>'• '+names[code]+'\nMã: '+code+':'+state.incidents[code].firstSeen).join('\n')+'\nGiờ Việt Nam: '+new Date(data.now+7*3600000).toISOString().slice(0,19).replace('T',' ')+'\nhttps://github.com/'+config.GITHUB_REPOSITORY+'/actions/workflows/monitor.yml';
+  const text='Ngành Kinh tế số · NTTU [GIÁM SÁT '+(config.target==='production'?'PRODUCTION':'STAGING')+']\n'+(test?'[KIỂM THỬ]\n':'')+ready.map(code=>'• '+(code==='monitor_gap'&&daily?'Bộ giám sát có khoảng trống kiểm tra trên 26 giờ.':names[code])+'\nMã: '+code+':'+state.incidents[code].firstSeen).join('\n')+'\nGiờ Việt Nam: '+new Date(data.now+7*3600000).toISOString().slice(0,19).replace('T',' ')+'\nhttps://github.com/'+config.GITHUB_REPOSITORY+'/actions/workflows/monitor.yml';
   try{
    const response=await fetcher('https://api.telegram.org/bot'+config.MONITOR_TELEGRAM_BOT_TOKEN+'/sendMessage',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:config.MONITOR_TELEGRAM_CHAT_ID,text,disable_web_page_preview:true}),redirect:'error',signal:AbortSignal.timeout(15000)});
    const body=await response.json();const delivered=response.ok&&body.ok===true&&Number.isSafeInteger(body.result?.message_id)&&(config.target!=='production'||(String(body.result?.chat?.id)===config.MONITOR_TELEGRAM_CHAT_ID&&body.result?.chat?.type==='private'));
