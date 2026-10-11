@@ -17,7 +17,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   f7-billing-read:
-    if: github.event_name == 'workflow_dispatch' && inputs.f7_billing_read && github.repository == 'johntroger/nttu-digital-economics-publisher' && github.ref == 'refs/heads/codex/step38-f7-closed-acceptance'
+    if: github.event_name == 'workflow_dispatch' && inputs.f7_billing_read && github.repository == 'johntroger/nttu-digital-economics-publisher' && github.ref == 'refs/heads/codex/step38-f13-cloud-read'
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
@@ -28,11 +28,11 @@ jobs:
         with:
           node-version-file: .nvmrc
       - name: Read whole-account usage and print sanitized totals
-        run: node scripts/production-f7-billing-read.mjs
+        run: node scripts/run-clean.mjs script scripts/production-f13-cloud-read.mjs
         env:
-          PRODUCTION_BILLING_READ_TOKEN: ${{ secrets.PRODUCTION_BILLING_READ_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
   portable-checks:
-    if: github.event_name != 'workflow_dispatch' || !inputs.f7_billing_read || github.ref != 'refs/heads/codex/step38-f7-closed-acceptance'
+    if: github.event_name != 'workflow_dispatch' || !inputs.f7_billing_read || github.ref != 'refs/heads/codex/step38-f13-cloud-read'
     name: Portable checks (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
