@@ -42,16 +42,21 @@ export function assessProduction({health,status,snapshot},now){
  const codes=[],observed=['worker','status','database'];
  if(!health||health.environment!=='production'||health.phase!=='management'||! /^[a-f0-9]{40}$/.test(health.release??'')||health.publishingEnabled!==false||health.schedulerImplemented!==false||health.operationsSchedulerImplemented!==true)codes.push('worker');
  if(!status||status.environment!=='production'||status.databaseChecked!==true||status.schemaReady!==true||status.publishingEnabled!==false||status.paused!==true)codes.push('status');
- if(!snapshot||snapshot.environment!=='production'||snapshot.enabled!==0||snapshot.paused_by_user!==1||![13,14].includes(snapshot.migration_count)||![0,1].includes(snapshot.http_enabled)||!Number.isSafeInteger(snapshot.jobs)||!Number.isSafeInteger(snapshot.publications))codes.push('database');
+ if(!snapshot||snapshot.environment!=='production'||snapshot.enabled!==0||snapshot.paused_by_user!==1||![13,14,15,16].includes(snapshot.migration_count)||![0,1].includes(snapshot.http_enabled)||!Number.isSafeInteger(snapshot.jobs)||!Number.isSafeInteger(snapshot.publications))codes.push('database');
  else{
   observed.push('heartbeat','config');const http=snapshot.http_enabled===1;
   const times=http?[snapshot.last_http_at,snapshot.last_complete_at]:[snapshot.last_scheduled_at];
   if(times.some(t=>!Number.isSafeInteger(t)||t>now+60000||now-t>20*60000))codes.push('heartbeat');
   if(snapshot.jobs!==0||snapshot.publications!==0||status?.triggerSource!==(http?'http':'cron'))codes.push('config');
  }
- if(snapshot?.migration_count===14){
+ if([14,15,16].includes(snapshot?.migration_count)){
   observed.push('publisher','publisher_budget','unknown');const p=status?.publisher;
-  if(!p?.schemaReady||p.state!=='closed'||p.counts?.permits!==0||p.counts?.publications!==0||Object.values(p.gates??{}).some(Boolean))codes.push('publisher');
+  // In schema16 httpPublisher reports credential presence, not an open send gate.
+  // Deployment/database/owner approval must still be explicitly false.
+  const gates=p?.gates,known=['deployment','database','ownerPublicationApproval','httpPublisher'];
+  const validGates=gates&&known.every(k=>typeof gates[k]==='boolean')&&Object.keys(gates).every(k=>known.includes(k));
+  const open=validGates&&known.some(k=>gates[k]&&(snapshot.migration_count!==16||k!=='httpPublisher'));
+  if(!p?.schemaReady||p.state!=='closed'||p.counts?.permits!==0||p.counts?.publications!==0||!validGates||open||(snapshot.migration_count===16&&p.engine!=='runner'))codes.push('publisher');
   if(p?.counts?.unknown>0)codes.push('unknown');
   if(p?.runtime?.last_queries>50||p?.runtime?.last_duration_ms>30000||p?.runtime?.state==='failed')codes.push('publisher_budget');
  }

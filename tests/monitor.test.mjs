@@ -10,6 +10,22 @@ test('Schema14 observes publisher gates separately from Telegram heartbeat; clos
  p.status.publisher.counts.unknown=1;p.status.publisher.state='unknown';assert.ok(assessProduction(p,now).codes.includes('unknown'));
  p.status.publisher.runtime.last_queries=51;assert.ok(assessProduction(p,now).codes.includes('publisher_budget'));
 });
+test('schema16 distinguishes installed runner credential from open send gates and never implies Meta verification',()=>{
+ const d=productionHealthy();d.snapshot.migration_count=16;
+ d.status.publisher={schemaReady:true,state:'closed',engine:'runner',counts:{permits:0,publications:0,unknown:0},gates:{deployment:false,database:false,ownerPublicationApproval:false,httpPublisher:true},runtime:{state:'closed',last_queries:0,last_duration_ms:0}};
+ d.status.metaVerificationSource='node_required';d.status.metaVerified=false;d.status.metaExpiresAt=null;d.status.dataAccessExpiresAt=null;
+ assert.deepEqual(assessProduction(d,now).codes,['meta']);
+ for(const key of ['deployment','database','ownerPublicationApproval']){d.status.publisher.gates[key]=true;assert.ok(assessProduction(d,now).codes.includes('publisher'));d.status.publisher.gates[key]=false;}
+ d.status.publisher.engine='legacy';assert.ok(assessProduction(d,now).codes.includes('publisher'));d.status.publisher.engine='runner';
+ delete d.status.publisher.gates.database;assert.ok(assessProduction(d,now).codes.includes('publisher'));d.status.publisher.gates.database=false;
+ d.status.publisher.gates.unrecognized=true;assert.ok(assessProduction(d,now).codes.includes('publisher'));delete d.status.publisher.gates.unrecognized;
+ d.status.publisher.counts.unknown=1;assert.ok(assessProduction(d,now).codes.includes('unknown'));
+ d.snapshot.migration_count=17;assert.ok(assessProduction(d,now).codes.includes('database'));
+});
+test('schema15 still checks publisher gates and requires HTTP publisher credential gate closed',()=>{
+ const d=productionHealthy();d.snapshot.migration_count=15;d.status.publisher={schemaReady:true,state:'closed',counts:{permits:0,publications:0,unknown:0},gates:{deployment:false,database:false,ownerPublicationApproval:false,httpPublisher:false},runtime:{state:'closed',last_queries:0,last_duration_ms:0}};
+ assert.deepEqual(assessProduction(d,now).codes,[]);d.status.publisher.gates.httpPublisher=true;assert.ok(assessProduction(d,now).codes.includes('publisher'));d.status.publisher.gates.httpPublisher=false;d.status.publisher.runtime.last_queries=51;assert.ok(assessProduction(d,now).codes.includes('publisher_budget'));
+});
 test('production monitor honors paused management, warns three days before token expiry and detects stale heartbeat/schema drift',()=>{const d=productionHealthy();assert.deepEqual(assessProduction(d,now).codes,[]);d.status.metaExpiresAt=now+3*86400000;assert.deepEqual(assessProduction(d,now).codes,['meta_expiring']);assert.deepEqual(transition(blank(),assessProduction(d,now),now).ready,['meta_expiring']);d.status.metaExpiresAt=now;assert.deepEqual(assessProduction(d,now).codes,['meta_expired']);d.status.metaExpiresAt=now+60*86400000;d.snapshot.last_scheduled_at=now-21*60000;d.status.runtime.last_dispatch_state='needs_action';assert.deepEqual(assessProduction(d,now).codes,['heartbeat','telegram']);d.snapshot.migration_count=11;assert.ok(assessProduction(d,now).codes.includes('database'));});
 test('production probes use the separate bearer and read-only production SQL without staging resources',async()=>{const cfg={...config,target:'production',PRODUCTION_MONITOR_TOKEN:'production-fixture',PRODUCTION_D1_DATABASE_ID:'production-fixture'};const calls=[];const d=await probes(cfg,async(url,options)=>{calls.push(url);if(url.endsWith('/health'))return Response.json(productionHealthy().health);if(url.endsWith('/api/production/monitor')){assert.equal(options.headers.Authorization,'Bearer production-fixture');return Response.json(productionHealthy().status);}assert.ok(url.includes('/production-fixture/query'));const p=JSON.parse(options.body);assert.equal(p.sql,PRODUCTION_MONITOR_SQL);assert.deepEqual(p.params,[]);return Response.json({success:true,result:[{success:true,results:[productionHealthy().snapshot]}]});});assert.equal(calls.length,3);assert.deepEqual(d.snapshot,productionHealthy().snapshot);});
 test('production blocked notifications stay visible after a later healthy dispatch',()=>{const d=productionHealthy();d.status.notificationsBlocked=1;assert.deepEqual(assessProduction(d,now).codes,['telegram']);});
