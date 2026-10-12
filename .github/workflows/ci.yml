@@ -16,6 +16,26 @@ concurrency:
   # Never interrupt a remote migration/deployment when a newer push arrives.
   cancel-in-progress: false
 jobs:
+  change-scope:
+    name: Classify changes and check repository content
+    if: github.event_name != 'workflow_dispatch' || !inputs.f7_billing_read || github.ref != 'refs/heads/codex/step38-f7-closed-acceptance'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      run_full: ${{ steps.scope.outputs.run_full }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version-file: .nvmrc
+      - name: Reject private files and credential patterns even in documentation
+        run: node scripts/check-repository.mjs
+      - name: Classify the entire changed commit range
+        id: scope
+        run: node scripts/ci-change-scope.mjs
   f7-billing-read:
     if: github.event_name == 'workflow_dispatch' && inputs.f7_billing_read && github.repository == 'johntroger/nttu-digital-economics-publisher' && github.ref == 'refs/heads/codex/step38-f7-closed-acceptance'
     runs-on: ubuntu-latest
@@ -32,7 +52,8 @@ jobs:
         env:
           PRODUCTION_BILLING_READ_TOKEN: ${{ secrets.PRODUCTION_BILLING_READ_TOKEN }}
   portable-checks:
-    if: github.event_name != 'workflow_dispatch' || !inputs.f7_billing_read || github.ref != 'refs/heads/codex/step38-f7-closed-acceptance'
+    needs: change-scope
+    if: needs.change-scope.outputs.run_full == 'true'
     name: Portable checks (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
@@ -68,8 +89,8 @@ jobs:
           node scripts/run-clean.mjs script scripts/production-f12-native.mjs
   deploy-staging:
     name: Deploy staging foundation
-    needs: portable-checks
-    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.STAGING_DEPLOY_ENABLED == 'true'
+    needs: [change-scope, portable-checks]
+    if: needs.change-scope.outputs.run_full == 'true' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.STAGING_DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     # Repository secrets support a private repository on GitHub Free.
