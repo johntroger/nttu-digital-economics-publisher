@@ -40,17 +40,31 @@ if(mode==='preflight'){
 }else if(mode==='ci'){
  const pr=JSON.parse(readFileSync(root+'/pull-request.json'));
  const runs=(await gh('/actions/workflows/ci.yml/runs?head_sha='+pr.sha+'&per_page=20')).workflow_runs.filter(r=>r.head_sha===pr.sha);
- const result=[];for(const run of runs){const jobs=(await gh('/actions/runs/'+run.id+'/jobs')).jobs;result.push({id:run.id,event:run.event,sha:run.head_sha,status:run.status,conclusion:run.conclusion,url:run.html_url,jobs:jobs.map(j=>({name:j.name,status:j.status,conclusion:j.conclusion}))});}
+ const result=[];for(const run of runs){const jobs=(await gh('/actions/runs/'+run.id+'/jobs')).jobs;result.push({id:run.id,event:run.event,sha:run.head_sha,status:run.status,conclusion:run.conclusion,url:run.html_url,jobs:jobs.map(j=>({name:j.name,status:j.status,conclusion:j.conclusion,startedAt:j.started_at,steps:j.steps?.filter(s=>s.status!=='queued').map(s=>({name:s.name,status:s.status,conclusion:s.conclusion}))}))});}
  save('ci',result);console.log(JSON.stringify(result));
 }else if(mode==='staging-off'){
  const pr=JSON.parse(readFileSync(root+'/pull-request.json')),ci=JSON.parse(readFileSync(root+'/ci.json'));
- assert(ci.some(r=>r.sha===pr.sha&&r.event==='pull_request'&&r.conclusion==='success'&&['portable-checks (windows-latest)','portable-checks (ubuntu-latest)'].every(name=>r.jobs.some(j=>j.name===name&&j.conclusion==='success'))),'Exact PR CI required');
+ assert(ci.some(r=>r.sha===pr.sha&&r.event==='pull_request'&&r.conclusion==='success'&&['Portable checks (windows-latest)','Portable checks (ubuntu-latest)'].every(name=>r.jobs.some(j=>j.name===name&&j.conclusion==='success'))),'Exact PR CI required');
  const before=JSON.parse(readFileSync(root+'/github-before.json'));assert.equal((await gh('/git/ref/heads/main')).object.sha,before.main,'Main changed; review again');assert.equal((await gh('/actions/variables/PRODUCTION_ACTIONS_ENABLED')).value,'false');
  assert.equal((await gh('/actions/variables/STAGING_DEPLOY_ENABLED')).value,before.stagingDeploy);
  await gh('/actions/variables/STAGING_DEPLOY_ENABLED','PATCH',{name:'STAGING_DEPLOY_ENABLED',value:'false'});assert.equal((await gh('/actions/variables/STAGING_DEPLOY_ENABLED')).value,'false');save('staging-gate',{at:new Date().toISOString(),before:before.stagingDeploy,during:'false'});console.log('Staging deployment gate disabled; staging publishing schedule untouched.');
+}else if(mode==='promote'){
+ const pr=JSON.parse(readFileSync(root+'/pull-request.json')),before=JSON.parse(readFileSync(root+'/github-before.json')),ci=JSON.parse(readFileSync(root+'/ci.json'));
+ assert(ci.some(r=>r.sha===pr.sha&&r.event==='pull_request'&&r.conclusion==='success'));
+ assert.equal((await gh('/actions/variables/STAGING_DEPLOY_ENABLED')).value,'false');assert.equal((await gh('/actions/variables/PRODUCTION_ACTIONS_ENABLED')).value,'false');assert.equal((await gh('/git/ref/heads/main')).object.sha,before.main);
+ const local=spawnSync('git',['merge-base','--is-ancestor',before.main,pr.sha]);assert.equal(local.status,0,'Only fast-forward promotion allowed');
+ await gh('/git/refs/heads/main','PATCH',{sha:pr.sha,force:false});assert.equal((await gh('/git/ref/heads/main')).object.sha,pr.sha);save('main-fast-forward',{at:new Date().toISOString(),from:before.main,to:pr.sha,force:false});console.log('Main fast-forwarded to reviewed F10 SHA; all production gates closed.');
+}else if(mode==='readback'){
+ const pr=JSON.parse(readFileSync(root+'/pull-request.json'));assert.equal((await gh('/git/ref/heads/main')).object.sha,pr.sha);
+ const content=await gh('/contents/.github/workflows/production-runner.yml?ref='+pr.sha);const text=Buffer.from(content.content,'base64').toString('utf8');const accepted=spawnSync('git',['show',pr.sha+':.github/workflows/production-runner.yml'],{encoding:'utf8'}).stdout;assert.equal(text.replaceAll('\r\n','\n'),accepted.replaceAll('\r\n','\n'));
+ assert(!/^\s+schedule:/m.test(text));assert(text.includes("vars.PRODUCTION_ACTIONS_ENABLED == 'true'")&&text.includes('vars.PRODUCTION_RUNNER_RELEASE == github.sha'));
+ const rules=(await gh('/environments/production-runner/deployment-branch-policies')).branch_policies;assert.equal(rules.length,1);assert.equal(rules[0].name,'main');assert.equal(rules[0].type,'branch');
+ const names=(await gh('/environments/production-runner/secrets?per_page=100')).secrets.map(s=>s.name).sort();for(const name of ['PRODUCTION_META_APP_SECRET','PRODUCTION_META_PAGE_ACCESS_TOKEN','PRODUCTION_RUNNER_TOKEN'])assert(names.includes(name));
+ assert.equal((await gh('/actions/variables/PRODUCTION_ACTIONS_ENABLED')).value,'false');assert.equal((await gh('/actions/variables/PRODUCTION_RUNNER_RELEASE')).value,pr.sha);assert.equal(JSON.parse((await gh('/actions/variables/PRODUCTION_BILLING_POLICY')).value).releaseSha,pr.sha);
+ const state=await gh('/pulls/'+pr.number);const result={capturedAt:new Date().toISOString(),sha:pr.sha,workflowSourceMatched:true,schedule:false,actionsGate:'false',environmentRules:rules.map(r=>({name:r.name,type:r.type})),secretNames:names,secretValuesRead:false,pr:{number:pr.number,state:state.state,merged:state.merged},dispatches:0};save('github-readback',result);console.log(JSON.stringify(result));
 }else if(mode==='staging-restore'){
  const before=JSON.parse(readFileSync(root+'/github-before.json')),pr=JSON.parse(readFileSync(root+'/pull-request.json')),ci=JSON.parse(readFileSync(root+'/ci.json'));
- assert.equal((await gh('/git/ref/heads/main')).object.sha,pr.sha);assert(ci.some(r=>r.event==='push'&&r.sha===pr.sha&&r.conclusion==='success'&&r.jobs.some(j=>j.name==='deploy-staging'&&j.conclusion==='skipped')));
+ assert.equal((await gh('/git/ref/heads/main')).object.sha,pr.sha);assert(ci.some(r=>r.event==='push'&&r.sha===pr.sha&&r.conclusion==='success'&&r.jobs.some(j=>j.name==='Deploy staging foundation'&&j.conclusion==='skipped')));
  assert.equal((await gh('/actions/variables/PRODUCTION_ACTIONS_ENABLED')).value,'false');
  await gh('/actions/variables/STAGING_DEPLOY_ENABLED','PATCH',{name:'STAGING_DEPLOY_ENABLED',value:before.stagingDeploy});assert.equal((await gh('/actions/variables/STAGING_DEPLOY_ENABLED')).value,before.stagingDeploy);save('main-promoted',{at:new Date().toISOString(),sha:pr.sha,stagingRestored:before.stagingDeploy,actionsGate:'false',ci});console.log('Main CI passed; staging deploy gate restored. No production gate enabled.');
 }else throw Error('Explicit F10 mode required');

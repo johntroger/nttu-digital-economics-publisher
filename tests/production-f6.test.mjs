@@ -164,7 +164,11 @@ test('F6 rollout proposal and workflow cannot deploy, schedule or open either se
  for(const worker of [c.runner,c.management]){assert.equal(worker.vars.PRODUCTION_RUNNER_ENABLED,'false');assert.equal(worker.vars.PRODUCTION_PUBLISHER_ENABLED,'false');assert.deepEqual(worker.triggers.crons,[]);}
  assert.equal(c.githubVariables.PRODUCTION_ACTIONS_ENABLED,'false');assert.equal(c.rolloutApproved,false);assert.equal(c.postingApproved,false);assert.equal(c.migrations.length,2);
  assert.ok(!c.credentials.runner.some(x=>x.startsWith('META_')||x.startsWith('GOOGLE_')));
- const workflow=readFileSync('.github/workflows/production-runner.yml','utf8');assert.ok(!workflow.includes('schedule:'));assert.ok(!workflow.includes('inputs:'));assert.match(workflow,/vars.PRODUCTION_RUNNER_RELEASE == github.sha/);assert.match(workflow,/environment: production-runner/);assert.match(workflow,/timeout-minutes: 5/);
+ const workflow=readFileSync('.github/workflows/production-runner.yml','utf8');assert.ok(!workflow.includes('schedule:'));
+ const dispatch=workflow.slice(workflow.indexOf('  workflow_dispatch:'),workflow.indexOf('permissions:'));
+ assert.deepEqual([...dispatch.matchAll(/^      ([a-z_]+):$/gm)].map(m=>m[1]),['single_test']);
+ assert.match(dispatch,/type: boolean\s+default: false/);assert.ok(!/type: (string|choice)|ref:|page:|version:|time:/.test(dispatch));
+ assert.match(workflow,/vars.PRODUCTION_RUNNER_RELEASE == github.sha/);assert.match(workflow,/environment: production-runner/);assert.match(workflow,/timeout-minutes: 5/);
 });
 test('F6 Node monitor uses only status and Meta GET, and reports the fresh state after verification',async()=>{
  const f=await runnerFixture({graphHook:async(url,req,{db})=>{assert.equal(req.method,'GET');if(url.pathname.endsWith('/me'))db.exec("UPDATE application_state SET paused_by_user=1,operation_generation=operation_generation+1");}});try{

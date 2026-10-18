@@ -1,4 +1,5 @@
 import {pathToFileURL} from 'node:url';
+import {verifyProductionMonitorMeta,monitorPublicationState} from './production-monitor-meta.mjs';
 
 export const STATE_TITLE='[Operations] Independent staging monitor state';
 export const PRODUCTION_STATE_TITLE='[Operations] Independent production monitor state';
@@ -13,6 +14,13 @@ export const MONITOR_SQL=`SELECT r.environment,r.last_scheduled_at,a.paused_by_u
  (SELECT count(*) FROM publications p JOIN publish_jobs j ON j.id=p.job_id WHERE j.page_connection_id=c.page_connection_id AND j.slot_id IS NOT NULL AND p.remote_business_date=?) AS published_today,
  (SELECT count(*) FROM publish_jobs j JOIN schedule_slots s ON s.id=j.slot_id WHERE j.page_connection_id=c.page_connection_id AND s.business_date<=? AND j.state IN ('unknown','publish_requested','evidence_pending')) AS unresolved_today
  FROM cloud_runtime r JOIN application_state a ON a.environment=r.environment JOIN cloud_daily_config c ON c.id=1 WHERE r.id=1`;
+export const PRODUCTION_DAILY_MONITOR_SQL=`SELECT i.environment,a.paused_by_user,c.enabled legacy_enabled,p.enabled,p.start_date,
+ (SELECT count(*) FROM schema_migrations) migration_count,
+ (SELECT count(*) FROM production_publisher_usage WHERE day=?) published_today,
+ (SELECT count(*) FROM production_publisher_jobs WHERE day=? AND state IN ('requested','unknown')) unresolved_today,
+ (SELECT last_complete_at FROM production_publisher_runtime WHERE id=1) runner_last_complete_at
+ FROM production_identity i JOIN application_state a ON a.environment=i.environment
+ JOIN production_control c ON c.id=i.id JOIN production_publisher_config p ON p.id=i.id WHERE i.id=1`;
 const ORIGIN='https://nttu-publisher-staging.nttu-kts-johntroger.workers.dev';
 export function externalTriggerTemplate(){return {
  url:'https://api.github.com/repos/johntroger/nttu-digital-economics-publisher/actions/workflows/monitor.yml/dispatches',
@@ -38,7 +46,9 @@ export function triggerInfo(config,now){
  return {source,requestedAt,startedAt:now,lagSeconds:requestedAt===null?null:Math.max(0,Math.floor((now-requestedAt)/1000))};
 }
 Object.assign(names,{meta:'Kết nối Meta production cần xác minh lại.',meta_expiring:'Token Trang production còn không quá 3 ngày.',meta_expired:'Token hoặc quyền dữ liệu Meta production đã hết hạn.',telegram:'Kết nối hoặc hàng chờ Telegram production cần xử lý.'});
-export function assessProduction({health,status,snapshot},now){
+export function assessProduction(data,now){
+ const {health,status,snapshot,metaProof,operationsExpected}=data;
+ if(data.scheduleExpected==='true')return assessProductionDaily(data,now);
  const codes=[],observed=['worker','status','database'];
  if(!health||health.environment!=='production'||health.phase!=='management'||! /^[a-f0-9]{40}$/.test(health.release??'')||health.publishingEnabled!==false||health.schedulerImplemented!==false||health.operationsSchedulerImplemented!==true)codes.push('worker');
  if(!status||status.environment!=='production'||status.databaseChecked!==true||status.schemaReady!==true||status.publishingEnabled!==false||status.paused!==true)codes.push('status');
@@ -46,7 +56,13 @@ export function assessProduction({health,status,snapshot},now){
  else{
   observed.push('heartbeat','config');const http=snapshot.http_enabled===1;
   const times=http?[snapshot.last_http_at,snapshot.last_complete_at]:[snapshot.last_scheduled_at];
-  if(times.some(t=>!Number.isSafeInteger(t)||t>now+60000||now-t>20*60000))codes.push('heartbeat');
+  // Pausing publishing does not implicitly disable Telegram operations. Only
+  // an explicit expected=false policy with all publishing gates closed does.
+  const p=status?.publisher,g=p?.gates;
+  const deliberatelyOff=operationsExpected==='false'&&snapshot.migration_count===16&&snapshot.enabled===0&&snapshot.paused_by_user===1&&status?.paused===true&&status?.publishingEnabled===false&&p?.schemaReady===true&&p?.engine==='runner'&&p?.state==='closed'&&p?.counts?.permits===0&&p?.counts?.publications===0&&['deployment','database','ownerPublicationApproval'].every(k=>g?.[k]===false);
+  if(operationsExpected!==undefined&&!['true','false'].includes(operationsExpected)||operationsExpected==='false'&&!deliberatelyOff)codes.push('config');
+  if(deliberatelyOff&&times.some(t=>t!==null&&(!Number.isSafeInteger(t)||t>now+60000||now-t<=20*60000)))codes.push('config');
+  if(!deliberatelyOff&&times.some(t=>!Number.isSafeInteger(t)||t>now+60000||now-t>20*60000))codes.push('heartbeat');
   if(snapshot.jobs!==0||snapshot.publications!==0||status?.triggerSource!==(http?'http':'cron'))codes.push('config');
  }
  if([14,15,16].includes(snapshot?.migration_count)){
@@ -62,14 +78,36 @@ export function assessProduction({health,status,snapshot},now){
  }
  if(status&&status.environment==='production'&&status.databaseChecked===true){
   observed.push('meta','meta_expiring','meta_expired','telegram');
-  if(status.metaConfigured!==true||status.metaVerified!==true)codes.push('meta');
-  const expiry=[status.metaExpiresAt,status.dataAccessExpiresAt].filter(x=>x!==null);
+  const node=snapshot?.migration_count===16&&status.metaVerificationSource==='node_required';
+  const fresh=node&&metaProof?.state==='verified_read_only'&&metaProof.readOnly===true&&metaProof.facebookPosts===0&&metaProof.workerWrites===0&&metaProof.configurationMatched===true&&metaProof.pageId==='817593604765443'&&metaProof.releaseSha===health?.release&&metaProof.releaseSha===status.release&&Number.isSafeInteger(metaProof.checkedAt)&&metaProof.checkedAt<=now&&now-metaProof.checkedAt<120000;
+  if(status.metaConfigured!==true||(node?!fresh:status.metaVerified!==true))codes.push('meta');
+  const expiry=(node?(fresh?[metaProof.expires,metaProof.dataExpires]:[]):[status.metaExpiresAt,status.dataAccessExpiresAt]).filter(x=>x!==null);
   if(expiry.some(x=>!Number.isSafeInteger(x)||x<=now))codes.push('meta_expired');
   else if(expiry.some(x=>x<=now+3*86400000))codes.push('meta_expiring');
   const dispatch=status.triggerSource==='http'?status.http?.last_dispatch_state:status.runtime?.last_dispatch_state;
   if(status.telegramConfigured!==true||status.notificationsBlocked>0||['needs_action','delivery_unknown','failed'].includes(dispatch))codes.push('telegram');
  }
- return{day:businessDay(now),codes,observed};
+ return{day:businessDay(now),codes:[...new Set(codes)],observed,operationsExpected:operationsExpected??'unconfirmed'};
+}
+export function assessProductionDaily({health,status,snapshot,metaProof,actionsEnabled},now){
+ const codes=[],observed=['worker','status','database','config','publisher','late','unknown','heartbeat','meta','meta_expiring','meta_expired','telegram'],day=businessDay(now);
+ if(health?.environment!=='production'||health.phase!=='management'||! /^[a-f0-9]{40}$/.test(health.release??'')||health.publishingEnabled!==true||health.schedulerImplemented!==false||health.operationsSchedulerImplemented!==true)codes.push('worker');
+ if(status?.environment!=='production'||status.databaseChecked!==true||status.schemaReady!==true||status.paused!==false||status.publishingEnabled!==true||status.release!==health?.release)codes.push('status');
+ const p=status?.publisher,g=p?.gates;
+ if(actionsEnabled!=='true'||!p?.schemaReady||p.engine!=='runner'||!['armed','in_flight','unknown'].includes(p.state)||!g||['deployment','database','ownerPublicationApproval','httpPublisher'].some(k=>g[k]!==true))codes.push('publisher');
+ const valid=snapshot?.environment==='production'&&snapshot.migration_count===16&&snapshot.legacy_enabled===0&&snapshot.enabled===1&&snapshot.paused_by_user===0&&/^\d{4}-\d{2}-\d{2}$/.test(snapshot.start_date??'')&&Number.isSafeInteger(snapshot.published_today)&&snapshot.published_today>=0&&snapshot.published_today<=1&&Number.isSafeInteger(snapshot.unresolved_today)&&snapshot.unresolved_today>=0;
+ if(!valid)codes.push('database');
+ else if(snapshot.start_date<=day){
+  const due=Date.parse(day+'T10:00:00+07:00');
+  if(snapshot.unresolved_today>0||p?.counts?.unknown>0)codes.push('unknown');
+  if(now>=due+20*60000&&snapshot.published_today===0)codes.push(snapshot.unresolved_today>0?'unknown':'late');
+  if(now>=due+20*60000&&(!Number.isSafeInteger(snapshot.runner_last_complete_at)||snapshot.runner_last_complete_at<due||snapshot.runner_last_complete_at>now+60000))codes.push('heartbeat');
+ }
+ const fresh=metaProof?.state==='verified_read_only'&&metaProof.readOnly===true&&metaProof.facebookPosts===0&&metaProof.workerWrites===0&&metaProof.configurationMatched===true&&metaProof.pageId==='817593604765443'&&metaProof.releaseSha===health?.release&&metaProof.releaseSha===status?.release&&Number.isSafeInteger(metaProof.checkedAt)&&metaProof.checkedAt<=now&&now-metaProof.checkedAt<120000;
+ if(status?.metaConfigured!==true||status?.metaVerificationSource!=='node_required'||!fresh)codes.push('meta');
+ if(fresh){const expiry=[metaProof.expires,metaProof.dataExpires].filter(x=>x!==null);if(expiry.some(x=>!Number.isSafeInteger(x)||x<=now))codes.push('meta_expired');else if(expiry.some(x=>x<=now+3*86400000))codes.push('meta_expiring');}
+ if(status?.telegramConfigured!==true||status.notificationsBlocked>0)codes.push('telegram');
+ return {day,codes:[...new Set(codes)],observed,scheduleExpected:'true'};
 }
 export function assess({health,status,snapshot},now){
  const day=businessDay(now),codes=[],observed=['worker','status','database'];
@@ -95,40 +133,51 @@ export function parseState(body){
  return state;
 }
 export function stateBody(state){return 'Independent monitor checkpoint. Do not edit while a run is active.\n```json\n'+JSON.stringify(state,null,2)+'\n```\n';}
-export function transition(previous,result,now){
+export function transition(previous,result,now,{minObservations=2}={}){
+ if(![1,2].includes(minObservations))throw Error('Monitor observation policy invalid');
  const state=structuredClone(previous);state.lastCheckedAt=now;
  for(const code of result.observed)if(!result.codes.includes(code))delete state.incidents[code];
  for(const code of result.codes){let item=state.incidents[code];if(!item){item={firstSeen:now,lastSeen:now,count:1,notification:'pending'};state.incidents[code]=item;}else if(now-item.lastSeen>=5*60000){item.count++;item.lastSeen=now;}}
- const ready=Object.keys(state.incidents).filter(code=>result.codes.includes(code)&&state.incidents[code].notification==='pending'&&(state.incidents[code].count>=2||['late','unknown','trigger_delay','monitor_gap','test','meta_expiring','meta_expired'].includes(code)));
+ const ready=Object.keys(state.incidents).filter(code=>result.codes.includes(code)&&state.incidents[code].notification==='pending'&&(state.incidents[code].count>=minObservations||['late','unknown','trigger_delay','monitor_gap','test','meta_expiring','meta_expired'].includes(code)));
  return {state,ready};
 }
 async function jsonFetch(fetcher,url,options={}){const response=await fetcher(url,{...options,redirect:'error',signal:AbortSignal.timeout(15000)});if(!response.ok)throw Error('Provider request failed');return response.json();}
-export async function probes(config,fetcher=fetch){
- const now=Date.now(),day=businessDay(now);
+export async function probes(config,fetcher=fetch,{clock=Date.now}={}){
+ const now=clock(),day=businessDay(now);
  const results=await Promise.allSettled([
   jsonFetch(fetcher,config.origin+'/health'),
   jsonFetch(fetcher,config.origin+(config.target==='production'?'/api/production/monitor':'/api/staging/status'),{headers:{Authorization:'Bearer '+(config.target==='production'?config.PRODUCTION_MONITOR_TOKEN:config.STAGING_HEALTH_TOKEN)}}),
-  jsonFetch(fetcher,'https://api.cloudflare.com/client/v4/accounts/'+config.CLOUDFLARE_ACCOUNT_ID+'/d1/database/'+(config.target==='production'?config.PRODUCTION_D1_DATABASE_ID:config.STAGING_D1_DATABASE_ID)+'/query',{method:'POST',headers:{Authorization:'Bearer '+config.CLOUDFLARE_API_TOKEN,'Content-Type':'application/json'},body:JSON.stringify({sql:config.target==='production'?PRODUCTION_MONITOR_SQL:MONITOR_SQL,params:config.target==='production'?[]:[day,day]})})
+  jsonFetch(fetcher,'https://api.cloudflare.com/client/v4/accounts/'+config.CLOUDFLARE_ACCOUNT_ID+'/d1/database/'+(config.target==='production'?config.PRODUCTION_D1_DATABASE_ID:config.STAGING_D1_DATABASE_ID)+'/query',{method:'POST',headers:{Authorization:'Bearer '+config.CLOUDFLARE_API_TOKEN,'Content-Type':'application/json'},body:JSON.stringify({sql:config.target==='production'?(config.PRODUCTION_SCHEDULE_EXPECTED==='true'?PRODUCTION_DAILY_MONITOR_SQL:PRODUCTION_MONITOR_SQL):MONITOR_SQL,params:config.target==='production'&&config.PRODUCTION_SCHEDULE_EXPECTED!=='true'?[]:[day,day]})})
  ]);
  const value=i=>results[i].status==='fulfilled'?results[i].value:null,d1=value(2);
- return {health:value(0),status:value(1),snapshot:d1?.success===true&&d1.result?.[0]?.success===true&&d1.result[0].results?.length===1?d1.result[0].results[0]:null,now};
+ let status=value(1),metaProof=config.target==='production'&&status?.metaVerificationSource==='node_required'?await verifyProductionMonitorMeta(config,status,{transport:fetcher,now:clock()}):null;
+ if(metaProof?.state==='verified_read_only'){
+  try{
+   const latest=await jsonFetch(fetcher,config.origin+'/api/production/monitor',{headers:{Authorization:'Bearer '+config.PRODUCTION_MONITOR_TOKEN}});
+   if(latest.metaConfigurationHash!==status.metaConfigurationHash||latest.release!==status.release||latest.metaConfigured!==true||!monitorPublicationState(config,latest))metaProof={state:'closed',reason:'MONITOR_META_CONFIGURATION_CHANGED',configurationMatched:false};
+   status=latest;
+  }catch{metaProof={state:'unavailable',reason:'MONITOR_META_RECHECK_UNAVAILABLE',configurationMatched:false};}
+ }
+ return {health:value(0),status,snapshot:d1?.success===true&&d1.result?.[0]?.success===true&&d1.result[0].results?.length===1?d1.result[0].results[0]:null,metaProof,operationsExpected:config.PRODUCTION_OPERATIONS_EXPECTED,scheduleExpected:config.PRODUCTION_SCHEDULE_EXPECTED,actionsEnabled:config.PRODUCTION_ACTIONS_ENABLED,now:clock()};
 }
 export async function runMonitor(config,{fetcher=fetch,probe=probes,test=false}={}){
+ if(![undefined,'daily','half-hourly'].includes(config.MONITOR_CADENCE))throw Error('Monitor cadence invalid');
+ const daily=config.MONITOR_CADENCE==='daily';
  const issue='https://api.github.com/repos/'+config.GITHUB_REPOSITORY+'/issues/'+config.MONITOR_STATE_ISSUE;
  const headers={Authorization:'Bearer '+config.GITHUB_TOKEN,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28','Content-Type':'application/json'};
  const read=await jsonFetch(fetcher,issue,{headers});if(read.title!==(config.target==='production'?PRODUCTION_STATE_TITLE:STATE_TITLE)||read.pull_request)throw Error('Monitor checkpoint identity invalid');
  const previous=parseState(read.body),data=await probe(config,fetcher),result=(config.target==='production'?assessProduction:assess)(data,data.now),trigger=triggerInfo(config,data.now);
  result.observed.push('trigger_delay','monitor_gap');if(trigger.lagSeconds>600)result.codes.push('trigger_delay');
- if(Number.isSafeInteger(previous.lastCheckedAt)&&data.now-previous.lastCheckedAt>75*60000)result.codes.push('monitor_gap');
+ if(Number.isSafeInteger(previous.lastCheckedAt)&&data.now-previous.lastCheckedAt>(daily?26*60:75)*60000)result.codes.push('monitor_gap');
  if(test){result.codes.push('test');result.observed.push('test');}else{result.observed.push('test');}
- const {state,ready}=transition(previous,result,data.now);state.lastTrigger=trigger;
+ const {state,ready}=transition(previous,result,data.now,{minObservations:daily?1:2});state.lastTrigger=trigger;
  const save=()=>jsonFetch(fetcher,issue,{method:'PATCH',headers,body:JSON.stringify({body:stateBody(state)})});
  // Persist intent before any Telegram send. A crash or missing response cannot trigger an automatic repeat.
  for(const code of ready)state.incidents[code].notification='intent';
  await save();
  let notificationFailed=Object.values(state.incidents).some(item=>['intent','unknown','rejected'].includes(item.notification));
  if(ready.length){
-  const text='Ngành Kinh tế số · NTTU [GIÁM SÁT '+(config.target==='production'?'PRODUCTION':'STAGING')+']\n'+(test?'[KIỂM THỬ]\n':'')+ready.map(code=>'• '+names[code]+'\nMã: '+code+':'+state.incidents[code].firstSeen).join('\n')+'\nGiờ Việt Nam: '+new Date(data.now+7*3600000).toISOString().slice(0,19).replace('T',' ')+'\nhttps://github.com/'+config.GITHUB_REPOSITORY+'/actions/workflows/monitor.yml';
+  const text='Ngành Kinh tế số · NTTU [GIÁM SÁT '+(config.target==='production'?'PRODUCTION':'STAGING')+']\n'+(test?'[KIỂM THỬ]\n':'')+ready.map(code=>'• '+(code==='monitor_gap'&&daily?'Bộ giám sát có khoảng trống kiểm tra trên 26 giờ.':names[code])+'\nMã: '+code+':'+state.incidents[code].firstSeen).join('\n')+'\nGiờ Việt Nam: '+new Date(data.now+7*3600000).toISOString().slice(0,19).replace('T',' ')+'\nhttps://github.com/'+config.GITHUB_REPOSITORY+'/actions/workflows/monitor.yml';
   try{
    const response=await fetcher('https://api.telegram.org/bot'+config.MONITOR_TELEGRAM_BOT_TOKEN+'/sendMessage',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:config.MONITOR_TELEGRAM_CHAT_ID,text,disable_web_page_preview:true}),redirect:'error',signal:AbortSignal.timeout(15000)});
    const body=await response.json();const delivered=response.ok&&body.ok===true&&Number.isSafeInteger(body.result?.message_id)&&(config.target!=='production'||(String(body.result?.chat?.id)===config.MONITOR_TELEGRAM_CHAT_ID&&body.result?.chat?.type==='private'));
@@ -139,6 +188,7 @@ export async function runMonitor(config,{fetcher=fetch,probe=probes,test=false}=
  }
  // Only fixed codes are logged. Never log provider bodies, error URLs, credentials or captions.
  const summary={checkedAt:new Date(data.now).toISOString(),trigger,issues:result.codes,notified:ready,notificationFailed:notificationFailed||Object.values(state.incidents).some(item=>['intent','unknown','rejected'].includes(item.notification))};
+ if(config.target==='production'){summary.operationsExpected=result.operationsExpected;summary.meta=data.metaProof?{state:data.metaProof.state,reason:data.metaProof.reason,configurationMatched:data.metaProof.configurationMatched,checkedAt:data.metaProof.checkedAt,graphGets:data.metaProof.graphGets??0}:null;}
  return summary;
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){

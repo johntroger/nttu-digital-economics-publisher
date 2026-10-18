@@ -3,7 +3,7 @@ import type {ManagementBindings} from './management.ts';
 import {productionState,productionRuntimeState} from './management.ts';
 import {productionMetaConfigured} from './meta.ts';
 import {telegramConfigured,dispatchTelegramQueue} from '../cloud/telegram.ts';
-import {inspectMetaConnection} from '../cloud/meta.ts';
+import {inspectMetaConnection,metaFingerprint} from '../cloud/meta.ts';
 
 export async function operationsSchema(env:ManagementBindings){return Boolean(await env.DB!.prepare("SELECT 1 FROM schema_migrations WHERE name='0012_production_operations.sql'").first());}
 export async function httpTriggerStatus(env:ManagementBindings){
@@ -76,7 +76,8 @@ export async function productionMonitorStatus(env:ManagementBindings,options:{no
  const runtime=view!.runtime?JSON.parse(view!.runtime):null,http=view!.http?JSON.parse(view!.http):null,configured=productionMetaConfigured(env);
  const live=configured&&migrations<16?await inspectMetaConnection(env,options):null,publisher=await publisherPreflight(env,options.now??Date.now(),state);
  return{environment:'production',databaseChecked:true,publishingEnabled:publisher.publishingEnabled,paused:publisher.paused??state.paused_by_user===1,schemaReady,telegramConfigured:telegramConfigured(env)&&env.TELEGRAM_CHAT_ID==='1548618770',runtime,http,triggerSource:http?.enabled===1?'http':'cron',
-  publisher,metaVerificationSource:migrations===16?'node_required':'worker',metaConfigured:configured,metaVerified:live?.state==='verified_read_only',metaExpiresAt:live?.expires??null,
+  publisher,release:env.RELEASE_SHA,metaConfigurationHash:configured&&migrations===16?await metaFingerprint(env):null,
+  metaVerificationSource:migrations===16?'node_required':'worker',metaConfigured:configured,metaVerified:live?.state==='verified_read_only',metaExpiresAt:live?.expires??null,
   dataAccessExpiresAt:live?.dataExpires??null,
   notificationsPending:view!.pending,notificationsBlocked:view!.blocked};
 }
