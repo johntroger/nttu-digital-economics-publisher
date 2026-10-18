@@ -25,7 +25,11 @@ function policyDecision(policy,now){
   // It is bound to one UTC billing month and one reviewed release.
   if(policy.verificationMode!=='owner-monthly-attestation'||policy.evidenceSource!=='authenticated-github-ui'||policy.reviewedBy!=='tranthanhtung37@gmail.com'||policy.ownerApproved!==true||policy.autoRenew!==false||policy.period!==month||policy.verifiedAt<start||policy.expiresAt!==end||now>=policy.expiresAt||! /^[a-f0-9]{40}$/.test(policy.releaseSha??''))return denied('budget_unverified');
  }else if(policy.policyVersion!==undefined&&policy.policyVersion!==1||now-policy.verifiedAt>86400000)return denied('budget_unverified');
- if(!Number.isSafeInteger(policy.reserveMinutes)||policy.reserveMinutes<(policy.policyVersion===2?600:300)||!Number.isSafeInteger(policy.cycleMinutes)||policy.cycleMinutes<5||policy.cycleMinutes>10)return denied('reserve_unverified');
+ // Releasing the monthly reserve requires a separate, month/release-bound
+ // owner approval. Legacy policies and unapproved monthly policies keep their floors.
+ const release=policy.reserveRelease;
+ const reserveReleased=policy.policyVersion===2&&release?.ownerApproved===true&&release.reviewedBy===policy.reviewedBy&&release.period===policy.period&&release.releaseSha===policy.releaseSha&&Number.isSafeInteger(release.approvedAt)&&release.approvedAt>=0&&release.approvedAt<=now&&new Date(release.approvedAt).toISOString().slice(0,7)===policy.period;
+ if(!Number.isSafeInteger(policy.reserveMinutes)||policy.reserveMinutes<(policy.policyVersion===2?(reserveReleased?0:600):300)||!Number.isSafeInteger(policy.cycleMinutes)||policy.cycleMinutes<5||policy.cycleMinutes>10)return denied('reserve_unverified');
  return {allowed:true};
 }
 export function quotaDecision(usage,policy,now=Date.now()){
