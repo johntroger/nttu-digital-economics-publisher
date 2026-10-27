@@ -21,7 +21,7 @@ export async function verifyProductionMonitorMeta(env,status,{transport=fetch,no
  try{
   const run=await githubJSON('/repos/'+REPOSITORY+'/actions/runs/'+env.GITHUB_RUN_ID,env.GITHUB_TOKEN,transport);
   if(run.head_sha!==env.GITHUB_SHA||run.head_branch!=='main'||run.event!==env.GITHUB_EVENT_NAME||run.path!==MONITOR_WORKFLOW||run.status!=='in_progress'||String(run.id)!==env.GITHUB_RUN_ID)return {...base,state:'closed',reason:'MONITOR_WORKFLOW_IDENTITY_INVALID'};
-  const quota=await readRunnerQuota({token:env.PRODUCTION_BILLING_READ_TOKEN,policy,transport,now});if(!quota.allowed)return {...base,state:'quota_blocked',reason:quota.reason};
+  const quota=await readRunnerQuota({token:env.PRODUCTION_BILLING_READ_TOKEN,policy,transport,now,context:env});if(!quota.allowed)return {...base,state:'quota_blocked',reason:quota.reason};
   let graphGets=0;
   const proof=await inspectMetaConnection(config,{now,transport:async(input,options)=>{
    const u=new URL(String(input));if(options?.method!=='GET'||u.origin!=='https://graph.facebook.com'||!['/v26.0/debug_token','/v26.0/me'].includes(u.pathname)||graphGets>=2)throw Error('MONITOR_META_GET_ONLY');

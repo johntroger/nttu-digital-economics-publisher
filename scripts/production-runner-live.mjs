@@ -35,7 +35,7 @@ export async function runProductionActions(env,{transport=fetch,now=Date.now()}=
   if(run.head_sha!==env.PRODUCTION_RUNNER_RELEASE||run.head_branch!=='main'||run.event!=='workflow_dispatch'||run.path!==LIVE_WORKFLOW||run.status!=='in_progress'||String(run.id)!==env.GITHUB_RUN_ID)throw Error('WORKFLOW_IDENTITY_INVALID');
   let policy;try{policy=JSON.parse(env.PRODUCTION_BILLING_POLICY??'');}catch{return {state:'quota_blocked',reason:'budget_unverified',realPublication:'NOT_RUN'};}
   if(policy?.policyVersion===2&&policy.releaseSha!==env.PRODUCTION_RUNNER_RELEASE)return {state:'quota_blocked',reason:'budget_release_changed',realPublication:'NOT_RUN'};
-  const quota=await readRunnerQuota({token:env.PRODUCTION_BILLING_READ_TOKEN,policy,transport,now});
+  const quota=await readRunnerQuota({token:env.PRODUCTION_BILLING_READ_TOKEN,policy,transport,now,context:env});
   if(!quota.allowed)return {state:'quota_blocked',reason:quota.reason,realPublication:'NOT_RUN'};
   client=liveRunnerClient(env,transport);
   const before=await client.call('/runner/status');if(before.release!==env.PRODUCTION_RUNNER_RELEASE)throw Error('RUNNER_RELEASE_CHANGED');

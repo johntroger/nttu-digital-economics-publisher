@@ -1,5 +1,6 @@
 // Account-wide billing read. No repository filter: other CI/monitor jobs share
 // the allowance. A 200 response cannot prove a zero-dollar stop-usage policy.
+import {publicActionsDecision} from './public-actions-quota.mjs';
 export const REPOSITORY='johntroger/nttu-digital-economics-publisher';
 // Canonical API identifiers and legacy display labels, standard runners only.
 // https://docs.github.com/en/billing/reference/product-and-sku-names
@@ -49,8 +50,12 @@ export function quotaDecision(usage,policy,now=Date.now()){
  const remaining=policy.includedMinutes-used-policy.reserveMinutes;
  return {allowed:remaining>=policy.cycleMinutes,reason:remaining>=policy.cycleMinutes?'quota_reserved':'quota_insufficient',usedMinutes:used,reservedMinutes:policy.reserveMinutes,remainingMinutes:remaining,cycleMinutes:policy.cycleMinutes};
 }
-export async function readRunnerQuota({token,policy,transport=fetch,now=Date.now()}){
+export async function readRunnerQuota({token,policy,transport=fetch,now=Date.now(),context}){
  const validation=policyDecision(policy,now);if(!validation.allowed)return validation;
+ if(context?.ACTIONS_COST_MODE==='verified-public-standard'){
+  const decision=await publicActionsDecision(context,policy,{repository:REPOSITORY,read:(path,credential)=>githubJSON(path,credential,transport)});
+  if(decision.publicRepository!==false)return decision;
+ }
  try{
   const d=new Date(now),usage=await githubJSON('/users/johntroger/settings/billing/usage?year='+d.getUTCFullYear()+'&month='+(d.getUTCMonth()+1),token,transport);
   return quotaDecision(usage,policy,now);

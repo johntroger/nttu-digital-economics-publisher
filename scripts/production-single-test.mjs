@@ -46,7 +46,7 @@ export async function singleTestCommand(env,mode,{transport=fetch,clock=Date.now
  if(mode==='close'){await pauseProductionPublisher(e,SINGLE_TEST.actor,clock());return {state:'closed',facebookPosts:0};}
  assert.equal(mode,'prepare');
  const policy=JSON.parse(env.PRODUCTION_BILLING_POLICY??'null');assert.equal(policy?.releaseSha,env.GITHUB_SHA);
- const quota=await readRunnerQuota({token:env.PRODUCTION_BILLING_READ_TOKEN,policy,transport,now:clock()});assert(quota.allowed,'SINGLE_TEST_QUOTA_BLOCKED');
+ const quota=await readRunnerQuota({token:env.PRODUCTION_BILLING_READ_TOKEN,policy,transport,now:clock(),context:env});assert(quota.allowed,'SINGLE_TEST_QUOTA_BLOCKED');
  const approval=JSON.parse(env.PRODUCTION_SINGLE_TEST_APPROVAL??'null');
  for(const [key,value] of Object.entries(SINGLE_TEST))assert.equal(approval?.[key],value,'SINGLE_TEST_FIXED_CONTENT_REQUIRED');
  const prepared=await prepareSingleTest(e,approval,{transport,clock});

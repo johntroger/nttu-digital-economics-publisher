@@ -12,7 +12,7 @@ export async function verifyProductionMetaReadOnly(env,{transport=fetch,now=Date
  try{
   const run=await githubJSON('/repos/'+REPOSITORY+'/actions/runs/'+env.GITHUB_RUN_ID,env.GITHUB_TOKEN,transport);
   if(run.head_sha!==env.GITHUB_SHA||run.head_branch!=='main'||run.event!=='workflow_dispatch'||run.path!==READONLY_WORKFLOW||run.status!=='in_progress'||String(run.id)!==env.GITHUB_RUN_ID)return {...base,state:'closed',reason:'workflow_identity_invalid'};
-  const quota=await readRunnerQuota({token:env.PRODUCTION_BILLING_READ_TOKEN,policy,transport,now});if(!quota.allowed)return {...base,state:'quota_blocked',reason:quota.reason};
+  const quota=await readRunnerQuota({token:env.PRODUCTION_BILLING_READ_TOKEN,policy,transport,now,context:env});if(!quota.allowed)return {...base,state:'quota_blocked',reason:quota.reason};
   const config={META_PAGE_ID:'817593604765443',META_APP_ID:'1125636386458970',META_API_VERSION:'v26.0',META_CONNECTION_PURPOSE:'production_verify',META_APP_SECRET:env.META_APP_SECRET,META_PAGE_ACCESS_TOKEN:env.META_PAGE_ACCESS_TOKEN};
   if(!metaCredentialsPresent(config))return {...base,state:'needs_action',reason:'META_NOT_CONFIGURED'};
   let graphGets=0;
