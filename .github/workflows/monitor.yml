@@ -50,6 +50,7 @@ jobs:
         id: budget
         run: node scripts/run-clean.mjs script scripts/monitor-free-budget.mjs
         env:
+          GITHUB_TOKEN: ${{ github.token }}
           PRODUCTION_RUNNER_RELEASE: ${{ vars.PRODUCTION_RUNNER_RELEASE }}
           PRODUCTION_BILLING_POLICY: ${{ vars.PRODUCTION_BILLING_POLICY }}
           PRODUCTION_BILLING_READ_TOKEN: ${{ secrets.PRODUCTION_BILLING_READ_TOKEN }}

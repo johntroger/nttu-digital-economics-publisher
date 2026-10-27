@@ -45,6 +45,8 @@ test('Monitor schedule and GET-only verifier jobs can verify their own standard 
  }
 });
 test('All production workflow callers opt in without changing runners, dispatch or schedule',()=>{
+ const monitor=readFileSync('.github/workflows/monitor.yml','utf8');
+ assert.match(monitor,/run: node scripts\/run-clean\.mjs script scripts\/monitor-free-budget\.mjs\r?\n\s+env:\r?\n\s+GITHUB_TOKEN: \$\{\{ github\.token \}\}/);
  for(const file of ['production-runner.yml','monitor.yml','production-meta-readonly.yml']){const text=readFileSync('.github/workflows/'+file,'utf8');assert.match(text,/runs-on: ubuntu-latest/);assert.match(text,/ACTIONS_COST_MODE: verified-public-standard/);}
  for(const file of ['production-runner-live.mjs','monitor-free-budget.mjs','production-meta-readonly.mjs','production-monitor-meta.mjs','production-single-test.mjs'])assert.match(readFileSync('scripts/'+file,'utf8'),/readRunnerQuota\(\{[^\n]+context:env\}/);
 });
