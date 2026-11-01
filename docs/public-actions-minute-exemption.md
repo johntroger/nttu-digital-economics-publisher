@@ -1,5 +1,13 @@
 # Bỏ chặn phút Actions cho repository public
 
+## Cập nhật 01/11/2026: bỏ gia hạn policy tháng cho public standard
+
+Theo xác nhận của chủ dự án, ba workflow production không đọc biến `PRODUCTION_BILLING_POLICY` hoặc token billing nữa. Chúng xác minh repository public, standard runner, đúng workflow/main/SHA/run/attempt qua GitHub API ở mỗi lượt. Không còn ngày hết hạn ngân sách nội bộ theo tháng và không cần xác nhận lại mỗi tháng. SHA vẫn ghim qua `PRODUCTION_RUNNER_RELEASE` và được đối chiếu với Worker.
+
+Nếu repository chuyển private, API không xác minh được hoặc runner đổi loại, lượt chạy dừng; không tự quay sang thanh toán hoặc dùng allowance private. Budget tài khoản 0 USD/Stop usage giữ nguyên. Guard v1/v2 chỉ còn phục vụ công cụ/fixture legacy không bật public mode.
+
+Quyền gửi từng bài, phiên bản, ảnh và thời điểm vẫn độc lập. Bỏ policy không tự tạo quyền đăng mới hoặc đăng bù. Lịch kế tiếp phải được duyệt cụ thể. Phần dưới là hồ sơ triển khai ngày 27/10 trước thay đổi này.
+
 Theo yêu cầu chủ dự án ngày 27/10/2026: repository public dùng runner chuẩn không bị giới hạn bởi phút miễn phí dành cho repository private. [GitHub xác nhận cơ chế này](https://docs.github.com/en/actions/concepts/billing-and-usage).
 
 Ba workflow production (runner, monitor, xác minh Meta chỉ đọc) khai báo `ACTIONS_COST_MODE=verified-public-standard`. Trước khi miễn kiểm tra phút, helper xác minh bằng GitHub API:

@@ -4,11 +4,6 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
-    inputs:
-      f7_billing_read:
-        description: F7 read-only account billing on the isolated acceptance branch
-        type: boolean
-        default: false
 permissions:
   contents: read
 concurrency:
@@ -16,23 +11,28 @@ concurrency:
   # Never interrupt a remote migration/deployment when a newer push arrives.
   cancel-in-progress: false
 jobs:
-  f7-billing-read:
-    if: github.event_name == 'workflow_dispatch' && inputs.f7_billing_read && github.repository == 'johntroger/nttu-digital-economics-publisher' && github.ref == 'refs/heads/codex/step38-f7-closed-acceptance'
+  change-scope:
+    name: Classify changes and check repository content
     runs-on: ubuntu-latest
-    timeout-minutes: 2
+    timeout-minutes: 3
+    outputs:
+      run_full: ${{ steps.scope.outputs.run_full }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
+          fetch-depth: 0
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version-file: .nvmrc
-      - name: Read whole-account usage and print sanitized totals
-        run: node scripts/production-f7-billing-read.mjs
-        env:
-          PRODUCTION_BILLING_READ_TOKEN: ${{ secrets.PRODUCTION_BILLING_READ_TOKEN }}
+      - name: Check repository even for documentation changes
+        run: node scripts/check-repository.mjs
+      - name: Classify the full commit range
+        id: scope
+        run: node scripts/ci-change-scope.mjs
   portable-checks:
-    if: github.event_name != 'workflow_dispatch' || !inputs.f7_billing_read || github.ref != 'refs/heads/codex/step38-f7-closed-acceptance'
+    needs: change-scope
+    if: needs.change-scope.outputs.run_full == 'true'
     name: Portable checks (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
@@ -57,7 +57,6 @@ jobs:
       - name: Build Workers and test local D1 runtime
         if: matrix.os == 'ubuntu-latest'
         run: |
-          npm run test:cloud
           node scripts/run-clean.mjs script scripts/production-management-smoke.mjs
           node scripts/run-clean.mjs script scripts/production-publisher-smoke.mjs
           npm run test:production-live
@@ -66,37 +65,3 @@ jobs:
           node scripts/run-clean.mjs script scripts/production-f7-native.mjs
           node scripts/run-clean.mjs script scripts/production-f7-rollback.mjs
           node scripts/run-clean.mjs script scripts/production-f12-native.mjs
-  deploy-staging:
-    name: Deploy staging foundation
-    needs: portable-checks
-    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.STAGING_DEPLOY_ENABLED == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    # Repository secrets support a private repository on GitHub Free.
-    # No production credentials are configured in this repository.
-    concurrency:
-      group: deploy-staging
-      cancel-in-progress: false
-    steps:
-      - name: Check out the tested SHA
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ github.sha }}
-          persist-credentials: false
-          fetch-depth: 0
-      - name: Set up Node 24
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-      - name: Install locked dependencies
-        run: npm ci --ignore-scripts
-      - name: Deploy and verify staging health
-        run: npm run deploy:staging
-        env:
-          STAGING_D1_DATABASE_ID: ${{ vars.STAGING_D1_DATABASE_ID }}
-          STAGING_WORKER_URL: ${{ vars.STAGING_WORKER_URL }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          STAGING_HEALTH_TOKEN: ${{ secrets.STAGING_HEALTH_TOKEN }}
-          STAGING_R2_ENABLED: ${{ vars.STAGING_R2_ENABLED }}

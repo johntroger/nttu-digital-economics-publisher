@@ -6,10 +6,10 @@ on:
   workflow_dispatch:
     inputs:
       monitor_target:
-        description: Environment to check for a manual request
+        description: Production environment (staging retired)
         type: choice
-        options: [both, staging, production]
-        default: both
+        options: [production]
+        default: production
       send_test:
         description: Send one clearly labeled Telegram monitor test
         type: boolean
@@ -28,11 +28,11 @@ permissions:
   issues: write
   actions: read
 concurrency:
-  group: independent-staging-monitor
+  group: independent-production-monitor
   cancel-in-progress: false
 jobs:
   monitor:
-    if: github.ref == 'refs/heads/main' && (vars.MONITOR_ENABLED == 'true' || vars.PRODUCTION_MONITOR_ENABLED == 'true') && (github.event_name != 'schedule' || vars.MONITOR_EXTERNAL_PRIMARY != 'true' || github.event.schedule == '45 3 * * 0')
+    if: github.ref == 'refs/heads/main' && vars.PRODUCTION_MONITOR_ENABLED == 'true' && (github.event_name != 'schedule' || vars.MONITOR_EXTERNAL_PRIMARY != 'true' || github.event.schedule == '45 3 * * 0')
     runs-on: ubuntu-latest
     timeout-minutes: 3
     environment: production-runner
@@ -52,27 +52,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           PRODUCTION_RUNNER_RELEASE: ${{ vars.PRODUCTION_RUNNER_RELEASE }}
-          PRODUCTION_BILLING_POLICY: ${{ vars.PRODUCTION_BILLING_POLICY }}
-          PRODUCTION_BILLING_READ_TOKEN: ${{ secrets.PRODUCTION_BILLING_READ_TOKEN }}
-      - name: Read staging state and deliver incident alerts
-        if: steps.budget.outputs.allowed == 'true' && vars.MONITOR_ENABLED == 'true' && (github.event_name != 'workflow_dispatch' || inputs.monitor_target != 'production')
-        run: node scripts/run-clean.mjs script scripts/monitor.mjs
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          STAGING_WORKER_URL: ${{ vars.STAGING_WORKER_URL }}
-          STAGING_HEALTH_TOKEN: ${{ secrets.STAGING_HEALTH_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          STAGING_D1_DATABASE_ID: ${{ vars.STAGING_D1_DATABASE_ID }}
-          MONITOR_STATE_ISSUE: ${{ vars.MONITOR_STATE_ISSUE }}
-          MONITOR_TELEGRAM_CHAT_ID: ${{ vars.MONITOR_TELEGRAM_CHAT_ID }}
-          MONITOR_TELEGRAM_BOT_TOKEN: ${{ secrets.MONITOR_TELEGRAM_BOT_TOKEN }}
-          MONITOR_TEST: ${{ github.event_name == 'workflow_dispatch' && inputs.send_test }}
-          MONITOR_CADENCE: daily
-          MONITOR_TRIGGER_SOURCE: ${{ github.event_name == 'schedule' && 'github-schedule' || inputs.trigger_source || 'manual' }}
-          MONITOR_TRIGGER_AT: ${{ inputs.triggered_at }}
       - name: Read production state and deliver incident alerts
-        if: ${{ !cancelled() && steps.budget.outputs.allowed == 'true' && vars.PRODUCTION_MONITOR_ENABLED == 'true' && (github.event_name != 'workflow_dispatch' || inputs.monitor_target != 'staging') }}
+        if: ${{ !cancelled() && steps.budget.outputs.allowed == 'true' && vars.PRODUCTION_MONITOR_ENABLED == 'true' }}
         run: node scripts/run-clean.mjs script scripts/monitor.mjs
         env:
           MONITOR_TARGET: production
@@ -80,8 +61,6 @@ jobs:
           PRODUCTION_SCHEDULE_EXPECTED: ${{ vars.PRODUCTION_SCHEDULE_EXPECTED }}
           PRODUCTION_OPERATIONS_EXPECTED: ${{ vars.PRODUCTION_OPERATIONS_EXPECTED }}
           PRODUCTION_RUNNER_RELEASE: ${{ vars.PRODUCTION_RUNNER_RELEASE }}
-          PRODUCTION_BILLING_POLICY: ${{ vars.PRODUCTION_BILLING_POLICY }}
-          PRODUCTION_BILLING_READ_TOKEN: ${{ secrets.PRODUCTION_BILLING_READ_TOKEN }}
           META_APP_SECRET: ${{ secrets.PRODUCTION_META_APP_SECRET }}
           META_PAGE_ACCESS_TOKEN: ${{ secrets.PRODUCTION_META_PAGE_ACCESS_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}

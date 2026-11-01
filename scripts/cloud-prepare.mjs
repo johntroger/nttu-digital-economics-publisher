@@ -1,7 +1,6 @@
 import { readFileSync, readdirSync, mkdirSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { resolve, relative, sep } from 'node:path';
-import { pathToFileURL } from 'node:url';
 import { HEARTBEAT_CRON } from '../src/cloud/runtime.ts';
 import {DESIGN_REGISTRY} from '../src/cloud/design-registry.ts';
 import { cloudSeedSQL } from './cloud-seed.mjs';
@@ -57,8 +56,4 @@ export function prepareCloud({ databaseId = '00000000-0000-0000-0000-00000000000
   writeFileSync(resolve(directory, 'wrangler.json'), JSON.stringify(config, null, 2) + '\n');
   writeFileSync(resolve(directory, 'schema-manifest.json'), JSON.stringify(hashes, null, 2) + '\n');
   return { directory, config };
-}
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const result = prepareCloud({ databaseId: process.env.STAGING_D1_DATABASE_ID });
-  console.log('Prepared staging-only configuration: ' + result.directory);
 }

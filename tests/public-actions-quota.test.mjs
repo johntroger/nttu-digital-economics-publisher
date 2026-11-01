@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {readRunnerQuota,REPOSITORY} from '../scripts/production-runner-quota.mjs';
+import {readRunnerQuota,readRunnerPolicy,REPOSITORY} from '../scripts/production-runner-quota.mjs';
+import {monitorBudget} from '../scripts/monitor-free-budget.mjs';
+import {verifyProductionMetaReadOnly} from '../scripts/production-meta-readonly.mjs';
 const now=Date.parse('2026-10-27T03:00:00Z'),sha='a'.repeat(40);
 const policy={policyVersion:2,account:'johntroger',product:'Actions',scope:'account',plan:'free',budgetUSD:0,stopUsage:true,includedMinutes:2000,reserveMinutes:600,cycleMinutes:5,verificationMode:'owner-monthly-attestation',evidenceSource:'authenticated-github-ui',reviewedBy:'tranthanhtung37@gmail.com',ownerApproved:true,autoRenew:false,period:'2026-10',verifiedAt:now-1000,expiresAt:Date.parse('2026-11-01T00:00:00Z'),releaseSha:sha};
 const context={ACTIONS_COST_MODE:'verified-public-standard',GITHUB_ACTIONS:'true',GITHUB_REPOSITORY:REPOSITORY,GITHUB_REF:'refs/heads/main',RUNNER_ENVIRONMENT:'github-hosted',GITHUB_JOB:'run',GITHUB_WORKFLOW_REF:REPOSITORY+'/.github/workflows/production-runner.yml@refs/heads/main',GITHUB_EVENT_NAME:'workflow_dispatch',GITHUB_RUN_ID:'123',GITHUB_RUN_ATTEMPT:'1',GITHUB_SHA:sha,PRODUCTION_RUNNER_RELEASE:sha,GITHUB_TOKEN:'fixture-job-token'};
@@ -11,8 +13,8 @@ const check=async(data=fixtures(),extra={})=>{const p=provider(data);return {res
 test('Verified public standard job ignores private-account minute exhaustion and needs no billing token',async()=>{
  const {result,calls}=await check();assert.equal(result.allowed,true);assert.equal(result.reason,'public_standard_runner');assert.equal(result.minuteLimit,null);assert.equal(result.remainingMinutes,null);assert.equal(result.usedMinutes,null);assert.equal(calls.length,3);assert(!calls.some(p=>p.includes('/billing/')));
 });
-test('Private repository uses the existing account budget path',async()=>{
- const data=fixtures();data.repo.private=true;data.repo.visibility='private';const {result,calls}=await check(data,{token:'fixture-billing'});assert.equal(result.allowed,false);assert.equal(result.reason,'quota_insufficient');assert.equal(calls.length,2);assert(calls[1].includes('/billing/usage'));
+test('Public-only mode refuses a private repository without using billing credentials',async()=>{
+ const data=fixtures();data.repo.private=true;data.repo.visibility='private';const {result,calls}=await check(data,{token:'fixture-billing'});assert.equal(result.allowed,false);assert.equal(result.reason,'public_repository_required');assert.equal(calls.length,1);assert(!calls.some(p=>p.includes('/billing/')));
 });
 test('Missing or mismatched context cannot claim the public exemption',async()=>{
  for(const change of [{GITHUB_REPOSITORY:'other/repo'},{GITHUB_REF:'refs/pull/1/merge'},{GITHUB_JOB:'unknown'},{RUNNER_ENVIRONMENT:'self-hosted'},{GITHUB_RUN_ID:'../123'},{GITHUB_SHA:'b'.repeat(40)},{GITHUB_TOKEN:''},{GITHUB_EVENT_NAME:'pull_request'},{GITHUB_WORKFLOW_REF:'other/workflow'}]){
@@ -33,9 +35,29 @@ test('Self-hosted, custom, larger, duplicate or stale jobs cannot claim free sta
 test('API errors, redirects, pagination and malformed metadata fail closed without billing fallback',async()=>{
  for(const response of [new Response('{}',{status:403}),new Response('',{status:302,headers:{Location:'https://other.invalid'}}),Response.json({}, {headers:{Link:'next'}}),Response.json({})])assert.equal((await readRunnerQuota({policy,context,now,transport:async()=>response})).allowed,false);
 });
-test('Public mode preserves release authorization, month expiry and zero-dollar policy requirements',async()=>{
- for(const change of [{ownerApproved:false},{autoRenew:true},{period:'2026-11'},{budgetUSD:1},{stopUsage:false},{releaseSha:'b'.repeat(40)}])assert.equal((await check(fixtures(),{policy:{...policy,...change}})).result.allowed,false);
- assert.equal((await check(fixtures(),{now:policy.expiresAt})).result.allowed,false);
+test('Verified public mode needs no monthly policy and works across month boundaries',async()=>{
+ for(const policyValue of [undefined,null,{...policy,expiresAt:0},{malformed:true}]){
+  const result=await check(fixtures(),{policy:policyValue,now:Date.parse('2027-01-01T00:00:00Z')});assert.equal(result.result.allowed,true);
+ }
+ for(const change of [{PRODUCTION_RUNNER_RELEASE:''},{PRODUCTION_RUNNER_RELEASE:'b'.repeat(40)},{GITHUB_SHA:'b'.repeat(40)}])assert.equal((await check(fixtures(),{context:{...context,...change}})).result.allowed,false);
+ assert.deepEqual(readRunnerPolicy(context),{policyVersion:3,releaseSha:sha});
+ assert.equal(readRunnerPolicy({PRODUCTION_BILLING_POLICY:'invalid'}),undefined);
+});
+
+test('Public monitor and GET verifier work without billing policy or billing token after October expiry',async()=>{
+ for(const [job,file]of [['monitor','monitor.yml'],['verify','production-meta-readonly.yml']]){
+  const data=fixtures();data.run.path='.github/workflows/'+file;data.jobs.jobs[0].name=job;
+  const env={...context,GITHUB_JOB:job,GITHUB_WORKFLOW_REF:REPOSITORY+'/.github/workflows/'+file+'@refs/heads/main',PRODUCTION_ACTIONS_ENABLED:'false',META_APP_SECRET:'fixture-app-secret-long',META_PAGE_ACCESS_TOKEN:'fixture-page-token-long'};
+  const p=provider(data),time=Date.parse('2026-11-01T03:00:00Z');let graph=0;
+  const transport=async(url,init)=>{
+   if(new URL(String(url)).hostname==='api.github.com')return p.transport(url,init);
+   assert.equal(init.method,'GET');graph++;
+   return Response.json(String(url).includes('/debug_token')?{data:{is_valid:true,type:'PAGE',app_id:'1125636386458970',scopes:['pages_read_engagement','pages_manage_posts'],expires_at:Math.floor(time/1000)+60*86400,data_access_expires_at:Math.floor(time/1000)+90*86400}}:{id:'817593604765443',name:'Ngành Kinh tế số - NTTU'});
+  };
+  const result=job==='monitor'?await monitorBudget(env,{transport,now:time}):await verifyProductionMetaReadOnly(env,{transport,now:time});
+  if(job==='monitor'){assert.equal(result.allowed,true);assert.equal(graph,0);}else{assert.equal(result.state,'verified_read_only');assert.equal(graph,2);assert.equal(result.facebookPosts,0);}
+  assert(!p.calls.some(url=>url.includes('/billing/')));
+ }
 });
 test('Monitor schedule and GET-only verifier jobs can verify their own standard execution',async()=>{
  for(const [job,file,event] of [['monitor','monitor.yml','schedule'],['verify','production-meta-readonly.yml','workflow_dispatch']]){

@@ -1,15 +1,15 @@
 // Standard GitHub-hosted jobs in public repositories have no billable minute cap.
 // Verify current GitHub metadata; never infer visibility from an environment flag.
 const workflows=Object.freeze({run:'.github/workflows/production-runner.yml',monitor:'.github/workflows/monitor.yml',verify:'.github/workflows/production-meta-readonly.yml'});
-export async function publicActionsDecision(context,policy,{repository,read}){
+export async function publicActionsDecision(context,{repository,read}){
  const denied=reason=>({allowed:false,reason});
  const e=context??{},workflow=workflows[e.GITHUB_JOB];
- if(e.GITHUB_ACTIONS!=='true'||e.GITHUB_REPOSITORY!==repository||e.GITHUB_REF!=='refs/heads/main'||e.RUNNER_ENVIRONMENT!=='github-hosted'||!workflow||e.GITHUB_WORKFLOW_REF!==repository+'/'+workflow+'@refs/heads/main'||!['workflow_dispatch','schedule'].includes(e.GITHUB_EVENT_NAME)||! /^[1-9][0-9]{0,19}$/.test(e.GITHUB_RUN_ID??'')||e.GITHUB_SHA!==policy.releaseSha||e.PRODUCTION_RUNNER_RELEASE!==policy.releaseSha||!e.GITHUB_TOKEN)return denied('public_runner_context_invalid');
+ if(e.GITHUB_ACTIONS!=='true'||e.GITHUB_REPOSITORY!==repository||e.GITHUB_REF!=='refs/heads/main'||e.RUNNER_ENVIRONMENT!=='github-hosted'||!workflow||e.GITHUB_WORKFLOW_REF!==repository+'/'+workflow+'@refs/heads/main'||!['workflow_dispatch','schedule'].includes(e.GITHUB_EVENT_NAME)||! /^[1-9][0-9]{0,19}$/.test(e.GITHUB_RUN_ID??'')||! /^[a-f0-9]{40}$/.test(e.PRODUCTION_RUNNER_RELEASE??'')||e.GITHUB_SHA!==e.PRODUCTION_RUNNER_RELEASE||!e.GITHUB_TOKEN)return denied('public_runner_context_invalid');
  if(e.GITHUB_EVENT_NAME==='schedule'&&e.GITHUB_JOB!=='monitor')return denied('public_runner_context_invalid');
  try{
   const repo=await read('/repos/'+repository,e.GITHUB_TOKEN);
   if(repo.full_name!==repository)return denied('public_repository_unverified');
-  if(repo.private===true&&repo.visibility==='private')return {publicRepository:false};
+  if(repo.private===true&&repo.visibility==='private')return denied('public_repository_required');
   if(repo.private!==false||repo.visibility!=='public')return denied('public_repository_unverified');
   const run=await read('/repos/'+repository+'/actions/runs/'+e.GITHUB_RUN_ID,e.GITHUB_TOKEN);
   if(String(run.id)!==e.GITHUB_RUN_ID||run.head_sha!==e.GITHUB_SHA||run.head_branch!=='main'||run.path!==workflow||run.event!==e.GITHUB_EVENT_NAME||run.status!=='in_progress'||String(run.run_attempt)!==e.GITHUB_RUN_ATTEMPT)return denied('public_workflow_unverified');

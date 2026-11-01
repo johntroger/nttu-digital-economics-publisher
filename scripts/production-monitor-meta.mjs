@@ -1,6 +1,6 @@
 // Fresh Node-only Meta proof. No publisher, queue, credential write or send API.
 import {inspectMetaConnection,metaCredentialsPresent,metaFingerprint} from '../src/cloud/meta.ts';
-import {githubJSON,readRunnerQuota,REPOSITORY} from './production-runner-quota.mjs';
+import {githubJSON,readRunnerQuota,readRunnerPolicy,REPOSITORY} from './production-runner-quota.mjs';
 export const MONITOR_WORKFLOW='.github/workflows/monitor.yml';
 export function trustedMonitorMetaContext(env){return env.GITHUB_ACTIONS==='true'&&env.GITHUB_REPOSITORY===REPOSITORY&&['workflow_dispatch','schedule'].includes(env.GITHUB_EVENT_NAME)&&env.GITHUB_REF==='refs/heads/main'&&env.GITHUB_WORKFLOW_REF===REPOSITORY+'/'+MONITOR_WORKFLOW+'@refs/heads/main'&&(env.PRODUCTION_ACTIONS_ENABLED==='false'||env.PRODUCTION_ACTIONS_ENABLED==='true'&&env.PRODUCTION_SCHEDULE_EXPECTED==='true')&&/^[a-f0-9]{40}$/.test(env.GITHUB_SHA??'')&&env.GITHUB_SHA===env.PRODUCTION_RUNNER_RELEASE&&/^[1-9][0-9]{0,19}$/.test(env.GITHUB_RUN_ID??'');}
 export function monitorPublicationState(env,status){
@@ -16,8 +16,8 @@ export async function verifyProductionMonitorMeta(env,status,{transport=fetch,no
  const config={META_PAGE_ID:'817593604765443',META_APP_ID:'1125636386458970',META_API_VERSION:'v26.0',META_CONNECTION_PURPOSE:'production_verify',META_APP_SECRET:env.META_APP_SECRET,META_PAGE_ACCESS_TOKEN:env.META_PAGE_ACCESS_TOKEN};
  if(!metaCredentialsPresent(config))return {...base,state:'needs_action',reason:'META_NOT_CONFIGURED'};
  if(await metaFingerprint(config)!==status.metaConfigurationHash)return {...base,state:'needs_action',reason:'META_CONFIGURATION_MISMATCH'};
- let policy;try{policy=JSON.parse(env.PRODUCTION_BILLING_POLICY??'');}catch{return {...base,state:'quota_blocked',reason:'budget_unverified'};}
- if(policy?.policyVersion!==2||policy.releaseSha!==env.GITHUB_SHA)return {...base,state:'quota_blocked',reason:'budget_release_changed'};
+ const policy=readRunnerPolicy(env);if(!policy)return {...base,state:'quota_blocked',reason:'budget_unverified'};
+ if(![2,3].includes(policy?.policyVersion)||policy.releaseSha!==env.GITHUB_SHA)return {...base,state:'quota_blocked',reason:'budget_release_changed'};
  try{
   const run=await githubJSON('/repos/'+REPOSITORY+'/actions/runs/'+env.GITHUB_RUN_ID,env.GITHUB_TOKEN,transport);
   if(run.head_sha!==env.GITHUB_SHA||run.head_branch!=='main'||run.event!==env.GITHUB_EVENT_NAME||run.path!==MONITOR_WORKFLOW||run.status!=='in_progress'||String(run.id)!==env.GITHUB_RUN_ID)return {...base,state:'closed',reason:'MONITOR_WORKFLOW_IDENTITY_INVALID'};

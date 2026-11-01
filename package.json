@@ -10,8 +10,8 @@
     "dev": "node scripts/dev.mjs",
     "typecheck": "tsc --noEmit",
     "test": "node scripts/run-clean.mjs test",
-    "test:stages": "node scripts/run-clean.mjs script scripts/test-production-stages.mjs",
-    "test:runner": "node scripts/run-clean.mjs script scripts/test-production-runner.mjs",
+    "test:stages": "node scripts/run-clean.mjs test tests/production-stages.test.mjs",
+    "test:runner": "node scripts/run-clean.mjs test tests/production-runner.test.mjs",
     "test:runner:native": "node scripts/run-clean.mjs script scripts/production-runner-smoke.mjs",
     "test:production-live": "node scripts/run-clean.mjs script scripts/production-live-smoke.mjs",
     "check": "npm run typecheck && npm test",
@@ -25,14 +25,14 @@
     "check:repository": "node scripts/check-repository.mjs",
     "check:ci": "npm run typecheck && npm run test:portable && npm run check:repository",
     "hooks:install": "git config core.hooksPath .githooks",
-    "cloud:prepare": "node scripts/cloud-prepare.mjs",
-    "cloud:import:batch": "node scripts/cloud-batch-import.mjs",
     "test:cloud": "node scripts/run-clean.mjs cloud",
     "test:cloud:workflow": "node scripts/run-clean.mjs workflow",
-    "deploy:staging": "node scripts/cloud-deploy.mjs"
+    "test:quota": "node scripts/run-clean.mjs test tests/public-actions-quota.test.mjs tests/production-budget.test.mjs"
+  },
+  "dependencies": {
+    "jose": "6.2.12"
   },
   "devDependencies": {
-    "jose": "6.2.12",
     "typescript": "https://registry.npmjs.org/typescript/-/typescript-6.0.3.tgz",
     "wrangler": "4.147.0"
   }

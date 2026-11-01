@@ -77,9 +77,12 @@ export function runWithCleanup(command,args,{root=ROOT,stdio='inherit',env=proce
 
 if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href){
  const mode=process.argv[2],extra=process.argv.slice(3);
+ const suites=readdirSync(join(ROOT,'tests')).filter(n=>n.endsWith('.test.mjs')).sort().map(n=>'tests/'+n);
+ const privateSuites=new Set(['backups','editor','sources','samples','ui'].map(n=>'tests/'+n+'.test.mjs'));
+ if(mode==='test'&&extra.some(arg=>arg!=='--test-concurrency=1'&&!suites.includes(arg)))throw new Error('Use existing tests/*.test.mjs suites');
  const commands={
-  test:['--test',...readdirSync(join(ROOT,'tests')).filter(n=>n.endsWith('.test.mjs')).sort().map(n=>'tests/'+n)],
-  portable:['scripts/test-portable.mjs'],
+  test:['--test',...(extra.length?extra:suites)],
+  portable:['--test',...suites.filter(n=>!privateSuites.has(n))],
   cloud:['scripts/cloud-smoke.mjs'],
   workflow:['scripts/cloud-workflow-smoke.mjs'],
   images:['scripts/samples.mjs','test'],

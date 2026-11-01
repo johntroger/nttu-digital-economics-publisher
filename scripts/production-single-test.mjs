@@ -4,7 +4,7 @@ import {pathToFileURL} from 'node:url';
 import {productionSendPreflight,issueSingleTestPermit,activateSingleTestPermit} from '../src/production/send-preflight.ts';
 import {pauseProductionPublisher} from '../src/production/publisher-live.ts';
 import {trustedRunnerContext} from './production-runner-live.mjs';
-import {readRunnerQuota,githubJSON,REPOSITORY} from './production-runner-quota.mjs';
+import {readRunnerQuota,readRunnerPolicy,githubJSON,REPOSITORY} from './production-runner-quota.mjs';
 export const SINGLE_TEST={pageId:'817593604765443',versionId:'production-approved-batch-2026-v1:P01:v1',captionHash:'6ee55f3f8b556298f1da92a276b421e3064a27a8e95fa410495dcd53d4c59cc2',imageChecksum:'768a2322450779c9d3629213442f9ff344ee13bb30f11a6978e68c8cc0ccb251',actor:'tranthanhtung37@gmail.com'};
 const ACCOUNT='4d46e32e5c27ff522ee857308a53e729',DB='09cdecc7-36a2-4196-950e-ef68b1ecd834',BUCKET='nttu-publisher-production-assets';
 export async function prepareSingleTest(e,approval,{transport=fetch,clock=Date.now}={}){
@@ -45,7 +45,7 @@ export async function singleTestCommand(env,mode,{transport=fetch,clock=Date.now
  const e=cloudBindings(env,transport);
  if(mode==='close'){await pauseProductionPublisher(e,SINGLE_TEST.actor,clock());return {state:'closed',facebookPosts:0};}
  assert.equal(mode,'prepare');
- const policy=JSON.parse(env.PRODUCTION_BILLING_POLICY??'null');assert.equal(policy?.releaseSha,env.GITHUB_SHA);
+ const policy=readRunnerPolicy(env);assert.equal(policy?.releaseSha,env.GITHUB_SHA);
  const quota=await readRunnerQuota({token:env.PRODUCTION_BILLING_READ_TOKEN,policy,transport,now:clock(),context:env});assert(quota.allowed,'SINGLE_TEST_QUOTA_BLOCKED');
  const approval=JSON.parse(env.PRODUCTION_SINGLE_TEST_APPROVAL??'null');
  for(const [key,value] of Object.entries(SINGLE_TEST))assert.equal(approval?.[key],value,'SINGLE_TEST_FIXED_CONTENT_REQUIRED');

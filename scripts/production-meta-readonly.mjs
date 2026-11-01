@@ -1,14 +1,14 @@
 // Intentionally imports only the shared GET verifier, never the publishing runner.
 import {pathToFileURL} from 'node:url';
 import {inspectMetaConnection,metaCredentialsPresent} from '../src/cloud/meta.ts';
-import {githubJSON,readRunnerQuota,REPOSITORY} from './production-runner-quota.mjs';
+import {githubJSON,readRunnerQuota,readRunnerPolicy,REPOSITORY} from './production-runner-quota.mjs';
 export const READONLY_WORKFLOW='.github/workflows/production-meta-readonly.yml';
 export function trustedReadOnlyContext(env){return env.GITHUB_ACTIONS==='true'&&env.GITHUB_REPOSITORY===REPOSITORY&&env.GITHUB_EVENT_NAME==='workflow_dispatch'&&env.GITHUB_REF==='refs/heads/main'&&env.GITHUB_WORKFLOW_REF===REPOSITORY+'/'+READONLY_WORKFLOW+'@refs/heads/main'&&env.PRODUCTION_ACTIONS_ENABLED==='false'&&/^[a-f0-9]{40}$/.test(env.GITHUB_SHA??'')&&env.GITHUB_SHA===env.PRODUCTION_RUNNER_RELEASE&&/^[1-9][0-9]{0,19}$/.test(env.GITHUB_RUN_ID??'');}
 export async function verifyProductionMetaReadOnly(env,{transport=fetch,now=Date.now()}={}){
  const base={readOnly:true,realPublication:'NOT_RUN',facebookPosts:0,workerCalls:0};
  if(!trustedReadOnlyContext(env))return {...base,state:'closed',reason:'context_invalid'};
- let policy;try{policy=JSON.parse(env.PRODUCTION_BILLING_POLICY??'');}catch{return {...base,state:'quota_blocked',reason:'budget_unverified'};}
- if(policy?.policyVersion!==2||policy.releaseSha!==env.GITHUB_SHA)return {...base,state:'quota_blocked',reason:'budget_release_changed'};
+ const policy=readRunnerPolicy(env);if(!policy)return {...base,state:'quota_blocked',reason:'budget_unverified'};
+ if(![2,3].includes(policy?.policyVersion)||policy.releaseSha!==env.GITHUB_SHA)return {...base,state:'quota_blocked',reason:'budget_release_changed'};
  try{
   const run=await githubJSON('/repos/'+REPOSITORY+'/actions/runs/'+env.GITHUB_RUN_ID,env.GITHUB_TOKEN,transport);
   if(run.head_sha!==env.GITHUB_SHA||run.head_branch!=='main'||run.event!=='workflow_dispatch'||run.path!==READONLY_WORKFLOW||run.status!=='in_progress'||String(run.id)!==env.GITHUB_RUN_ID)return {...base,state:'closed',reason:'workflow_identity_invalid'};

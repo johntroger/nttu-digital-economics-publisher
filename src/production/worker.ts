@@ -39,13 +39,13 @@ export default {
       if(url.search||!await triggerAuthorized(request,env))return json({error:'TRIGGER_AUTH_REQUIRED'},401);
       // No caller-selected time, recipient, payload or operation is accepted.
       if(await request.text()!=='')return json({error:'TRIGGER_BODY_NOT_ALLOWED'},422);
-      try{return json(await runProductionHttpTick(env));}catch{return json({error:'TRIGGER_UNAVAILABLE'},503);}
+      try{return json(await runProductionHttpTick(env,{},outerState!));}catch{return json({error:'TRIGGER_UNAVAILABLE'},503);}
     }
     if(url.pathname==='/health'&&request.method==='GET')return json({environment:'production',phase:'management',release:env.RELEASE_SHA,
       databaseChecked:true,publisherAdapterImplemented:true,runnerImplemented:Number(outerState!.migration_count)===16,publisherEngine:Number(outerState!.migration_count)===16?'runner':'legacy',publishingImplemented:Number(outerState!.migration_count)===16,...await productionRuntimeState(env,outerState!),schedulerImplemented:false,operationsSchedulerImplemented:true,ownerLoginConfigured:authConfigured(env)});
     if(url.pathname==='/api/production/monitor'&&request.method==='GET'){
       if(!await monitorAuthorized(request,env))return json({error:'MONITOR_AUTH_REQUIRED'},401);
-      return json(await productionMonitorStatus(env));
+      return json(await productionMonitorStatus(env,{},outerState!));
     }
     if(request.method==='GET'&&url.pathname==='/auth/google/start'){
       if(!authConfigured(env))return json({error:'GOOGLE_NOT_CONFIGURED'},503);
@@ -109,7 +109,7 @@ export default {
     if(url.pathname==='/api/production/preflight'){
       if(request.method!=='GET')return json({error:'METHOD_NOT_ALLOWED'},405);
       if(url.search)return json({error:'PREFLIGHT_QUERY_NOT_ALLOWED'},422);
-      return json(await publisherPreflight(env));
+      return json(await publisherPreflight(env,Date.now(),outerState!));
     }
     if(url.pathname==='/api/production/preview'){
       if(request.method!=='GET')return json({error:'METHOD_NOT_ALLOWED'},405);

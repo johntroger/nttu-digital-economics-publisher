@@ -1,7 +1,7 @@
 import {pathToFileURL} from 'node:url';
 import {runRunnerProtocol} from './production-actions-runner.mjs';
 import {scanRunnerStock} from './production-runner-stock.mjs';
-import {readRunnerQuota,githubJSON,REPOSITORY} from './production-runner-quota.mjs';
+import {readRunnerQuota,readRunnerPolicy,githubJSON,REPOSITORY} from './production-runner-quota.mjs';
 import {ProductionMetaPublisher,PRODUCTION_PAGE} from '../src/production/publisher-provider.ts';
 export const LIVE_RUNNER_ORIGIN='https://nttu-publisher-runner.nttu-kts-johntroger.workers.dev';
 export const LIVE_WORKFLOW='.github/workflows/production-runner.yml';
@@ -33,7 +33,7 @@ export async function runProductionActions(env,{transport=fetch,now=Date.now()}=
  try{
   const run=await githubJSON('/repos/'+REPOSITORY+'/actions/runs/'+env.GITHUB_RUN_ID,env.GITHUB_TOKEN,transport);
   if(run.head_sha!==env.PRODUCTION_RUNNER_RELEASE||run.head_branch!=='main'||run.event!=='workflow_dispatch'||run.path!==LIVE_WORKFLOW||run.status!=='in_progress'||String(run.id)!==env.GITHUB_RUN_ID)throw Error('WORKFLOW_IDENTITY_INVALID');
-  let policy;try{policy=JSON.parse(env.PRODUCTION_BILLING_POLICY??'');}catch{return {state:'quota_blocked',reason:'budget_unverified',realPublication:'NOT_RUN'};}
+  const policy=readRunnerPolicy(env);if(!policy)return {state:'quota_blocked',reason:'budget_unverified',realPublication:'NOT_RUN'};
   if(policy?.policyVersion===2&&policy.releaseSha!==env.PRODUCTION_RUNNER_RELEASE)return {state:'quota_blocked',reason:'budget_release_changed',realPublication:'NOT_RUN'};
   const quota=await readRunnerQuota({token:env.PRODUCTION_BILLING_READ_TOKEN,policy,transport,now,context:env});
   if(!quota.allowed)return {state:'quota_blocked',reason:quota.reason,realPublication:'NOT_RUN'};

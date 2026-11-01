@@ -139,6 +139,26 @@ test('F6 fixed-origin live wrapper completes a mock publication, stock and heart
   assert.equal((await runProductionActions(trustedEnv(f),{transport:liveMock(f),now:quotaNow})).state,'day_complete');assert.equal(f.postCount(),1);
  }finally{await f.dispose();}
 });
+
+test('public live wrapper publishes only through the fenced mock protocol without monthly billing policy',async()=>{
+ const f=await runnerFixture();try{
+  const env={...trustedEnv(f),ACTIONS_COST_MODE:'verified-public-standard',RUNNER_ENVIRONMENT:'github-hosted',GITHUB_JOB:'run',GITHUB_RUN_ATTEMPT:'1'};
+  delete env.PRODUCTION_BILLING_POLICY;delete env.PRODUCTION_BILLING_READ_TOKEN;
+  const original=liveMock(f,{run:{run_attempt:1}});
+  const transport=async(input,init)=>{
+   const u=new URL(String(input));
+   if(u.origin==='https://api.github.com'){
+    assert.ok(!u.pathname.includes('/billing/'));
+    if(u.pathname.endsWith('/jobs'))return Response.json({total_count:1,jobs:[{name:'run',status:'in_progress',runner_group_name:'GitHub Actions',labels:['ubuntu-latest']}]});
+    if(u.pathname==='/repos/johntroger/nttu-digital-economics-publisher')return Response.json({full_name:'johntroger/nttu-digital-economics-publisher',private:false,visibility:'public'});
+   }
+   return original(input,init);
+  };
+  const result=await runProductionActions(env,{transport,now:Date.parse('2026-11-01T03:00:00Z')});
+  assert.equal(result.state,'confirmed',JSON.stringify(result));assert.equal(f.postCount(),1);
+  assert.equal((await runProductionActions(env,{transport,now:Date.parse('2026-12-01T03:00:00Z')})).state,'day_complete');assert.equal(f.postCount(),1);
+ }finally{await f.dispose();}
+});
 test('F6 workflow proof, quota and server release failures never claim or POST',async()=>{
  for(const mode of ['quota','release','workflow']){
   const f=await runnerFixture();try{

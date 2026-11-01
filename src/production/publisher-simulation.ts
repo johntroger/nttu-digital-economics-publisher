@@ -158,7 +158,7 @@ export async function runProductionSimulation(env:CloudBindings,input:{publisher
       job=await one<Job>(env,'SELECT * FROM production_fixture_jobs WHERE id=?',id);if(!job)return {status:'claim_lost',sends};
     }
     const sendTime=instant(input.now);if(date(sendTime)!==job.day){await abandon(env,job,'cancelled','day_changed_before_intent');continue;}
-    const current=posts.find(p=>p.postId===job!.post),snapshot=JSON.parse(job.snapshot) as Candidate;
+    const current=posts.find(p=>p.postId===job!.post);
     if(!current||JSON.stringify(current)!==job.snapshot||eligibility(current,await context(env,sendTime,job.post)).length){await abandon(env,job,'failed','snapshot_no_longer_eligible');continue;}
     const attempt='fixture-attempt:'+crypto.randomUUID();
     await batch(env,[stmt(env,`INSERT INTO production_fixture_attempts SELECT ?,id,tries+1,'intent',?,NULL,NULL FROM production_fixture_jobs

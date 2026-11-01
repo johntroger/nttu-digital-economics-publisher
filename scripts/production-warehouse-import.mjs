@@ -5,7 +5,7 @@ import {spawnSync} from 'node:child_process';
 import {pathToFileURL} from 'node:url';
 import {approvedPack,quote} from './cloud-batch-import.mjs';
 import {batchHash} from './batch-contract.mjs';
-import {parseD1Output} from './upload-private-assets.mjs';
+import {parseD1Output} from './d1-output.mjs';
 import {createSourceLibrary} from './source-library.mjs';
 import {SOURCE_REGISTRY} from '../src/cloud/source-registry.ts';
 import {validateFile} from '../src/cloud/storage.ts';

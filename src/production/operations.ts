@@ -1,6 +1,6 @@
 import {publisherPreflight} from './publisher-live.ts';
 import type {ManagementBindings} from './management.ts';
-import {productionState,productionRuntimeState} from './management.ts';
+import {productionState,productionRuntimeState,assertProductionState} from './management.ts';
 import {productionMetaConfigured} from './meta.ts';
 import {telegramConfigured,dispatchTelegramQueue} from '../cloud/telegram.ts';
 import {inspectMetaConnection,metaFingerprint} from '../cloud/meta.ts';
@@ -47,8 +47,8 @@ export function triggerAuthorized(request:Request,env:ManagementBindings){
 }
 // One bounded queue item per server minute. D1's atomic claim fences concurrent HTTP ticks.
 // Queue intent/lease survives a killed request; a later tick recovers it without claiming success.
-export async function runProductionHttpTick(env:ManagementBindings,options:Parameters<typeof dispatchTelegramQueue>[2]={}){
- await productionState(env);const http=await httpTriggerStatus(env);
+export async function runProductionHttpTick(env:ManagementBindings,options:Parameters<typeof dispatchTelegramQueue>[2]={},observedState?:Awaited<ReturnType<typeof productionState>>){
+ if(observedState)assertProductionState(env,observedState);else await productionState(env);const http=await httpTriggerStatus(env);
  if(!await operationsSchema(env)||http?.enabled!==1)throw Error('HTTP_TRIGGER_DISABLED');
  const now=options.now??Date.now();if(!Number.isSafeInteger(now)||now<0)throw Error('HTTP_TRIGGER_CLOCK_INVALID');
  const bucket=Math.floor(now/60000),lease=crypto.randomUUID();
@@ -64,8 +64,8 @@ export async function runProductionHttpTick(env:ManagementBindings,options:Param
   throw Error('HTTP_TRIGGER_UNAVAILABLE');
  }
 }
-export async function productionMonitorStatus(env:ManagementBindings,options:{now?:number;transport?:typeof fetch}={}){
- const state=await productionState(env),migrations=Number(state.migration_count),schemaReady=migrations>=12;
+export async function productionMonitorStatus(env:ManagementBindings,options:{now?:number;transport?:typeof fetch}={},observedState?:Awaited<ReturnType<typeof productionState>>){
+ const state=observedState?assertProductionState(env,observedState):await productionState(env),migrations=Number(state.migration_count),schemaReady=migrations>=12;
  // The monitor needs counts, not the latest 100 notification payload rows or a
  // historical Meta check. Read only the fields returned to its scoped caller.
  const view=await env.DB!.prepare(`SELECT

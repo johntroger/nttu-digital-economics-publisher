@@ -8,6 +8,12 @@ export const ACTIONS_MINUTE_WEIGHTS=Object.freeze({'Actions Linux':1,actions_lin
 export const isActionsProduct=product=>product==='Actions'||product==='actions';
 // Observed account usage reports use "Minutes"; documentation examples use "minutes".
 export const isMinutesUnit=unit=>unit==='minutes'||unit==='Minutes';
+// Public standard execution is authorized by the pinned release and live GitHub
+// metadata, not a monthly attestation. Legacy offline/private tools keep v1/v2.
+export function readRunnerPolicy(env){
+ if(env.ACTIONS_COST_MODE==='verified-public-standard')return {policyVersion:3,releaseSha:env.PRODUCTION_RUNNER_RELEASE};
+ try{return JSON.parse(env.PRODUCTION_BILLING_POLICY??'');}catch{return undefined;}
+}
 export async function githubJSON(path,token,transport=fetch){
  if(!token||!path.startsWith('/')||path.includes('://'))throw Error('GITHUB_READ_INVALID');
  const response=await transport('https://api.github.com'+path,{method:'GET',redirect:'error',headers:{Authorization:'Bearer '+token,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2026-03-10'},signal:AbortSignal.timeout(10000)});
@@ -51,11 +57,11 @@ export function quotaDecision(usage,policy,now=Date.now()){
  return {allowed:remaining>=policy.cycleMinutes,reason:remaining>=policy.cycleMinutes?'quota_reserved':'quota_insufficient',usedMinutes:used,reservedMinutes:policy.reserveMinutes,remainingMinutes:remaining,cycleMinutes:policy.cycleMinutes};
 }
 export async function readRunnerQuota({token,policy,transport=fetch,now=Date.now(),context}){
- const validation=policyDecision(policy,now);if(!validation.allowed)return validation;
  if(context?.ACTIONS_COST_MODE==='verified-public-standard'){
-  const decision=await publicActionsDecision(context,policy,{repository:REPOSITORY,read:(path,credential)=>githubJSON(path,credential,transport)});
-  if(decision.publicRepository!==false)return decision;
+  if(!Number.isSafeInteger(now)||now<0||!Number.isFinite(new Date(now).getTime()))return {allowed:false,reason:'context_invalid'};
+  return publicActionsDecision(context,{repository:REPOSITORY,read:(path,credential)=>githubJSON(path,credential,transport)});
  }
+ const validation=policyDecision(policy,now);if(!validation.allowed)return validation;
  try{
   const d=new Date(now),usage=await githubJSON('/users/johntroger/settings/billing/usage?year='+d.getUTCFullYear()+'&month='+(d.getUTCMonth()+1),token,transport);
   return quotaDecision(usage,policy,now);

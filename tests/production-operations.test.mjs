@@ -5,10 +5,25 @@ import {productionMigrations} from '../scripts/production-management-prepare.mjs
 import {operationsStatus,enqueueProductionTelegramTest,runProductionOperations,monitorAuthorized,productionMonitorStatus,runProductionHttpTick,triggerAuthorized} from '../src/production/operations.ts';
 import worker from '../src/production/worker.ts';
 import {metaFingerprint} from '../src/cloud/meta.ts';
+import {PRODUCTION_STATE_SQL} from '../src/production/management.ts';
 const now=Date.parse('2026-10-07T04:00:00Z'),chat='1548618770',token='123456789:'+ 't'.repeat(35);
 function fixture({runner=false}={}){const db=new DatabaseSync(':memory:');for(const f of productionMigrations('09cdecc7-36a2-4196-950e-ef68b1ecd834',{publisherRunner:runner}))db.exec(f.sql);
  const env={APP_ENV:'production',INTEGRATION_MODE:'management',DAILY_PUBLISHING_ENABLED:'false',PRODUCTION_DATABASE_ID:'09cdecc7-36a2-4196-950e-ef68b1ecd834',RELEASE_SHA:'a'.repeat(40),AUTH_ORIGIN:'https://nttu-publisher-production.example.workers.dev',TELEGRAM_ENABLED:'true',TELEGRAM_CHAT_ID:chat,TELEGRAM_BOT_TOKEN:token,PRODUCTION_MONITOR_TOKEN:'b'.repeat(64),DB:{prepare(sql){let args=[];return{bind(...a){args=a;return this;},async first(){return db.prepare(sql).get(...args)??null;},async all(){return{results:db.prepare(sql).all(...args)};},async run(){return db.prepare(sql).run(...args);}};},async batch(statements){db.exec('BEGIN');try{const results=[];for(const s of statements)results.push(await s.run());db.exec('COMMIT');return results;}catch(e){db.exec('ROLLBACK');throw e;}}}};return{db,env};}
 const cron={cron:'*/5 * * * *',scheduledTime:now};
+
+test('production monitor and empty HTTP tick reuse exactly one request-local identity read',async()=>{
+ const f=fixture();try{
+  f.env.PRODUCTION_TRIGGER_TOKEN='d'.repeat(64);f.db.exec('UPDATE production_http_trigger SET enabled=1');
+  let identityReads=0;const prepare=f.env.DB.prepare;
+  f.env.DB.prepare=sql=>{if(sql===PRODUCTION_STATE_SQL)identityReads++;return prepare(sql);};
+  for(const [path,method,bearer]of [['/api/production/monitor','GET',f.env.PRODUCTION_MONITOR_TOKEN],['/api/production/tick','POST',f.env.PRODUCTION_TRIGGER_TOKEN]]){
+   identityReads=0;
+   const response=await worker.fetch(new Request(f.env.AUTH_ORIGIN+path,{method,headers:{Authorization:'Bearer '+bearer}}),f.env);
+   assert.equal(response.status,200);assert.equal(identityReads,1,path);
+  }
+  assert.equal(f.db.prepare('SELECT count(*) n FROM notification_outbox').get().n,0);
+ }finally{f.db.close();}
+});
 test('HTTP authorization is separate; invalid method, token, payload and disabled source fail closed',async()=>{const f=fixture();try{
  f.env.PRODUCTION_TRIGGER_TOKEN='d'.repeat(64);const url=f.env.AUTH_ORIGIN+'/api/production/tick',headers={Authorization:'Bearer '+f.env.PRODUCTION_TRIGGER_TOKEN};
  for(const method of ['GET','PUT'])assert.equal((await worker.fetch(new Request(url,{method}),f.env)).status,405);
