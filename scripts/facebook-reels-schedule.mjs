@@ -122,10 +122,18 @@ async function save(plan) {
 
 async function verifySchedule(meta, entry, caption) {
   const at = Date.parse(entry.scheduledAt);
-  for (let attempt = 0; attempt < 12; attempt++) {
+  const returnedId = entry.responsePostId;
+  const postId = /^\d{5,25}$/.test(returnedId ?? '') ? `${page}_${returnedId}` : null;
+  for (let attempt = 0; attempt < 16; attempt++) {
+    if (postId) {
+      const post = await meta.read(postId, { fields: 'id,is_published,scheduled_publish_time' }).catch(() => null);
+      if (post?.id === postId && post.is_published === false && epoch(post.scheduled_publish_time) === at) {
+        return postId;
+      }
+    }
     const posts = await scheduledPosts(meta);
-    const matching = posts.filter(post => epoch(post.scheduled_publish_time) === at &&
-      typeof post.message === 'string' && normalize(post.message) === caption);
+    const matching = posts.filter(post => epoch(post.scheduled_publish_time) === at && (post.id === postId ||
+      (typeof post.message === 'string' && normalize(post.message) === caption)));
     requireThat(matching.length <= 1, `Tập ${entry.episode} có lịch trùng trên Meta.`);
     if (matching.length === 1) return matching[0].id;
     await new Promise(resolve => setTimeout(resolve, 2500));
@@ -174,9 +182,10 @@ async function main() {
   const [mode = '--preview', ...extra] = process.argv.slice(2);
   requireThat(['--preview', '--apply', '--manifest'].includes(mode) && extra.length === 0, 'Dùng --preview, --manifest hoặc --apply.');
   const encodedManifest = process.env.FACEBOOK_REELS_MANIFEST;
-  const videos = encodedManifest
+  const manifest = encodedManifest
     ? JSON.parse(Buffer.from(encodedManifest, 'base64').toString('utf8'))
     : await Promise.all(episodes.map(loadLocalVideo));
+  const videos = Array.isArray(manifest) ? manifest : manifest.videos;
   requireThat(Array.isArray(videos) && videos.length === episodes.length, 'Danh sách tập không khớp.');
   for (const [i, episode] of episodes.entries()) await verifyVideo(videos[i], episode);
   if (mode === '--manifest') {
@@ -205,7 +214,7 @@ async function main() {
     if (!plan) {
       requireThat(process.env.GITHUB_RUN_ATTEMPT !== undefined ? process.env.GITHUB_RUN_ATTEMPT === '1' : true,
         'Không chạy lại một lượt GitHub đã gửi yêu cầu. Đối soát biên nhận trước.');
-      plan = newPlan();
+      plan = manifest.resume ?? newPlan();
       await save(plan);
     }
     requireThat(plan.page === page && plan.items.length === videos.length, 'Biên nhận Facebook không khớp lô.');
